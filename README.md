@@ -1,3 +1,5 @@
+Licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
 # Local Coding Agent
 
 A small Python CLI coding assistant that connects to a remote Ollama server and can inspect or operate on the project workspace through registered tools.
