@@ -27,7 +27,7 @@ LLM_BASE_URL=http://YOUR_OLLAMA_HOST:11434/v1
 LLM_MODEL=ornith:9b
 ```
 
-For the current remote Tailscale setup:
+If your Ollama server is hosted elsewhere, set the environment explicitly:
 
 ```env
 LLM_BASE_URL=http://YOUR_OLLAMA_HOST:11434/v1

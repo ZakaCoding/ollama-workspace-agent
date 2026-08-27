@@ -7,18 +7,19 @@ All notable changes to this project are documented here.
 ### Added
 
 - Initial local coding assistant CLI.
-- Ollama chat integration using `OLLAMA_URL` and `OLLAMA_MODEL`.
-- Workspace tools for listing directories, reading files, and running commands.
-- OpenAI-compatible LLM client with request diagnostics and forced tool calls for
-	protocol verification.
+- Ollama chat integration using `LLM_BASE_URL` and `LLM_MODEL`.
+- Workspace tools for listing directories, reading files, writing files, and executing safe shell commands.
+- OpenAI-compatible LLM client with request diagnostics and forced tool calls for protocol verification.
+- Agent runtime guardrails for workspace-aware execution and per-task state isolation.
 
 ### Fixed
 
 - Restored the missing `Agent` class so `main.py` can import and start the application.
 - Connected the agent to the existing tool registry and Ollama tool-calling responses.
 - Wired `main.py` to the package-based agent implementation.
-- Corrected the remote Tailscale endpoint and standardized the `LLM_BASE_URL` and
-	`LLM_MODEL` environment variables.
+- Hardened filesystem and shell boundaries so commands cannot escape the workspace.
+- Removed stale task requirement state from previous requests and ensured a fresh `AgentState` per user prompt.
+- Normalized environment-variable documentation to use placeholders instead of concrete host addresses.
 
 ## [0.1.0] - 2026-08-27
 
