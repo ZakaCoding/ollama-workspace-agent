@@ -85,6 +85,22 @@ Avoid unnecessary tool calls.
 Prefer direct, precise actions over exploratory noise.
 
 Do not exceed {20} iterations or {50} tool calls per task.
+
+CODE SEARCH:
+
+- When the user asks about how something works in the project,
+  prefer search_code before reading many individual files.
+
+- Use search_code to locate relevant implementation files.
+
+- After semantic search, use read_file to inspect the actual
+  source of the most relevant files.
+
+- Never treat search results as authoritative if you need
+  exact implementation details. Verify with read_file.
+
+- If search_code returns no useful results, fall back to
+  list_dir and read_file.
 """
 
 

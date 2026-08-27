@@ -10,6 +10,7 @@ from app.tools.git import (
     git_log,
 )
 
+from app.tools.search import search_code
 from app.tools.shell import (
     run_command,
 )
@@ -144,6 +145,37 @@ TOOLS = [
             },
         },
     },
+
+    {
+        "type": "function",
+        "function": {
+            "name": "search_code",
+            "description": (
+                "Search the indexed project source code "
+                "using semantic similarity. Use this when "
+                "you need to find code relevant to a concept "
+                "or question."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": (
+                            "Natural language description "
+                            "of the code you are looking for."
+                        ),
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Maximum results to return.",
+                        "default": 5,
+                    },
+                },
+                "required": ["query"],
+            },
+        },
+    }
 ]
 
 
@@ -157,4 +189,6 @@ FUNCTIONS = {
     "git_log": git_log,
 
     "run_command": run_command,
+
+    "search_code": search_code,
 }
