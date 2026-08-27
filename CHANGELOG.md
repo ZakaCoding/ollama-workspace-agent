@@ -9,6 +9,9 @@ All notable changes to this project are documented here.
 - Initial local coding assistant CLI.
 - Ollama chat integration using `LLM_BASE_URL` and `LLM_MODEL`.
 - Workspace tools for listing directories, reading files, writing files, and executing safe shell commands.
+- Calculator tools for basic arithmetic operations.
+- Semantic code indexing and search through the new `search_code` tool.
+- Local project index storage under `.ai/`, excluded from version control.
 - OpenAI-compatible LLM client with request diagnostics and forced tool calls for protocol verification.
 - Agent runtime guardrails for workspace-aware execution and per-task state isolation.
 
