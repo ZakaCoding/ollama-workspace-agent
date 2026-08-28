@@ -21,6 +21,9 @@ class AgentService:
     def chat(self, message: str) -> str:
         return self.agent.run(message)
 
+    def chat_stream(self, message: str):
+        return self.agent.stream(message)
+
     def clear(self):
         self.agent.clear()
 

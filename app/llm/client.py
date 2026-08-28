@@ -60,3 +60,40 @@ class LLMClient:
             )
 
         return data
+
+    def chat_stream(self, messages):
+        payload = {
+            "model": self.model,
+            "messages": messages,
+            "stream": True,
+        }
+
+        response = self.session.post(
+            f"{self.base_url}/chat/completions",
+            json=payload,
+            timeout=300,
+            stream=True,
+        )
+        response.raise_for_status()
+
+        for line in response.iter_lines(decode_unicode=True):
+            if not line or not line.startswith("data:"):
+                continue
+
+            data = line[5:].strip()
+            if data == "[DONE]":
+                break
+
+            try:
+                chunk = json.loads(data)
+            except json.JSONDecodeError:
+                continue
+
+            choices = chunk.get("choices", [])
+            if not choices:
+                continue
+
+            delta = choices[0].get("delta", {})
+            content = delta.get("content")
+            if content:
+                yield content

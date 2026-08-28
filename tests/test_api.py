@@ -34,6 +34,10 @@ class FakeService:
     def clear(self):
         pass
 
+    def chat_stream(self, message):
+        yield "hello"
+        yield " world"
+
 
 def test_health_and_status_endpoints():
     client = TestClient(create_app(FakeService()))
@@ -59,6 +63,18 @@ def test_chat_endpoint_rejects_empty_messages():
     response = client.post("/chat", json={"message": ""})
 
     assert response.status_code == 422
+
+
+def test_chat_stream_endpoint_returns_incremental_text():
+    client = TestClient(create_app(FakeService()))
+
+    response = client.post(
+        "/chat/stream",
+        json={"message": "hello"},
+    )
+
+    assert response.status_code == 200
+    assert response.text == "hello world"
 
 
 def test_chat_endpoint_returns_gateway_error_on_service_failure():

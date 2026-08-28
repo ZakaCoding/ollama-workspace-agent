@@ -43,6 +43,7 @@ All notable changes to this project are documented here.
 - Code-review findings now include exact source evidence for easier verification.
 - Added initial FastAPI endpoints for health, status, chat, and indexing.
 - FastAPI now loads `.env`, exposes `POST /clear`, and returns clear errors for chat and indexing failures.
+- Added plain-text streaming through `POST /chat/stream` for conversational responses.
 
 ## [0.1.0] - 2026-08-27
 

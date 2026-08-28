@@ -479,3 +479,38 @@ class Agent:
                 print(
                     "   ✓ Result received"
                 )
+
+    def stream(self, user_input: str):
+        self.state = AgentState(task=user_input)
+        retrieval_task = task_requires_code_search(user_input)
+
+        self.messages.append(
+            {
+                "role": "user",
+                "content": user_input,
+            }
+        )
+
+        if retrieval_task:
+            search_context = self._build_search_context(user_input)
+            if search_context:
+                self.messages.append(
+                    {
+                        "role": "system",
+                        "content": search_context,
+                    }
+                )
+
+        content_parts = []
+        for content in self.llm.chat_stream(self.messages):
+            content_parts.append(content)
+            yield content
+
+        content = "".join(content_parts)
+        self.messages.append(
+            {
+                "role": "assistant",
+                "content": self._add_verification_note(content),
+            }
+        )
+        self.state.completed = True

@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.service import AgentService
@@ -58,6 +59,21 @@ def create_app(service: AgentService | None = None) -> FastAPI:
             ) from exc
 
         return ChatResponse(content=content)
+
+    @app.post("/chat/stream")
+    def chat_stream(request: ChatRequest) -> StreamingResponse:
+        try:
+            stream = agent_service.chat_stream(request.message)
+        except Exception as exc:
+            raise HTTPException(
+                status_code=502,
+                detail=f"Chat service unavailable: {exc}",
+            ) from exc
+
+        return StreamingResponse(
+            stream,
+            media_type="text/plain; charset=utf-8",
+        )
 
     @app.post("/clear", response_model=ClearResponse)
     def clear() -> ClearResponse:
