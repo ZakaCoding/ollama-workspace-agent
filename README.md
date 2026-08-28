@@ -18,7 +18,7 @@ Create and activate a virtual environment, then install the dependencies:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install python-dotenv requests httpx pytest fastapi uvicorn
+python -m pip install python-dotenv requests httpx pytest fastapi uvicorn rich
 ```
 
 Create `.env` in the project root:
