@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 from app.agent.state import AgentState
@@ -8,6 +9,61 @@ from app.tools.registry import TOOLS, FUNCTIONS
 
 
 WORKSPACE = Path.cwd().resolve()
+
+
+READ_ONLY_PREFIXES = (
+    "where ",
+    "what ",
+    "how ",
+    "which ",
+    "why ",
+    "can you explain ",
+    "check ",
+    "inspect ",
+    "show ",
+)
+
+
+CODE_QUESTION_PREFIXES = (
+    "where ",
+    "what ",
+    "how ",
+    "which ",
+    "why ",
+)
+
+
+EXPLICIT_ACTION_WORDS = (
+    "add ",
+    "change ",
+    "create ",
+    "delete ",
+    "fix ",
+    "implement ",
+    "modify ",
+    "remove ",
+    "update ",
+    "write ",
+)
+
+
+def task_is_read_only(task: str) -> bool:
+    normalized = task.strip().lower()
+
+    if normalized.startswith(READ_ONLY_PREFIXES):
+        return not any(
+            word in normalized
+            for word in EXPLICIT_ACTION_WORDS
+        )
+
+    return False
+
+
+def task_requires_code_search(task: str) -> bool:
+    normalized = task.strip().lower()
+    return task_is_read_only(normalized) and normalized.startswith(
+        CODE_QUESTION_PREFIXES
+    )
 
 
 SYSTEM_PROMPT = f"""
@@ -88,19 +144,38 @@ Do not exceed {20} iterations or {50} tool calls per task.
 
 CODE SEARCH:
 
-- When the user asks about how something works in the project,
-  prefer search_code before reading many individual files.
+CODEBASE SEARCH POLICY:
 
-- Use search_code to locate relevant implementation files.
+When answering questions about the project's implementation:
 
-- After semantic search, use read_file to inspect the actual
-  source of the most relevant files.
+1. FIRST use search_code.
+2. Do NOT use list_dir to discover the project if search_code can answer it.
+3. Do NOT read many files blindly.
+4. Use search_code with a descriptive natural-language query.
+5. After search_code returns results, use read_file to verify the relevant
+    source files.
+6. Only use list_dir when search_code is unavailable, the user explicitly
+     asks for directory contents, or search results are insufficient.
+7. Do NOT modify files unless the user explicitly requests a modification.
+8. Do NOT run commands unless the user explicitly requests execution or
+    command execution is necessary to complete an explicitly requested task.
+9. For questions that only require understanding code, prefer:
+        search_code -> read_file -> answer
 
-- Never treat search results as authoritative if you need
-  exact implementation details. Verify with read_file.
+READ-ONLY TASK RULE:
 
-- If search_code returns no useful results, fall back to
-  list_dir and read_file.
+If the user asks a question, explanation, inspection, search, debugging
+analysis, or codebase understanding task:
+
+- DO NOT write files or modify files.
+- DO NOT run destructive commands.
+- DO NOT create tests unless explicitly requested.
+- DO NOT fix anything unless explicitly requested.
+- Use only read-only tools unless the user explicitly asks for changes.
+
+Treat an explicit request to modify files as the boundary that permits
+write tools. Do not infer permission to edit from a question or from a
+discovered issue.
 """
 
 
@@ -119,6 +194,10 @@ class Agent:
 
     def run(self, user_input: str):
         self.state = AgentState(task=user_input)
+        read_only_task = task_is_read_only(user_input)
+        retrieval_task = task_requires_code_search(user_input)
+        search_used = False
+        read_used = False
 
         self.messages.append(
             {
@@ -130,9 +209,24 @@ class Agent:
         while True:
             self.state.next_iteration()
 
+            if retrieval_task and not search_used:
+                available_tools = [
+                    tool
+                    for tool in TOOLS
+                    if tool["function"]["name"] == "search_code"
+                ]
+            elif retrieval_task and not read_used:
+                available_tools = [
+                    tool
+                    for tool in TOOLS
+                    if tool["function"]["name"] == "read_file"
+                ]
+            else:
+                available_tools = None if retrieval_task else TOOLS
+
             response = self.llm.chat(
                 messages=self.messages,
-                tools=TOOLS,
+                tools=available_tools,
             )
 
             choice = response["choices"][0]
@@ -144,6 +238,64 @@ class Agent:
             )
 
             if not tool_calls:
+                if retrieval_task and not read_used:
+                    indexed_paths = []
+
+                    for message in reversed(self.messages):
+                        if message.get("role") != "tool":
+                            continue
+
+                        indexed_paths.extend(
+                            re.findall(
+                                r"^FILE: ([^\n]+)",
+                                message.get("content", ""),
+                                re.MULTILINE,
+                            )
+                        )
+
+                    for path in dict.fromkeys(indexed_paths):
+                        read_arguments = {"path": path}
+                        read_result = FUNCTIONS["read_file"](
+                            **read_arguments
+                        )
+                        read_call_id = f"forced-read-{path}"
+
+                        print()
+                        print("🔧 Tool: read_file")
+                        print("   Args:", json.dumps(read_arguments))
+                        print("   ✓ Result received")
+
+                        self.messages.append(
+                            {
+                                "role": "assistant",
+                                "content": "",
+                                "tool_calls": [
+                                    {
+                                        "id": read_call_id,
+                                        "type": "function",
+                                        "function": {
+                                            "name": "read_file",
+                                            "arguments": json.dumps(
+                                                read_arguments
+                                            ),
+                                        },
+                                    }
+                                ],
+                            }
+                        )
+                        self.messages.append(
+                            {
+                                "role": "tool",
+                                "tool_call_id": read_call_id,
+                                "content": read_result,
+                            }
+                        )
+                        read_used = True
+                        break
+
+                    if read_used:
+                        continue
+
                 content = message.get(
                     "content",
                     "",
@@ -181,6 +333,11 @@ class Agent:
                     {},
                 )
 
+                if name == "search_code":
+                    search_used = True
+                elif name == "read_file":
+                    read_used = True
+
                 if isinstance(arguments, str):
                     try:
                         arguments = json.loads(arguments)
@@ -213,7 +370,15 @@ class Agent:
 
                 tool = FUNCTIONS.get(name)
 
-                if tool is None:
+                if read_only_task and name in {
+                    "write_file",
+                    "run_command",
+                }:
+                    result = (
+                        f"Tool blocked: {name} is not allowed for a "
+                        "read-only task."
+                    )
+                elif tool is None:
                     result = f"Unknown tool: {name}"
                 else:
                     try:

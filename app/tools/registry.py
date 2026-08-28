@@ -62,8 +62,10 @@ TOOLS = [
         "function": {
             "name": "write_file",
             "description": (
-                "Create or completely replace a text file "
-                "inside the workspace."
+                "Create or completely replace a text file inside the "
+                "workspace. Use ONLY when the user explicitly requests "
+                "a file modification; never use for questions, inspection, "
+                "or analysis."
             ),
             "parameters": {
                 "type": "object",
@@ -130,9 +132,10 @@ TOOLS = [
         "function": {
             "name": "run_command",
             "description": (
-                "Execute a shell command when no dedicated "
-                "tool is available. Use this for tests, builds, "
-                "package managers, Docker, PHP, Python, Node, etc."
+                "Execute a shell command when no dedicated tool is available "
+                "and execution is explicitly requested or necessary for an "
+                "explicitly requested task. Do not use for ordinary code "
+                "questions or filesystem operations."
             ),
             "parameters": {
                 "type": "object",
@@ -151,10 +154,15 @@ TOOLS = [
         "function": {
             "name": "search_code",
             "description": (
-                "Search the indexed project source code "
-                "using semantic similarity. Use this when "
-                "you need to find code relevant to a concept "
-                "or question."
+                "Search the project's indexed source code using semantic "
+                "search. IMPORTANT: use this tool FIRST when the user asks "
+                "where something is implemented, how a feature works, or "
+                "which files contain relevant functionality. This tool "
+                "searches the existing project index and does not modify "
+                "files. Examples: 'Where is tool execution implemented?', "
+                "'Where is authentication handled?', 'How does the agent "
+                "execute commands?', 'Where is the database connection "
+                "created?'"
             ),
             "parameters": {
                 "type": "object",

@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here.
 
-## [Unreleased]
+## [0.2.0] - 2026-08-28
 
 ### Added
 
@@ -23,6 +23,11 @@ All notable changes to this project are documented here.
 - Hardened filesystem and shell boundaries so commands cannot escape the workspace.
 - Removed stale task requirement state from previous requests and ensured a fresh `AgentState` per user prompt.
 - Normalized environment-variable documentation to use placeholders instead of concrete host addresses.
+- Enforced read-only behavior for questions so file writes and shell commands are blocked at runtime.
+- Routed implementation questions through semantic search and file verification before producing an answer.
+- Prevented additional tool calls after required retrieval and verification are complete.
+
+## [Unreleased]
 
 ## [0.1.0] - 2026-08-27
 
