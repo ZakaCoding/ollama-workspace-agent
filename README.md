@@ -73,8 +73,9 @@ Run the HTTP API with:
 uvicorn app.api:app --host 127.0.0.1 --port 8000
 ```
 
-The API provides `GET /health`, `GET /status`, `POST /chat`, and `POST /index`.
-Chat requests use `{"message": "your request"}`.
+The API loads `.env` automatically and provides `GET /health`, `GET /status`,
+`POST /chat`, `POST /clear`, and `POST /index`. Chat requests use
+`{"message": "your request"}`.
 
 ## Tools
 

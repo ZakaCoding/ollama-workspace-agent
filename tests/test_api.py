@@ -31,6 +31,9 @@ class FakeService:
     def index(self):
         self.indexed = True
 
+    def clear(self):
+        pass
+
 
 def test_health_and_status_endpoints():
     client = TestClient(create_app(FakeService()))
@@ -56,6 +59,31 @@ def test_chat_endpoint_rejects_empty_messages():
     response = client.post("/chat", json={"message": ""})
 
     assert response.status_code == 422
+
+
+def test_chat_endpoint_returns_gateway_error_on_service_failure():
+    class FailingService(FakeService):
+        def chat(self, message):
+            raise RuntimeError("remote model unavailable")
+
+    client = TestClient(create_app(FailingService()))
+
+    response = client.post("/chat", json={"message": "hello"})
+
+    assert response.status_code == 502
+    assert response.json() == {
+        "detail": "Chat service unavailable: remote model unavailable",
+    }
+
+
+def test_clear_endpoint_resets_service():
+    service = FakeService()
+    client = TestClient(create_app(service))
+
+    response = client.post("/clear")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
 
 
 def test_index_endpoint_runs_indexing_and_returns_status():

@@ -1,7 +1,11 @@
-from fastapi import FastAPI
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from app.service import AgentService
+
+
+load_dotenv()
 
 
 class ChatRequest(BaseModel):
@@ -24,6 +28,10 @@ class IndexResponse(BaseModel):
     chunks: int
 
 
+class ClearResponse(BaseModel):
+    status: str
+
+
 def create_app(service: AgentService | None = None) -> FastAPI:
     agent_service = service or AgentService()
     app = FastAPI(
@@ -41,12 +49,31 @@ def create_app(service: AgentService | None = None) -> FastAPI:
 
     @app.post("/chat", response_model=ChatResponse)
     def chat(request: ChatRequest) -> ChatResponse:
-        content = agent_service.chat(request.message)
+        try:
+            content = agent_service.chat(request.message)
+        except Exception as exc:
+            raise HTTPException(
+                status_code=502,
+                detail=f"Chat service unavailable: {exc}",
+            ) from exc
+
         return ChatResponse(content=content)
+
+    @app.post("/clear", response_model=ClearResponse)
+    def clear() -> ClearResponse:
+        agent_service.clear()
+        return ClearResponse(status="ok")
 
     @app.post("/index", response_model=IndexResponse)
     def index() -> IndexResponse:
-        agent_service.index()
+        try:
+            agent_service.index()
+        except Exception as exc:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Indexing failed: {exc}",
+            ) from exc
+
         return IndexResponse(
             status="ok",
             **agent_service.status(),
