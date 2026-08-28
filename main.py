@@ -1,14 +1,18 @@
+import argparse
+import os
+
 from dotenv import load_dotenv
 
+from app.api_client import ApiClient
 from app.service import AgentService
 
 
 HELP_TEXT = """Commands:
-  /help    Show this help
-  /index   Rebuild the semantic project index
-  /status  Show index status
-  /clear   Clear conversation history
-  /quit    Exit the agent
+    /help    commands
+    /index   rebuild project index
+    /status  show index status
+    /clear   clear conversation
+    /quit    exit
 """
 
 
@@ -21,23 +25,40 @@ def show_status(service):
     print(f"Index: ready ({status['chunks']} chunks)")
 
 
-def main():
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(
+        description="Local coding agent CLI",
+    )
+    parser.add_argument(
+        "--api-url",
+        help="Use the FastAPI server instead of direct mode.",
+    )
+    parser.add_argument(
+        "--api-key",
+        default=os.getenv("API_KEY"),
+        help="API key for the FastAPI server.",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv=None):
 
     load_dotenv()
+    args = parse_args(argv)
 
-    print()
-    print("╭──────────────────────────────────────────────╮")
-    print("│        LOCAL AMAZON Q — PHASE 1              │")
-    print("│        Client Agent + Remote Ollama           │")
-    print("╰──────────────────────────────────────────────╯")
-    print()
+    mode = "API client" if args.api_url else "Direct service"
+    print(f"local-agent | {mode} | /help for commands")
 
-    service = AgentService()
+    service = (
+        ApiClient(args.api_url, args.api_key)
+        if args.api_url
+        else AgentService()
+    )
 
     while True:
 
         try:
-            user_input = input("You › ").strip()
+            user_input = input("› ").strip()
 
         except (KeyboardInterrupt, EOFError):
             print("\nBye.")
@@ -53,19 +74,36 @@ def main():
             continue
 
         if command == "/status":
-            show_status(service)
+            try:
+                if args.api_url:
+                    status = service.status()
+                    if status["ready"]:
+                        print(f"index ready | {status['chunks']} chunks")
+                    else:
+                        print("index not found")
+                else:
+                    show_status(service)
+            except Exception as exc:
+                print(f"status error: {exc}")
             continue
 
         if command == "/clear":
-            service.clear()
-            print("Conversation cleared.")
+            try:
+                service.clear()
+                print("conversation cleared")
+            except Exception as exc:
+                print(f"clear error: {exc}")
             continue
 
         if command == "/index":
             try:
-                service.index()
+                result = service.index()
+                if args.api_url:
+                    print(f"index {result['status']}")
+                else:
+                    print("index complete")
             except Exception as exc:
-                print(f"Index error: {exc}")
+                print(f"index error: {exc}")
             continue
 
         if command in {
@@ -78,12 +116,13 @@ def main():
             break
 
         try:
-
-            answer = service.chat(user_input)
-
-            print()
-            print("Agent ›")
-            print(answer)
+            print("assistant:")
+            if args.api_url:
+                for chunk in service.chat_stream(user_input):
+                    print(chunk, end="", flush=True)
+                print()
+            else:
+                print(service.chat(user_input))
             print()
 
         except Exception as exc:

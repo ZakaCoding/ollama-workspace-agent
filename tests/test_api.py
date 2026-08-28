@@ -114,3 +114,14 @@ def test_index_endpoint_runs_indexing_and_returns_status():
         "ready": True,
         "chunks": 3,
     }
+
+
+def test_configured_api_key_protects_endpoints_but_not_health():
+    client = TestClient(create_app(FakeService(), api_key="secret"))
+
+    assert client.get("/health").status_code == 200
+    assert client.get("/status").status_code == 401
+    assert client.get(
+        "/status",
+        headers={"X-API-Key": "secret"},
+    ).status_code == 200

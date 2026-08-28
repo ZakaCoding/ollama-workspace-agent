@@ -1,5 +1,8 @@
+import os
+import secrets
+
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -33,8 +36,34 @@ class ClearResponse(BaseModel):
     status: str
 
 
-def create_app(service: AgentService | None = None) -> FastAPI:
+def create_app(
+    service: AgentService | None = None,
+    api_key: str | None = None,
+) -> FastAPI:
     agent_service = service or AgentService()
+    configured_api_key = (
+        api_key if api_key is not None else os.getenv("API_KEY")
+    )
+
+    def require_api_key(
+        provided_api_key: str | None = Header(
+            default=None,
+            alias="X-API-Key",
+        ),
+    ) -> None:
+        if configured_api_key is None:
+            return
+
+        if provided_api_key is None or not secrets.compare_digest(
+            provided_api_key,
+            configured_api_key,
+        ):
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid or missing API key.",
+                headers={"WWW-Authenticate": "ApiKey"},
+            )
+
     app = FastAPI(
         title="Local Coding Agent API",
         version="0.1.0",
@@ -45,11 +74,16 @@ def create_app(service: AgentService | None = None) -> FastAPI:
         return {"status": "ok"}
 
     @app.get("/status", response_model=StatusResponse)
-    def status() -> StatusResponse:
+    def status(
+        _: None = Depends(require_api_key),
+    ) -> StatusResponse:
         return StatusResponse(**agent_service.status())
 
     @app.post("/chat", response_model=ChatResponse)
-    def chat(request: ChatRequest) -> ChatResponse:
+    def chat(
+        request: ChatRequest,
+        _: None = Depends(require_api_key),
+    ) -> ChatResponse:
         try:
             content = agent_service.chat(request.message)
         except Exception as exc:
@@ -61,7 +95,10 @@ def create_app(service: AgentService | None = None) -> FastAPI:
         return ChatResponse(content=content)
 
     @app.post("/chat/stream")
-    def chat_stream(request: ChatRequest) -> StreamingResponse:
+    def chat_stream(
+        request: ChatRequest,
+        _: None = Depends(require_api_key),
+    ) -> StreamingResponse:
         try:
             stream = agent_service.chat_stream(request.message)
         except Exception as exc:
@@ -76,12 +113,16 @@ def create_app(service: AgentService | None = None) -> FastAPI:
         )
 
     @app.post("/clear", response_model=ClearResponse)
-    def clear() -> ClearResponse:
+    def clear(
+        _: None = Depends(require_api_key),
+    ) -> ClearResponse:
         agent_service.clear()
         return ClearResponse(status="ok")
 
     @app.post("/index", response_model=IndexResponse)
-    def index() -> IndexResponse:
+    def index(
+        _: None = Depends(require_api_key),
+    ) -> IndexResponse:
         try:
             agent_service.index()
         except Exception as exc:

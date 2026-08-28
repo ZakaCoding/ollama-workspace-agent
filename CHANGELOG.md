@@ -44,6 +44,9 @@ All notable changes to this project are documented here.
 - Added initial FastAPI endpoints for health, status, chat, and indexing.
 - FastAPI now loads `.env`, exposes `POST /clear`, and returns clear errors for chat and indexing failures.
 - Added plain-text streaming through `POST /chat/stream` for conversational responses.
+- Added optional API-key protection for non-health FastAPI endpoints.
+- Added direct and API-backed CLI modes with streamed API chat responses.
+- Simplified the CLI presentation into a compact lightweight terminal interface.
 
 ## [0.1.0] - 2026-08-27
 
