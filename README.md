@@ -18,7 +18,7 @@ Create and activate a virtual environment, then install the dependencies:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install python-dotenv requests httpx pytest
+python -m pip install python-dotenv requests httpx pytest fastapi uvicorn
 ```
 
 Create `.env` in the project root:
@@ -67,6 +67,15 @@ python main.py
 Enter a request at the `You` prompt. Available commands are `/help`, `/index`,
 `/status`, `/clear`, and `/quit`.
 
+Run the HTTP API with:
+
+```bash
+uvicorn app.api:app --host 127.0.0.1 --port 8000
+```
+
+The API provides `GET /health`, `GET /status`, `POST /chat`, and `POST /index`.
+Chat requests use `{"message": "your request"}`.
+
 ## Tools
 
 The agent can call these workspace tools:
@@ -84,6 +93,8 @@ The current development phase forces tool calls when tools are supplied so the O
 .
 ├── app/
 │   ├── agent/       Agent orchestration and system prompt
+│   ├── api.py        FastAPI endpoints and request models
+│   ├── service.py    Shared chat, indexing, and status service
 │   ├── indexer/     Code indexing and semantic search
 │   ├── llm/         OpenAI-compatible Ollama client
 │   └── tools/       Workspace tool implementations and registry

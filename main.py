@@ -1,11 +1,6 @@
-import sqlite3
-from pathlib import Path
-
 from dotenv import load_dotenv
 
-from app.agent import Agent
-from app.agent.core import WORKSPACE
-from app.indexer.index import index_project
+from app.service import AgentService
 
 
 HELP_TEXT = """Commands:
@@ -17,15 +12,13 @@ HELP_TEXT = """Commands:
 """
 
 
-def show_status():
-    index_path = WORKSPACE / ".ai" / "index.db"
-    if not index_path.exists():
+def show_status(service):
+    status = service.status()
+    if not status["ready"]:
         print("Index: not found")
         return
 
-    with sqlite3.connect(index_path) as db:
-        count = db.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
-    print(f"Index: ready ({count} chunks)")
+    print(f"Index: ready ({status['chunks']} chunks)")
 
 
 def main():
@@ -39,7 +32,7 @@ def main():
     print("╰──────────────────────────────────────────────╯")
     print()
 
-    agent = Agent()
+    service = AgentService()
 
     while True:
 
@@ -60,17 +53,17 @@ def main():
             continue
 
         if command == "/status":
-            show_status()
+            show_status(service)
             continue
 
         if command == "/clear":
-            agent.clear()
+            service.clear()
             print("Conversation cleared.")
             continue
 
         if command == "/index":
             try:
-                index_project(WORKSPACE, WORKSPACE / ".ai" / "index.db")
+                service.index()
             except Exception as exc:
                 print(f"Index error: {exc}")
             continue
@@ -86,7 +79,7 @@ def main():
 
         try:
 
-            answer = agent.run(user_input)
+            answer = service.chat(user_input)
 
             print()
             print("Agent ›")

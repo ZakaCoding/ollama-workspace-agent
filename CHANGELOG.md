@@ -39,7 +39,9 @@ All notable changes to this project are documented here.
 
 ### Changed
 
+- Extracted shared chat, indexing, status, and reset operations into `AgentService` for CLI and API reuse.
 - Code-review findings now include exact source evidence for easier verification.
+- Added initial FastAPI endpoints for health, status, chat, and indexing.
 
 ## [0.1.0] - 2026-08-27
 
