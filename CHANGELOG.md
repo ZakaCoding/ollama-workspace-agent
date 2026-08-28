@@ -29,6 +29,11 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- Added client-side tool-call validation so unavailable tools are rejected before execution.
+- Added a bounded context builder for formatting semantic-search results for the LLM.
+
 ## [0.1.0] - 2026-08-27
 
 ### Added

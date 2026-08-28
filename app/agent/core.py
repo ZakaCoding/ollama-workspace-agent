@@ -192,6 +192,37 @@ class Agent:
             }
         ]
 
+    def _allowed_tool_names(
+        self,
+        available_tools,
+    ) -> set[str]:
+        if not available_tools:
+            return set()
+
+        return {
+            tool["function"]["name"]
+            for tool in available_tools
+        }
+
+    def _validate_tool_calls(
+        self,
+        tool_calls,
+        available_tools,
+    ):
+        allowed = self._allowed_tool_names(available_tools)
+        valid = []
+        invalid = []
+
+        for tool_call in tool_calls:
+            name = tool_call["function"]["name"]
+
+            if name in allowed:
+                valid.append(tool_call)
+            else:
+                invalid.append(tool_call)
+
+        return valid, invalid
+
     def run(self, user_input: str):
         self.state = AgentState(task=user_input)
         read_only_task = task_is_read_only(user_input)
@@ -236,6 +267,55 @@ class Agent:
                 "tool_calls",
                 [],
             )
+
+            valid_tool_calls, invalid_tool_calls = (
+                self._validate_tool_calls(
+                    tool_calls,
+                    available_tools,
+                )
+            )
+
+            if invalid_tool_calls:
+                allowed_tool_names = self._allowed_tool_names(
+                    available_tools
+                )
+
+                for tool_call in invalid_tool_calls:
+                    tool_name = tool_call["function"]["name"]
+
+                    print()
+                    print(
+                        f"⚠️ Blocked tool call: {tool_name}"
+                    )
+                    print(
+                        f"   Allowed tools: "
+                        f"{', '.join(sorted(allowed_tool_names))}"
+                    )
+
+                    self.messages.append(
+                        {
+                            "role": "assistant",
+                            "content": message.get("content", ""),
+                            "tool_calls": [tool_call],
+                        }
+                    )
+
+                    self.messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": tool_call["id"],
+                            "content": (
+                                f"Tool '{tool_name}' is not available "
+                                "for this step. You must use only the "
+                                "currently available tools."
+                            ),
+                        }
+                    )
+
+                tool_calls = valid_tool_calls
+
+                if not tool_calls:
+                    continue
 
             if not tool_calls:
                 if retrieval_task and not read_used:
