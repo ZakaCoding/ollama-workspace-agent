@@ -33,6 +33,13 @@ All notable changes to this project are documented here.
 
 - Added client-side tool-call validation so unavailable tools are rejected before execution.
 - Added a bounded context builder for formatting semantic-search results for the LLM.
+- Added client-side evidence notes for unsupported completion claims.
+- Added `/help`, `/index`, `/status`, `/clear`, and `/quit` CLI commands.
+- Added a read-only Python code-review tool with structured security findings.
+
+### Changed
+
+- Code-review findings now include exact source evidence for easier verification.
 
 ## [0.1.0] - 2026-08-27
 

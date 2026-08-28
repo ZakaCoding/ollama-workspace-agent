@@ -48,9 +48,9 @@ def test_code_questions_require_search_then_file_verification():
     assert not task_requires_code_search("Implement the search policy")
 
 
-def test_system_prompt_requires_search_first_and_read_only_questions():
-    assert "FIRST use search_code" in SYSTEM_PROMPT
-    assert "search_code -> read_file -> answer" in SYSTEM_PROMPT
+def test_system_prompt_requires_retrieved_context_and_read_only_questions():
+    assert "client retrieves relevant repository" in SYSTEM_PROMPT
+    assert "semantic search -> context builder -> answer" in SYSTEM_PROMPT
     assert "DO NOT write files" in SYSTEM_PROMPT
     assert "DO NOT fix anything unless explicitly requested." in SYSTEM_PROMPT
     assert "DO NOT create tests unless explicitly requested." in SYSTEM_PROMPT

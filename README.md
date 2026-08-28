@@ -64,7 +64,8 @@ source .venv/bin/activate
 python main.py
 ```
 
-Enter a request at the `You` prompt. Use `exit`, `quit`, `/exit`, or `/quit` to stop.
+Enter a request at the `You` prompt. Available commands are `/help`, `/index`,
+`/status`, `/clear`, and `/quit`.
 
 ## Tools
 
@@ -72,6 +73,7 @@ The agent can call these workspace tools:
 
 - `list_dir`: list files and directories
 - `read_file`: read UTF-8 text files
+- `code_review`: review Python files for common security risks
 - `run_command`: run a shell command after confirmation
 
 The current development phase forces tool calls when tools are supplied so the Ollama tool-calling protocol can be verified.

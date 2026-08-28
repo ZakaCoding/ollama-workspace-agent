@@ -11,6 +11,7 @@ from app.tools.git import (
 )
 
 from app.tools.search import search_code
+from app.tools.code_review import review_file
 from app.tools.shell import (
     run_command,
 )
@@ -152,6 +153,28 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "code_review",
+            "description": (
+                "Review a Python file for common security risks. This tool "
+                "is read-only and returns structured findings with line "
+                "numbers. Use only for an explicitly requested code review."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "Relative Python file path.",
+                    },
+                },
+                "required": ["path"],
+            },
+        },
+    },
+
+    {
+        "type": "function",
+        "function": {
             "name": "search_code",
             "description": (
                 "Search the project's indexed source code using semantic "
@@ -197,6 +220,8 @@ FUNCTIONS = {
     "git_log": git_log,
 
     "run_command": run_command,
+
+    "code_review": review_file,
 
     "search_code": search_code,
 }

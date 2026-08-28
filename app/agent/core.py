@@ -3,7 +3,9 @@ import re
 from pathlib import Path
 
 from app.agent.state import AgentState
+from app.agent.context import ContextBuilder
 from app.agent.verifier import verify_tool_result
+from app.indexer.search import search
 from app.llm.client import LLMClient
 from app.tools.registry import TOOLS, FUNCTIONS
 
@@ -146,21 +148,16 @@ CODE SEARCH:
 
 CODEBASE SEARCH POLICY:
 
-When answering questions about the project's implementation:
+For code and project questions, the client retrieves relevant repository
+context before calling the model:
 
-1. FIRST use search_code.
-2. Do NOT use list_dir to discover the project if search_code can answer it.
-3. Do NOT read many files blindly.
-4. Use search_code with a descriptive natural-language query.
-5. After search_code returns results, use read_file to verify the relevant
-    source files.
-6. Only use list_dir when search_code is unavailable, the user explicitly
-     asks for directory contents, or search results are insufficient.
-7. Do NOT modify files unless the user explicitly requests a modification.
-8. Do NOT run commands unless the user explicitly requests execution or
+1. Answer from the retrieved context when it contains the relevant evidence.
+2. Do NOT wander through the filesystem for ordinary code questions.
+3. Do NOT modify files unless the user explicitly requests a modification.
+4. Do NOT run commands unless the user explicitly requests execution or
     command execution is necessary to complete an explicitly requested task.
-9. For questions that only require understanding code, prefer:
-        search_code -> read_file -> answer
+5. For questions that only require understanding code, prefer:
+        semantic search -> context builder -> answer
 
 READ-ONLY TASK RULE:
 
@@ -185,6 +182,15 @@ class Agent:
         self.llm = LLMClient()
         self.state = None
 
+        self.messages = [
+            {
+                "role": "system",
+                "content": SYSTEM_PROMPT,
+            }
+        ]
+
+    def clear(self):
+        self.state = None
         self.messages = [
             {
                 "role": "system",
@@ -223,12 +229,59 @@ class Agent:
 
         return valid, invalid
 
+    def _build_search_context(
+        self,
+        task: str,
+    ) -> str:
+        index_path = WORKSPACE / ".ai" / "index.db"
+
+        if not index_path.exists():
+            return ""
+
+        results = search(
+            index_path,
+            task,
+            limit=5,
+        )
+
+        return ContextBuilder().build_search_context(results)
+
+    def _add_verification_note(self, content: str) -> str:
+        changed_files = bool(
+            self.state
+            and self.state.files_changed
+        )
+        commands_run = bool(
+            self.state
+            and getattr(self.state, "commands_run", [])
+        )
+        claims = {
+            "created": changed_files,
+            "updated": changed_files,
+            "modified": changed_files,
+            "wrote": changed_files,
+            "test": commands_run,
+        }
+        unsupported = [
+            word
+            for word, has_evidence in claims.items()
+            if re.search(rf"\b{word}\b", content, re.IGNORECASE)
+            and not has_evidence
+        ]
+
+        if not unsupported:
+            return content
+
+        return (
+            f"{content}\n\n"
+            "Client verification: no matching tool execution was recorded "
+            "for this response, so these claims are not verified."
+        )
+
     def run(self, user_input: str):
         self.state = AgentState(task=user_input)
         read_only_task = task_is_read_only(user_input)
         retrieval_task = task_requires_code_search(user_input)
-        search_used = False
-        read_used = False
 
         self.messages.append(
             {
@@ -237,23 +290,21 @@ class Agent:
             }
         )
 
+        if retrieval_task:
+            search_context = self._build_search_context(user_input)
+
+            if search_context:
+                self.messages.append(
+                    {
+                        "role": "system",
+                        "content": search_context,
+                    }
+                )
+
         while True:
             self.state.next_iteration()
 
-            if retrieval_task and not search_used:
-                available_tools = [
-                    tool
-                    for tool in TOOLS
-                    if tool["function"]["name"] == "search_code"
-                ]
-            elif retrieval_task and not read_used:
-                available_tools = [
-                    tool
-                    for tool in TOOLS
-                    if tool["function"]["name"] == "read_file"
-                ]
-            else:
-                available_tools = None if retrieval_task else TOOLS
+            available_tools = [] if retrieval_task else TOOLS
 
             response = self.llm.chat(
                 messages=self.messages,
@@ -318,68 +369,11 @@ class Agent:
                     continue
 
             if not tool_calls:
-                if retrieval_task and not read_used:
-                    indexed_paths = []
-
-                    for message in reversed(self.messages):
-                        if message.get("role") != "tool":
-                            continue
-
-                        indexed_paths.extend(
-                            re.findall(
-                                r"^FILE: ([^\n]+)",
-                                message.get("content", ""),
-                                re.MULTILINE,
-                            )
-                        )
-
-                    for path in dict.fromkeys(indexed_paths):
-                        read_arguments = {"path": path}
-                        read_result = FUNCTIONS["read_file"](
-                            **read_arguments
-                        )
-                        read_call_id = f"forced-read-{path}"
-
-                        print()
-                        print("🔧 Tool: read_file")
-                        print("   Args:", json.dumps(read_arguments))
-                        print("   ✓ Result received")
-
-                        self.messages.append(
-                            {
-                                "role": "assistant",
-                                "content": "",
-                                "tool_calls": [
-                                    {
-                                        "id": read_call_id,
-                                        "type": "function",
-                                        "function": {
-                                            "name": "read_file",
-                                            "arguments": json.dumps(
-                                                read_arguments
-                                            ),
-                                        },
-                                    }
-                                ],
-                            }
-                        )
-                        self.messages.append(
-                            {
-                                "role": "tool",
-                                "tool_call_id": read_call_id,
-                                "content": read_result,
-                            }
-                        )
-                        read_used = True
-                        break
-
-                    if read_used:
-                        continue
-
                 content = message.get(
                     "content",
                     "",
                 )
+                content = self._add_verification_note(content)
 
                 self.messages.append(
                     {
@@ -412,11 +406,6 @@ class Agent:
                     "arguments",
                     {},
                 )
-
-                if name == "search_code":
-                    search_used = True
-                elif name == "read_file":
-                    read_used = True
 
                 if isinstance(arguments, str):
                     try:
