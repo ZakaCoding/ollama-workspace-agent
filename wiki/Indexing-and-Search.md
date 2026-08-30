@@ -1,14 +1,31 @@
 # Indexing and Search
 
-The indexer gives the agent a local semantic view of source code. It is separate from the chat model and is stored in a SQLite database under `.ai/`.
+OwA uses a local semantic index so the agent can find relevant project context before opening many files. The index is intentionally simple and local-first: it does not depend on a remote search backend.
 
 ## Supported files
 
-The indexer currently considers common source and text extensions, including Python, JavaScript, TypeScript, PHP, Go, Rust, Java, C/C++, CSS, HTML, JSON, YAML, TOML, Markdown, text, SQL, and shell scripts.
+The indexer reads common code and config files such as:
 
-It ignores common generated or dependency directories such as `.git`, `.venv`, `venv`, `node_modules`, `__pycache__`, `.idea`, `.vscode`, and `.ai`.
+- Python, JavaScript, TypeScript, and Go
+- Rust, Java, C/C++, and shell scripts
+- HTML, CSS, JSON, YAML, TOML, SQL, and Markdown
+- many text-based project files used in developer workflows
 
-## Indexing API
+It ignores generated or dependency-heavy folders such as `.git`, `.venv`, `node_modules`, `dist`, `build`, and local caches.
+
+## Local storage
+
+The index is stored under `.owa/` and is tied to the repository. Each indexed chunk keeps:
+
+- the relative file path
+- the chunk position
+- the original source text
+- the serialized embedding
+- creation and update metadata
+
+This allows the agent to search semantically for likely relevant files without blindly opening everything.
+
+## Index flow
 
 ```python
 from pathlib import Path
@@ -16,45 +33,41 @@ from app.indexer.index import index_project
 
 index_project(
     workspace=Path.cwd(),
-    db_path=Path(".ai/index.db"),
+    db_path=Path(".owa/index.db"),
 )
 ```
 
-Each indexed chunk stores:
+The process is:
 
-- relative file path
-- chunk index
-- source content
-- serialized embedding
-- creation and update timestamps
-
-Existing `(path, chunk_index)` records are updated when re-indexed. The current indexer does not remove records for files or chunks that no longer exist, so a full cleanup strategy is an important future improvement.
-
-## Chunking
-
-`chunk_text` defaults to a 12,000-character chunk size with 1,000 characters of overlap. Empty input returns no chunks. An overlap equal to or larger than the chunk size raises `ValueError`.
+1. walk the project and filter files
+2. split files into overlapping chunks
+3. embed each chunk with Ollama
+4. store path, content, and embedding in SQLite
+5. rank query results by similarity when the user asks for project-specific search
 
 ## Query behavior
 
-`search_code(query, limit=5)` reads `.ai/index.db` and returns formatted results containing the file, chunk, similarity score, and content.
+The `search_code` tool embeds the query, compares it against stored chunk embeddings, and returns the most relevant segments. If the embedding service fails, it falls back to a simple keyword-based comparison so the agent still has some retrieval signal.
 
-Ranking behavior:
+This is a pragmatic design: it is easy to inspect, easy to debug, and well aligned with the local-first personality of the project.
 
-1. The query is embedded through Ollama.
-2. Each stored vector receives cosine similarity.
-3. Results are sorted descending and limited.
-4. If the embedding request raises an HTTP error, keyword overlap is used as a fallback.
+## Current limits
 
-The fallback is intentionally modest: it compares normalized alphanumeric and underscore terms. It is not a replacement for semantic retrieval.
+The indexing system is intentionally lightweight and does not yet include advanced features such as:
 
-## Operational limits
+- vector database tuning
+- stale chunk cleanup
+- repository-level hybrid ranking
+- automatic index migration tooling
 
-- The indexer requires an embedding service during indexing.
-- Vectors are loaded and scored in Python, which may be slow for large indexes.
-- The database has no vector index.
-- Search currently catches HTTP errors, but network and configuration failures should be handled more comprehensively.
-- The database is local state and should be rebuilt when its schema or embedding model changes.
+These are natural follow-ups for a public open-source project that wants better retrieval quality without heavy infrastructure.
 
-## Research opportunities
+## Research directions
 
-Useful experiments include comparing chunk sizes, measuring overlap waste, testing hybrid keyword and vector ranking, adding stale-record deletion, and evaluating retrieval quality on a fixed set of developer questions.
+Good future experiments include:
+
+- comparing chunk sizes and overlap settings
+- measuring retrieval quality on benchmark prompts
+- adding stale-record cleanup for removed files
+- trying hybrid semantic + keyword ranking
+- optimizing for larger repos and noisy generated output

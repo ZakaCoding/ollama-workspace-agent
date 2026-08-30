@@ -1,79 +1,116 @@
 # Getting Started
 
+OwA is designed to feel lightweight and local-first. This guide covers the fastest path from install to a working project-aware agent.
+
 ## Requirements
 
 - Python 3.11 or newer
-- Ollama reachable from the agent machine
-- A chat model installed in Ollama, such as `ornith:9b`
-- An embedding model installed in Ollama, such as `nomic-embed-text`
+- [Ollama](https://ollama.com) running on a reachable machine
+- a local chat model such as `llama3.1:8b` or `qwen2.5-coder`
+- an embedding model such as `nomic-embed-text`
 
 ## Install
 
-From the repository root:
+Use pipx if you want an isolated install:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install python-dotenv requests httpx pytest
+pipx install ollama-workspace-agent
 ```
 
-The existing runtime uses `requests` for chat calls and `httpx` for embeddings.
+Or install straight with pip:
 
-## Configure
+```bash
+pip install ollama-workspace-agent
+```
 
-Create a private `.env` file in the repository root:
+## Configure the agent
+
+The interactive setup flow is the easiest path:
+
+```bash
+cd your-project
+owa
+```
+
+Then type `/setup`. OwA will guide you through the Ollama host, chat model, embedding model, and optional API key.
+
+You can also configure it manually in `~/.config/owa/.env`:
 
 ```env
 LLM_BASE_URL=http://YOUR_OLLAMA_HOST:11434/v1
-LLM_MODEL=ornith:9b
+LLM_MODEL=llama3.1:8b
 EMBEDDING_BASE_URL=http://YOUR_OLLAMA_HOST:11434
 EMBEDDING_MODEL=nomic-embed-text
+API_KEY=choose-a-private-api-key
 ```
 
-`.env` is ignored by Git. Do not place credentials or private host details in source files or wiki pages.
+A project-local `.env` file can override the global config for a specific repository. This is useful when you work across many projects or want a per-project configuration.
 
-Check that Ollama is reachable:
+## Verify Ollama
+
+Check that the local API is responding:
 
 ```bash
 curl http://YOUR_OLLAMA_HOST:11434/api/tags
 ```
 
+Pull the models you need before the first run:
+
+```bash
+ollama pull llama3.1:8b
+ollama pull nomic-embed-text
+```
+
 ## Run the agent
 
-```bash
-source .venv/bin/activate
-python main.py
-```
-
-Enter a request at the `You` prompt. Use `exit`, `quit`, `/exit`, or `/quit` to stop.
-
-## Build the code index
-
-The indexer currently exposes a Python API rather than a CLI command:
-
-```python
-from pathlib import Path
-from app.indexer.index import index_project
-
-index_project(Path.cwd(), Path(".ai/index.db"))
-```
-
-The operation calls Ollama's `/api/embed` endpoint and writes the SQLite index to `.ai/index.db`. The `.ai/` directory is ignored by Git.
-
-Once an index exists, the agent can use the registered `search_code` tool. It searches by embedding similarity and falls back to keyword overlap when the embedding request fails with an HTTP error.
-
-## Verify the installation
+From the project you want help with:
 
 ```bash
-PYTHONPATH=. pytest -q
-python -m compileall -q main.py app tests
+cd your-project
+owa
 ```
 
-The test suite covers workspace path rejection, task-state isolation, shell confirmation behavior, and calculator operations.
+On the first run, OwA will index the project automatically. After that, you can start asking questions, asking it to edit files, or run workspace-safe review tasks.
 
-## Common setup problems
+## Useful commands
 
-- **`ModuleNotFoundError: app`**: run commands from the repository root or set `PYTHONPATH=.`.
-- **Embedding connection failure**: verify `EMBEDDING_BASE_URL`, Ollama availability, and the installed embedding model.
-- **No search results**: build the index first and confirm that the requested file extensions are supported.
-- **Unsafe command rejected**: commands are intentionally bounded to the configured workspace.
+| Command | Purpose |
+| --- | --- |
+| `/setup` | Configure or reconfigure Ollama settings |
+| `/model` | Switch the active LLM |
+| `/index` | Rebuild the project index |
+| `/status` | Show local workspace status |
+| `/clear` | Clear previous conversation state |
+| `/help` | List commands |
+| `/quit` | Exit |
+
+## Excluding files from indexing
+
+Create a `.owaignore` file in the project root if you want to skip certain folders or files:
+
+```text
+# .owaignore
+secrets.json
+fixtures/
+*.min.js
+```
+
+Common project directories such as `.git`, `.venv`, `node_modules`, and build folders are ignored automatically.
+
+## Troubleshooting
+
+### `owa: command not found`
+
+Make sure your Python environment is activated or that the pipx binary directory is on your PATH.
+
+### Embedding or model connection fails
+
+Check that Ollama is running and that the host values in your config match the machine where Ollama is listening.
+
+### No search results
+
+Run `/index` again to rebuild the local index. If the project changed significantly, a full re-index is often the fastest fix.
+
+### Setup keeps showing the old host
+
+That is expected; the config is loaded from the saved local settings and reused as the default.

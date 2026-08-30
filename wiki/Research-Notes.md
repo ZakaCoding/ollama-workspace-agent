@@ -1,64 +1,67 @@
 # Research Notes
 
-This page frames the repository as a small, reproducible environment for public research into coding agents. It describes the current implementation and proposes experiments; proposed work is not presented as implemented behavior.
+OwA is also a useful testbed for studying how coding agents behave in realistic local workflows. The project is intentionally compact, which makes it easy to evaluate tool use, retrieval quality, and verification behavior in a reproducible way.
 
-## Questions worth studying
+## Research questions worth exploring
 
-### Tool selection
+### Tool selection and planning
 
-When does a model choose `search_code` before opening individual files? Measure tool order, number of calls, task completion, and irrelevant retrievals across tasks with and without semantic search instructions.
+When does the model choose `search_code` before reading individual files? This is a good question for comparing retrieval-first and read-first behaviors across a set of coding tasks.
 
 ### Retrieval quality
 
-Create a benchmark of questions mapped to expected files and symbols. Compare embedding-only ranking, keyword fallback, and hybrid scoring. Report recall at several result limits instead of judging one successful demo.
+The indexer is simple but useful. A strong research direction is to compare semantic retrieval, keyword fallback, and hybrid ranking on a fixed set of tasks with known relevant files.
 
-### Verification
+### Verification behavior
 
-Compare outcomes when the agent is asked to verify its work versus when it receives no verification instruction. Record test execution, detected failures, unnecessary calls, and false claims of completion.
+A key question is whether the agent verifies its own edits before claiming they are complete. This is especially important for generated patches, tests, and refactors.
 
-### State isolation
+### Human approval patterns
 
-Run interleaved tasks and test whether requirements or observations from one task appear in another. Fresh `AgentState` per request provides a baseline for this experiment.
+The confirmation flow is an important safety design element. Studies can examine how often users approve or reject shell or write actions, and how that impacts completion rates and trust.
 
-### Human approval
+### Workspace isolation
 
-Measure how confirmation prompts affect completion time, rejected operations, and unsafe-operation prevention. A useful study should include both benign and destructive-looking commands.
+Because the project works inside a repository, it is a useful environment for checking how well task state, files, and tool results stay separated across interactions.
 
-## Suggested evaluation record
+## Good evaluation record
 
-For every run, preserve:
+For each run, track:
 
-- repository revision
-- model name and temperature or equivalent settings
+- repo revision
+- model name and settings
 - task prompt
-- available tools
-- tool-call sequence
-- tool arguments and results, with secrets redacted
-- files changed
+- tool sequence and arguments
+- files read or modified
 - tests run and exit codes
-- human interventions
-- final outcome and reviewer judgment
+- user approval or rejection events
+- final outcome and reviewer notes
+
+This gives a much better picture of performance than a single demo screenshot or a successful chat snippet.
 
 ## Current limitations
 
-- There is no formal benchmark suite.
-- The agent depends on a remote model service.
-- Search quality depends on the selected embedding model.
-- Vector storage and ranking are intentionally simple.
-- Prompt constraints can be bypassed by model mistakes or conflicting tool results.
-- The current test suite is narrow and does not exercise the live LLM loop.
+- there is no large benchmark suite yet
+- local models vary in quality and latency
+- retrieval quality depends on the embedding model chosen
+- the current indexing design is simple by design
+- the test suite is still modest compared with a full product surface
 
-## Reproducibility
+## Reproducibility guidance
 
-Public experiments should pin the repository revision, record environment variables without secrets, describe the Ollama models, and publish task sets and scoring scripts where possible. Do not publish private source files, credentials, or raw logs containing sensitive content.
+Public experiments should:
+
+- pin the repo revision
+- record the Ollama model names used
+- avoid leaking secrets or private source content
+- publish the prompts and scoring rules when possible
+- save logs with sensitive values redacted
 
 ## Possible roadmap
 
-- Add a real dependency configuration and repeatable CI workflow.
-- Add an indexer CLI with rebuild and cleanup commands.
-- Add stale-chunk removal and index metadata for embedding-model compatibility.
-- Add hybrid retrieval and repository-aware filters.
-- Add structured tool-result types and stronger argument validation.
-- Add approval policies for writes and shell commands.
-- Add end-to-end tests using a deterministic mock LLM.
-- Add benchmark tasks for retrieval, editing, and verification.
+- add a benchmark harness for repo tasks
+- improve retrieval quality with hybrid scoring
+- add stale chunk cleanup for the local index
+- add stronger validation and test-oriented verification steps
+- add optional mock or deterministic LLM testing paths
+- expand documentation for safe and repeatable local usage

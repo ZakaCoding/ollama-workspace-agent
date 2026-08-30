@@ -2,7 +2,56 @@ Licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 # OwA — Ollama Workspace Agent
 
-An open-source local coding assistant powered by Ollama. Runs entirely on your own hardware — no cloud, no telemetry, no API keys required beyond your own Ollama server.
+OwA is an open-source local coding assistant built for developers who want AI help without sending their code, prompts, or context to a cloud service.
+
+It runs on your own hardware, works with Ollama, and is designed specifically for local-first workflows. The idea is simple: the model runs on your machine, your repository stays on your machine, and the agent works inside your workspace with explicit boundaries.
+
+## Why OwA exists
+
+Most chat agents are designed for cloud-hosted models and remote infrastructure. That works well for large teams and expensive backends, but it is not a natural fit for developers who want a private, local coding assistant.
+
+OwA was built for a different workflow:
+
+- local hardware instead of paid cloud inference
+- small models such as `ornith:9b` and `qwen2.5-coder`
+- project-aware assistance without leaving the workspace
+- an inspectable, open-source agent with explicit safety boundaries
+- a coding tool that respects local ownership of the codebase
+
+The project intentionally keeps the architecture small and readable so developers can understand what is happening and extend it without a huge framework or hidden runtime.
+
+## What it does
+
+- indexes the workspace for semantic code search
+- reads, writes, and patches files inside the active project
+- inspects Git state, diff, and recent commit history
+- runs shell commands only after explicit confirmation
+- reviews Python files for common security issues
+- persists session memory across conversations
+- works as both a CLI and a local FastAPI API
+
+## Tech stack
+
+OwA is intentionally lightweight and practical:
+
+- Python 3.11+
+- Ollama for local chat and embedding models
+- FastAPI and Uvicorn for the local HTTP API
+- SQLite for the local code index
+- Rich for terminal UX and feedback
+- requests and httpx for service calls
+- semantic indexing and retrieval over project files
+
+## Recommended models
+
+OwA is designed to work well with local models such as:
+
+- `llama3.1:8b`
+- `qwen2.5-coder`
+- `ornith:9b`
+- `nomic-embed-text`
+
+The project is purpose-built for realistic local developer setups instead of assuming a high-end GPU or an always-on cloud service.
 
 ## Install
 
@@ -10,33 +59,22 @@ An open-source local coding assistant powered by Ollama. Runs entirely on your o
 pip install ollama-workspace-agent
 ```
 
-Or with pipx for an isolated install:
+Or use pipx for an isolated environment:
 
 ```bash
 pipx install ollama-workspace-agent
 ```
 
-## Requirements
-
-- Python 3.11+
-- Ollama running on a reachable machine
-- A chat model installed on Ollama, such as `llama3.1:8b`
-- An embedding model installed on Ollama, such as `nomic-embed-text`
-
-## Quick Start
+## Quick start
 
 ```bash
 cd your-project
 owa
 ```
 
-On first run, type `/setup` to configure your Ollama connection. OwA will walk you through it interactively and save the config to `~/.config/owa/.env`.
-
-Then just start chatting — OwA will auto-index your project on startup.
+On first run, use `/setup` to configure your Ollama connection. OwA will save the settings in `~/.config/owa/.env` and then index the project on startup.
 
 ## Configuration
-
-Run `/setup` inside OwA, or manually create `~/.config/owa/.env`:
 
 ```env
 LLM_BASE_URL=http://YOUR_OLLAMA_HOST:11434/v1
@@ -46,9 +84,7 @@ EMBEDDING_MODEL=nomic-embed-text
 API_KEY=choose-a-private-api-key
 ```
 
-You can also place a `.env` in your project root to override the global config for that project.
-
-`LLM_BASE_URL` uses Ollama's OpenAI-compatible `/v1` API. `EMBEDDING_BASE_URL` uses Ollama's native `/api/embed` API. If Ollama runs on the same machine, replace `YOUR_OLLAMA_HOST` with `127.0.0.1`.
+You can also place a local `.env` in the project root to override the global config for a specific repository.
 
 ## Verify Ollama
 
@@ -56,114 +92,59 @@ You can also place a `.env` in your project root to override the global config f
 curl http://YOUR_OLLAMA_HOST:11434/api/tags
 ```
 
-A successful response contains a `models` list. Make sure the models in your config are installed:
+Then pull the models you want to use:
 
 ```bash
 ollama pull llama3.1:8b
 ollama pull nomic-embed-text
 ```
 
-## CLI Commands
+## CLI commands
 
-| Command   | Description                        |
-|-----------|------------------------------------|
-| `/setup`  | Configure Ollama connection        |
-| `/model`  | Switch the active chat model       |
-| `/index`  | Rebuild the project index          |
-| `/status` | Show index status                  |
-| `/clear`  | Clear conversation history         |
-| `/help`   | Show available commands            |
-| `/quit`   | Exit                               |
+| Command | Description |
+| --- | --- |
+| `/setup` | Configure provider and model settings |
+| `/model` | Switch the active chat model |
+| `/index` | Rebuild the project index |
+| `/status` | Show index and workspace status |
+| `/clear` | Clear session memory |
+| `/help` | Show available commands |
+| `/quit` | Exit |
 
-## Indexing
+## Local security and guardrails
 
-OwA auto-indexes your project on first run. Common directories are excluded automatically (`node_modules`, `dist`, `build`, `.github`, `.git`, `.venv`, etc.).
+OwA keeps execution inside a bounded workspace and requires explicit confirmation before shell commands. The project is not a permission system, but it is designed to make accidental workspace escapes and destructive actions harder.
 
-To exclude additional files or directories, create a `.owaignore` in your project root:
+For a detailed breakdown, see [Safety and Guardrails](wiki/Safety-and-Guardrails.md).
 
-```
-# .owaignore
-secrets.json
-fixtures/
-*.min.js
-```
+## Documentation
 
-The local index is stored in `.owa/` and is automatically added to your `.gitignore` on first index.
+- [Home](wiki/Home.md) — project overview and mission
+- [Getting Started](wiki/Getting-Started.md) — install, configure, and run
+- [Architecture](wiki/Architecture.md) — runtime flow and module boundaries
+- [Tools](wiki/Tools.md) — tool contract and behavior
+- [Indexing and Search](wiki/Indexing-and-Search.md) — local semantic retrieval design
+- [Safety and Guardrails](wiki/Safety-and-Guardrails.md) — boundaries and safe operations
+- [Development](wiki/Development.md) — repo layout and contribution workflow
+- [Research Notes](wiki/Research-Notes.md) — experiments and open questions
 
-## API Mode
+## Support the project
 
-Run the HTTP API:
+OwA is open source and built for the long tail of local developers who want AI help without giving up privacy or control.
 
-```bash
-uvicorn app.api:app --host 127.0.0.1 --port 8000
-```
+If this project helps you, please consider sponsoring the work that keeps it maintained, documented, and improved.
 
-Use the CLI as an API client:
+- GitHub Sponsors: https://github.com/sponsors/ZakaCoding
 
-```bash
-owa --api-url http://127.0.0.1:8000
-```
+## Links
 
-Available endpoints: `GET /health`, `GET /status`, `POST /chat`, `POST /chat/stream`, `POST /clear`, `POST /index`.
+- [PyPI](https://pypi.org/project/ollama-workspace-agent/)
+- [GitHub](https://github.com/ZakaCoding/ollama-workspace-agent)
+- [Changelog](CHANGELOG.md)
+- [License](LICENSE)
 
-When `API_KEY` is configured, include it in the `X-API-Key` header for every endpoint except `/health`.
+## Project status
 
-## Tools
+Active development. The goal is to keep the project useful, inspectable, and grounded in real local developer workflows instead of cloud-first assumptions.
 
-The agent can call these workspace tools:
-
-| Tool          | Description                                          |
-|---------------|------------------------------------------------------|
-| `list_dir`    | List files and directories                           |
-| `read_file`   | Read UTF-8 text files                                |
-| `patch_file`  | Targeted search-and-replace edit on an existing file |
-| `write_file`  | Create or fully replace a file                       |
-| `search_code` | Semantic search over the indexed codebase            |
-| `code_review` | Review Python files for common security risks        |
-| `run_command` | Run a shell command after user confirmation          |
-| `git_status`  | Show Git branch and working tree status              |
-| `git_diff`    | Show current Git diff                                |
-| `git_log`     | Show recent Git commits                              |
-
-## Project Layout
-
-```text
-.
-├── app/
-│   ├── agent/       Agent orchestration and system prompt
-│   ├── api.py       FastAPI endpoints and request models
-│   ├── cli.py       CLI entry point
-│   ├── config.py    Global config path resolution
-│   ├── service.py   Shared chat, indexing, and status service
-│   ├── indexer/     Code indexing and semantic search
-│   ├── llm/         OpenAI-compatible Ollama client
-│   └── tools/       Workspace tool implementations and registry
-├── demo/            Small demo code
-├── main.py          Thin shim for `python main.py`
-├── CHANGELOG.md     Project change history
-└── README.md        Project documentation
-```
-
-## Development
-
-Clone and install in editable mode:
-
-```bash
-git clone https://github.com/ZakaCoding/ollama-workspace-agent
-cd ollama-workspace-agent
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-```
-
-Run tests:
-
-```bash
-pytest tests/ -v
-```
-
-Compile check:
-
-```bash
-python -m py_compile main.py app/agent/*.py app/indexer/*.py app/llm/*.py app/tools/*.py
-```
+Contributions, issue reports, and sponsor support are welcome.

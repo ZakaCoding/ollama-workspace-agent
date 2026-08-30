@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="OwA is a local-first coding assistant for Ollama, built to work with small language models and keep your repository on your own machine."
+    />
+    <title>OwA — Ollama Workspace Agent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="container nav">
+        <div class="brand">
+          <span class="brand-mark">OwA</span>
+          <span>Ollama Workspace Agent</span>
+        </div>
+        <nav>
+          <a href="#why">Why</a>
+          <a href="#features">Features</a>
+          <a href="#stack">Tech Stack</a>
+          <a href="#support">Support</a>
+          <a class="button button-small" href="https://github.com/ZakaCoding/ollama-workspace-agent" target="_blank" rel="noreferrer">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="container hero-grid">
+          <div>
+            <p class="eyebrow">Local-first AI for developers</p>
+            <h1>Build with AI without sending your code to the cloud.</h1>
+            <p class="lead">
+              OwA is an open-source coding agent that runs with Ollama on your own hardware.
+              It helps you work inside your project, with local models, clear boundaries, and no
+              cloud dependency required.
+            </p>
+            <div class="cta-row">
+              <a class="button" href="https://github.com/ZakaCoding/ollama-workspace-agent" target="_blank" rel="noreferrer">View on GitHub</a>
+              <a class="button button-secondary" href="https://github.com/sponsors/ZakaCoding" target="_blank" rel="noreferrer">Sponsor</a>
+            </div>
+            <ul class="meta-list">
+              <li>Works with local Ollama models</li>
+              <li>Workspace-aware and inspectable</li>
+              <li>Built for small, practical machines</li>
+            </ul>
+          </div>
+          <div class="card spotlight">
+            <div class="mini-label">Use case</div>
+            <h3>Code-aware help that stays local</h3>
+            <p>
+              Search your code, read files, patch edits, inspect Git state, and run review checks
+              without sending your workspace to a remote API.
+            </p>
+            <div class="model-list">
+              <span>llama3.1:8b</span>
+              <span>qwen2.5-coder</span>
+              <span>ornith:9b</span>
+              <span>nomic-embed-text</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="why" class="section">
+        <div class="container">
+          <div class="section-header">
+            <p class="eyebrow">Why OwA exists</p>
+            <h2>Built for local hardware, private workflows, and real coding tasks.</h2>
+          </div>
+
+          <div class="feature-grid">
+            <article class="feature">
+              <h3>Local-first by design</h3>
+              <p>
+                OwA is built for developers who prefer running their own models locally instead of
+                depending on a cloud API for every code interaction.
+              </p>
+            </article>
+            <article class="feature">
+              <h3>Small model friendly</h3>
+              <p>
+                It is designed to work well with practical local setups using moderately sized models,
+                including common Ollama-supported chat and embedding models.
+              </p>
+            </article>
+            <article class="feature">
+              <h3>More control, less leakage</h3>
+              <p>
+                The model runs on your machine, the code stays on your machine, and the agent works
+                inside the workspace with explicit boundaries and confirmation steps.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="features" class="section alt">
+        <div class="container">
+          <div class="section-header">
+            <p class="eyebrow">What it does</p>
+            <h2>Workspace-aware coding assistance for everyday developer work.</h2>
+          </div>
+
+          <div class="feature-grid compact">
+            <article class="feature dark">
+              <h3>Semantic code search</h3>
+              <p>Index the project locally and find the most likely relevant files by context.</p>
+            </article>
+            <article class="feature dark">
+              <h3>File reading and patching</h3>
+              <p>Open files, edit targeted locations, and keep changes reviewable.</p>
+            </article>
+            <article class="feature dark">
+              <h3>Git awareness</h3>
+              <p>Inspect status, diffs, and recent commit history without leaving the repo.</p>
+            </article>
+            <article class="feature dark">
+              <h3>Review and safety checks</h3>
+              <p>Use structured checks and confirmations to reduce risky or accidental actions.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="stack" class="section">
+        <div class="container two-column">
+          <div>
+            <p class="eyebrow">Tech stack</p>
+            <h2>Small, transparent, and easy to understand.</h2>
+            <p class="lead small">
+              OwA is intentionally lightweight: a Python application with a direct CLI, local intent
+              routing, Ollama integration, local indexing, and a compact tool system that stays within
+              the repo.
+            </p>
+          </div>
+          <div class="chip-list">
+            <span>Python 3.11+</span>
+            <span>Ollama</span>
+            <span>SQLite</span>
+            <span>FastAPI</span>
+            <span>Uvicorn</span>
+            <span>Rich</span>
+            <span>requests</span>
+            <span>httpx</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="support" class="section support">
+        <div class="container support-card">
+          <div>
+            <p class="eyebrow">Support the project</p>
+            <h2>Open source work needs sustainable support.</h2>
+          </div>
+          <div>
+            <p>
+              OwA is built for developers who value privacy, local models, and transparent software.
+              If this project helps your workflow, sponsoring the work helps keep it maintained,
+              documented, and improved.
+            </p>
+            <a class="button" href="https://github.com/sponsors/ZakaCoding" target="_blank" rel="noreferrer">Become a sponsor</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container footer-row">
+        <span>OwA — Ollama Workspace Agent</span>
+        <div>
+          <a href="https://github.com/ZakaCoding/ollama-workspace-agent" target="_blank" rel="noreferrer">GitHub</a>
+          <a href="https://github.com/sponsors/ZakaCoding" target="_blank" rel="noreferrer">Sponsors</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

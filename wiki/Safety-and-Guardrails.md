@@ -1,48 +1,48 @@
 # Safety and Guardrails
 
-This project is a local coding-agent prototype. Its guardrails reduce accidental scope violations, but they do not make arbitrary model-generated shell commands safe.
+OwA is designed to be useful in real workspaces without pretending that a model-generated shell command is automatically safe. The guardrails are there to reduce accidental surprises, but they are not complete security guarantees.
 
 ## Workspace boundary
 
-Filesystem tools resolve user-provided paths against the configured workspace. Absolute paths and paths that escape with `..` are rejected.
+File operations resolve paths against the configured workspace root. Absolute paths and traversal attempts like `../` are rejected before a file is read or written.
 
-The shell tool applies a similar boundary check to command paths and asks for confirmation before execution. End-of-file or unavailable input is treated as rejection rather than approval.
+The shell tool follows the same principle: it validates commands against the workspace and asks the user to confirm before execution. Unexpected or missing input is treated as denial rather than approval.
 
 ## Task isolation
 
-A fresh `AgentState` is created for each user request. This prevents stale task data from silently carrying requirements between unrelated prompts.
+A fresh `AgentState` is created for each request. This helps prevent stale task instructions or context from leaking between unrelated prompts.
 
 ## Prompt constraints
 
-The system prompt tells the model the workspace root, available behavior, tool preferences, iteration limits, and the requirement to verify implementation details. Prompt instructions improve behavior but are not a security boundary by themselves.
+The system prompt tells the model the workspace root, allowed behavior, tool selection rules, iteration limits, and the requirement to verify changes before claiming completion. Prompt guidance is helpful but not a complete security boundary by itself.
 
 ## What is not guaranteed
 
-- Shell commands can still have effects inside the workspace.
-- A trusted local model can still make destructive or incorrect edits.
-- The agent does not provide a complete approval policy for every file operation.
-- Network calls to Ollama are not authenticated by this application.
-- Secrets in files may be exposed to the model when explicitly read or indexed.
-- The semantic index may retain stale source content until rebuilt or cleaned.
+- a local model can still make incorrect or destructive edits
+- shell execution can still affect files inside the workspace
+- the tool layer does not replace a complete organizational approval process
+- Ollama calls are only as secure as the local environment running them
+- any file read or indexed may expose secrets if those files are in scope
+- the semantic index can contain stale data until it is rebuilt
 
-## Safe operating practice
+## Safe use practices
 
-- Run the agent in a disposable or version-controlled workspace.
-- Keep `.env` private and avoid indexing secret-bearing files.
-- Review proposed writes and Git diffs.
-- Use a least-privilege account for the agent process.
-- Do not expose the shell tool to untrusted users without an additional policy layer.
-- Treat model output as untrusted suggestions until verified.
+- run the agent in a disposable or version-controlled repo
+- keep `.env` and secrets outside the indexed workspace when possible
+- review diffs and logs before accepting changes
+- keep shell access restricted to trusted workflows
+- treat model output as suggestions until verified
+- avoid exposing shell or file tools to untrusted users without extra policy checks
 
 ## Security review checklist
 
-When changing the agent, test:
+When changing agent behavior, check that the project still handles:
 
 - absolute path rejection
-- traversal rejection
-- symlink behavior
-- shell command parsing and redirection
-- confirmation denial and EOF handling
-- tool argument validation
-- prompt and tool-call iteration limits
-- accidental secret inclusion in index results
+- traversal attempts
+- symlink edge cases
+- shell parsing and redirection
+- confirmation denial and EOF behavior
+- argument validation for all tools
+- prompt iteration limits
+- accidental secret exposure in indexed content
