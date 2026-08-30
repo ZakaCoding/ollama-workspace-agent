@@ -69,7 +69,7 @@ class AgentState:
         Update state after a tool has executed.
         """
 
-        if tool_name == "write_file":
+        if tool_name in {"write_file", "patch_file"}:
             path = arguments.get("path")
 
             if path:

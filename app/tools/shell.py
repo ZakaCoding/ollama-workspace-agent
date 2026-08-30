@@ -1,7 +1,12 @@
 import re
 import subprocess
 
+from rich.console import Console
+from rich.prompt import Confirm
+
 from app.tools.filesystem import WORKSPACE
+
+console = Console(stderr=True)
 
 
 FILESYSTEM_VERBS = {
@@ -76,21 +81,14 @@ def run_command(command: str) -> str:
     if _is_filesystem_operation(command):
         return "Command blocked: use read_file/write_file for filesystem access."
 
-    print()
-    print("=" * 70)
-    print("⚠️  AGENT WANTS TO EXECUTE")
-    print("=" * 70)
-    print(command)
-    print("=" * 70)
+    console.print(f"[bold yellow]⚠ agent wants to run:[/bold yellow] [cyan]{command}[/cyan]")
 
     try:
-        answer = input(
-            "Allow command? [y/N]: "
-        ).strip().lower()
+        confirmed = Confirm.ask("Allow?", default=False)
     except EOFError:
         return "Command rejected by user."
 
-    if answer != "y":
+    if not confirmed:
         return "Command rejected by user."
 
     try:

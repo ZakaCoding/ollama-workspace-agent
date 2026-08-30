@@ -1,9 +1,13 @@
 from pathlib import Path
 
+from rich.console import Console
+
 from app.indexer.chunker import chunk_text
 from app.indexer.database import connect, initialize
 from app.indexer.embeddings import embed
 from app.indexer.store import save_chunk
+
+console = Console(stderr=True)
 
 
 IGNORED_DIRS = {
@@ -81,9 +85,7 @@ def index_project(
             if should_index(path)
         ]
 
-        print(
-            f"Found {len(files)} files to index."
-        )
+    console.print(f"[dim]found {len(files)} files to index[/dim]")
 
         for file_path in files:
 
@@ -99,17 +101,12 @@ def index_project(
                 UnicodeDecodeError,
                 OSError,
             ):
-                print(
-                    f"SKIP {relative_path}"
-                )
+                console.print(f"[dim]skip {relative_path}[/dim]")
                 continue
 
             chunks = chunk_text(content)
 
-            print(
-                f"Indexing {relative_path} "
-                f"({len(chunks)} chunks)"
-            )
+            console.print(f"[dim]indexing {relative_path} ({len(chunks)} chunks)[/dim]")
 
             for index, chunk in enumerate(chunks):
 
@@ -123,4 +120,4 @@ def index_project(
                     embedding=vector,
                 )
 
-    print("Index complete.")
+    console.print("[dim]index complete[/dim]")

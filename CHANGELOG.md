@@ -36,6 +36,12 @@ All notable changes to this project are documented here.
 - Added client-side evidence notes for unsupported completion claims.
 - Added `/help`, `/index`, `/status`, `/clear`, and `/quit` CLI commands.
 - Added a read-only Python code-review tool with structured security findings.
+- Added `patch_file` tool for targeted search-and-replace edits without rewriting the whole file.
+- Added `pyproject.toml` with `owa` as an installable CLI entry point.
+- Added `app/cli.py` as the main CLI module, with `main.py` as a thin shim for `python main.py`.
+- Added `app/config.py` for central config path resolution (`~/.config/owa/.env`).
+- Added `/setup` command — interactive wizard to configure Ollama host, models, and API key.
+- Added auto-index on startup when no `.ai/index.db` exists in the current project.
 
 ### Changed
 
@@ -48,6 +54,18 @@ All notable changes to this project are documented here.
 - Added direct and API-backed CLI modes with streamed API chat responses.
 - Renamed project to **OwA — Ollama Workspace Agent**.
 - Overhauled CLI with `rich`: branded banner, styled prompt, dot spinner, Markdown-rendered responses, and colored error/status messages.
+- Removed debug output (`>>> LLM REQUEST`, `STATUS`, `TOOL CALLS`) from `LLMClient`.
+- Changed `tool_choice` from `required` to `auto` so the model only calls tools when needed.
+- Replaced bare `print()`/`input()` in agent core and shell tool with `rich` styled output.
+- `patch_file` and `write_file` are now both blocked on read-only tasks and tracked in `AgentState`.
+- System prompt updated to reflect OwA identity and prefer `patch_file` over `write_file` for modifications.
+- Config loads from `~/.config/owa/.env` globally, with per-project `.env` override.
+- Removed `load_dotenv()` from `app/indexer/embeddings.py` — config is now loaded centrally.
+
+### Fixed
+
+- `run_command` confirmation prompt now uses `rich` `Confirm.ask()` instead of bare `input()`.
+- Blocked tool warnings now surface as styled yellow messages instead of raw stdout noise.
 
 ## [0.1.0] - 2026-08-27
 

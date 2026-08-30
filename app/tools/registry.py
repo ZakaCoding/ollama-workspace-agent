@@ -1,6 +1,7 @@
 from app.tools.filesystem import (
     list_dir,
     read_file,
+    patch_file,
     write_file,
 )
 
@@ -54,6 +55,35 @@ TOOLS = [
                     }
                 },
                 "required": ["path"],
+            },
+        },
+    },
+
+    {
+        "type": "function",
+        "function": {
+            "name": "patch_file",
+            "description": (
+                "Replace an exact block of text in an existing file. "
+                "Use this for targeted edits — adding, changing, or removing "
+                "a function, block, or lines — without rewriting the whole file. "
+                "Prefer this over write_file whenever the file already exists. "
+                "old_str must match exactly one location in the file."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string"},
+                    "old_str": {
+                        "type": "string",
+                        "description": "Exact text to replace. Must be unique in the file.",
+                    },
+                    "new_str": {
+                        "type": "string",
+                        "description": "Text to insert in place of old_str. Empty string to delete.",
+                    },
+                },
+                "required": ["path", "old_str", "new_str"],
             },
         },
     },
@@ -213,6 +243,7 @@ TOOLS = [
 FUNCTIONS = {
     "list_dir": list_dir,
     "read_file": read_file,
+    "patch_file": patch_file,
     "write_file": write_file,
 
     "git_status": git_status,

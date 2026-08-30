@@ -69,6 +69,25 @@ def read_file(path: str) -> str:
     return content
 
 
+def patch_file(path: str, old_str: str, new_str: str) -> str:
+    target = resolve_path(path)
+
+    if not target.exists():
+        return f"File does not exist: {path}"
+
+    content = target.read_text(encoding="utf-8")
+
+    if old_str not in content:
+        return "patch_file failed: old_str not found in file."
+
+    count = content.count(old_str)
+    if count > 1:
+        return f"patch_file failed: old_str matches {count} locations — make it more specific."
+
+    target.write_text(content.replace(old_str, new_str, 1), encoding="utf-8")
+    return f"Patched {path}: replaced 1 occurrence."
+
+
 def write_file(path: str, content: str) -> str:
     target = resolve_path(path)
 

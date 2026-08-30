@@ -2,12 +2,16 @@ import json
 import re
 from pathlib import Path
 
+from rich.console import Console
+
 from app.agent.state import AgentState
 from app.agent.context import ContextBuilder
 from app.agent.verifier import verify_tool_result
 from app.indexer.search import search
 from app.llm.client import LLMClient
 from app.tools.registry import TOOLS, FUNCTIONS
+
+console = Console(stderr=True)
 
 
 WORKSPACE = Path.cwd().resolve()
@@ -69,7 +73,8 @@ def task_requires_code_search(task: str) -> bool:
 
 
 SYSTEM_PROMPT = f"""
-You are a local software engineering agent.
+You are OwA, the Ollama Workspace Agent —
+an open-source local coding assistant.
 
 You operate inside this workspace:
 
@@ -95,7 +100,8 @@ Use tools whenever real workspace information is required.
 FILESYSTEM:
 - list_dir -> inspect directories
 - read_file -> inspect files
-- write_file -> create or replace files
+- patch_file -> targeted edit on an existing file (preferred for modifications)
+- write_file -> create a new file or fully replace an existing one
 
 GIT:
 - git_status -> inspect Git status
@@ -334,14 +340,7 @@ class Agent:
                 for tool_call in invalid_tool_calls:
                     tool_name = tool_call["function"]["name"]
 
-                    print()
-                    print(
-                        f"⚠️ Blocked tool call: {tool_name}"
-                    )
-                    print(
-                        f"   Allowed tools: "
-                        f"{', '.join(sorted(allowed_tool_names))}"
-                    )
+                    console.print(f"[bold yellow]⚠ blocked tool:[/bold yellow] [dim]{tool_name}[/dim]")
 
                     self.messages.append(
                         {
@@ -425,22 +424,13 @@ class Agent:
                         self.state.record_error(result)
                         continue
 
-                print()
-                print(
-                    f"🔧 Tool: {name}"
-                )
-                print(
-                    "   Args:",
-                    json.dumps(
-                        arguments,
-                        ensure_ascii=False,
-                    ),
-                )
+                console.print(f"[dim]  ⚙ {name}({json.dumps(arguments, ensure_ascii=False)})[/dim]")
 
                 tool = FUNCTIONS.get(name)
 
                 if read_only_task and name in {
                     "write_file",
+                    "patch_file",
                     "run_command",
                 }:
                     result = (
@@ -476,9 +466,7 @@ class Agent:
                     }
                 )
 
-                print(
-                    "   ✓ Result received"
-                )
+                console.print(f"[dim]    ✓ done[/dim]")
 
     def stream(self, user_input: str):
         self.state = AgentState(task=user_input)

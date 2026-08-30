@@ -3,3 +3,6 @@ __pycache__/
 *.py[cod]
 .env
 .ai/
+*.egg-info/
+dist/
+build/

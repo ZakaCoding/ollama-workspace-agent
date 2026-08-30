@@ -27,39 +27,15 @@ class LLMClient:
 
         if tools:
             payload["tools"] = tools
-            payload["tool_choice"] = "required"
-
-        print("\n>>> LLM REQUEST")
-        print(f"URL   : {self.base_url}/chat/completions")
-        print(f"MODEL : {self.model}")
-        print(f"TOOLS : {len(tools or [])}")
+            payload["tool_choice"] = "auto"
 
         response = self.session.post(
             f"{self.base_url}/chat/completions",
             json=payload,
             timeout=300,
         )
-
-        print(f"STATUS: {response.status_code}")
-
-        if not response.ok:
-            print(response.text)
-
         response.raise_for_status()
-
-        data = response.json()
-        message = data["choices"][0]["message"]
-
-        print("TOOL CALLS:", len(message.get("tool_calls", [])))
-
-        for call in message.get("tool_calls", []):
-            print(
-                "  ->",
-                call["function"]["name"],
-                call["function"].get("arguments"),
-            )
-
-        return data
+        return response.json()
 
     def chat_stream(self, messages):
         payload = {

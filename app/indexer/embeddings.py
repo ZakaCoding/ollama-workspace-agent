@@ -1,10 +1,6 @@
 import os
 
 import httpx
-from dotenv import load_dotenv
-
-
-load_dotenv()
 
 
 EMBEDDING_BASE_URL = os.getenv(
@@ -26,7 +22,7 @@ def embed(text: str) -> list[float]:
             "model": EMBEDDING_MODEL,
             "input": text,
         },
-        timeout=120,
+        timeout=300,
     )
 
     response.raise_for_status()
