@@ -32,7 +32,16 @@ Repository = "https://github.com/ZakaCoding/ollama-workspace-agent"
 Changelog = "https://github.com/ZakaCoding/ollama-workspace-agent/blob/main/CHANGELOG.md"
 Issues = "https://github.com/ZakaCoding/ollama-workspace-agent/issues"
 
-[project.scripts]
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "httpx",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+
 owa = "app.cli:main"
 
 [tool.setuptools.packages.find]
