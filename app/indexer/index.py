@@ -51,21 +51,33 @@ TEXT_EXTENSIONS = {
 }
 
 
-def should_index(path: Path) -> bool:
+def _load_owaignore(workspace: Path) -> set[str]:
+    owaignore = workspace / ".owaignore"
+    if not owaignore.exists():
+        return set()
+    patterns = set()
+    for line in owaignore.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            patterns.add(line)
+    return patterns
+
+
+def should_index(path: Path, workspace: Path | None = None, ignored_patterns: set[str] | None = None) -> bool:
 
     if not path.is_file():
         return False
 
-    if any(
-        part in IGNORED_DIRS
-        for part in path.parts
-    ):
+    if any(part in IGNORED_DIRS for part in path.parts):
         return False
 
-    return (
-        path.suffix.lower()
-        in TEXT_EXTENSIONS
-    )
+    if ignored_patterns and workspace:
+        rel = path.relative_to(workspace)
+        for pattern in ignored_patterns:
+            if rel.match(pattern) or any(part == pattern for part in rel.parts):
+                return False
+
+    return path.suffix.lower() in TEXT_EXTENSIONS
 
 
 def _ensure_gitignore(workspace: Path):
@@ -89,6 +101,10 @@ def index_project(
 
     first_run = not db_path.exists()
 
+    ignored_patterns = _load_owaignore(workspace)
+    if ignored_patterns:
+        console.print(f"[dim].owaignore: excluding {len(ignored_patterns)} pattern(s)[/dim]")
+
     initialize(db_path)
 
     with connect(db_path) as db:
@@ -96,7 +112,7 @@ def index_project(
         files = [
             path
             for path in workspace.rglob("*")
-            if should_index(path)
+            if should_index(path, workspace, ignored_patterns)
         ]
 
         console.print(f"[dim]found {len(files)} files to index[/dim]")

@@ -4,6 +4,15 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-29
+
+### Added
+
+- Session memory — conversation history persists across restarts in `.owa/history.json`. Cleared with `/clear`.
+- Context window management — trims to last 20 message pairs before each LLM call, keeping system prompt intact.
+- `.owaignore` — place a `.owaignore` file in your project root to exclude files and directories from indexing.
+- `/model` command — list available Ollama models and switch the active chat model on the fly.
+
 ## [0.3.3] - 2026-08-29
 
 ### Changed

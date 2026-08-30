@@ -14,8 +14,8 @@ from app.tools.registry import TOOLS, FUNCTIONS
 
 console = Console(stderr=True)
 
-
 WORKSPACE = Path.cwd().resolve()
+HISTORY_PATH = WORKSPACE / ".owa" / "history.json"
 
 
 READ_ONLY_PREFIXES = (
@@ -190,22 +190,32 @@ class Agent:
     def __init__(self):
         self.llm = LLMClient()
         self.state = None
+        self.messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        self._load_history()
 
-        self.messages = [
-            {
-                "role": "system",
-                "content": SYSTEM_PROMPT,
-            }
-        ]
+    def _load_history(self):
+        if HISTORY_PATH.exists():
+            try:
+                saved = json.loads(HISTORY_PATH.read_text())
+                self.messages += [m for m in saved if m["role"] != "system"]
+            except Exception:
+                pass
+
+    def _save_history(self):
+        try:
+            HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
+            non_system = [m for m in self.messages if m["role"] != "system"]
+            HISTORY_PATH.write_text(json.dumps(non_system))
+        except Exception:
+            pass
 
     def clear(self):
         self.state = None
-        self.messages = [
-            {
-                "role": "system",
-                "content": SYSTEM_PROMPT,
-            }
-        ]
+        self.messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        try:
+            HISTORY_PATH.unlink(missing_ok=True)
+        except Exception:
+            pass
 
     def _trim_messages(self, max_pairs: int = 20):
         system = [m for m in self.messages if m["role"] == "system"]
@@ -393,6 +403,7 @@ class Agent:
                 )
 
                 self.state.completed = True
+                self._save_history()
                 return content
 
             assistant_message = {
@@ -514,3 +525,4 @@ class Agent:
             }
         )
         self.state.completed = True
+        self._save_history()

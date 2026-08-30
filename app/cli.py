@@ -2,6 +2,7 @@ import argparse
 import os
 from pathlib import Path
 
+import httpx
 from dotenv import load_dotenv, set_key
 from rich.console import Console
 from rich.markdown import Markdown
@@ -27,6 +28,7 @@ console = Console(theme=THEME)
 HELP_TEXT = """[cmd]Commands[/cmd]
   [cmd]/index[/cmd]   rebuild project index
   [cmd]/status[/cmd]  show index status
+  [cmd]/model[/cmd]   switch chat model
   [cmd]/clear[/cmd]   clear conversation
   [cmd]/setup[/cmd]   configure Ollama connection
   [cmd]/quit[/cmd]    exit"""
@@ -42,6 +44,38 @@ def print_banner(mode: str):
         expand=False,
         width=62,
     ))
+
+
+def run_model():
+    base_url = os.getenv("LLM_BASE_URL", "").replace("/v1", "").rstrip("/")
+    current = os.getenv("LLM_MODEL", "")
+    models = []
+
+    if base_url:
+        try:
+            resp = httpx.get(f"{base_url}/api/tags", timeout=5)
+            models = [m["name"] for m in resp.json().get("models", [])]
+        except Exception:
+            pass
+
+    if models:
+        console.print("\n[cmd]Available models:[/cmd]")
+        for i, m in enumerate(models, 1):
+            marker = " [muted](current)[/muted]" if m == current else ""
+            console.print(f"  [muted]{i}.[/muted] {m}{marker}")
+        console.print()
+
+    model = Prompt.ask("[prompt]Chat model[/prompt]", default=current)
+    if not model or model == current:
+        console.print("[muted]No change.[/muted]")
+        return
+
+    ensure_config_dir()
+    if not ENV_PATH.exists():
+        ENV_PATH.write_text("")
+    set_key(ENV_PATH, "LLM_MODEL", model)
+    os.environ["LLM_MODEL"] = model
+    console.print(f"[muted]Model set to {model}. Restart owa for changes to take effect.[/muted]\n")
 
 
 def run_setup():
@@ -134,6 +168,10 @@ def main(argv=None):
             continue
 
         command = user_input.lower()
+
+        if command == "/model":
+            run_model()
+            continue
 
         if command == "/setup":
             run_setup()
