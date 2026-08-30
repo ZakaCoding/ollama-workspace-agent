@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-08-29
+
+### Fixed
+
+- Embedding config (`EMBEDDING_BASE_URL`, `EMBEDDING_MODEL`) was read at module import time, before `load_dotenv()` ran, causing `/index` to always connect to `127.0.0.1` and fail with `Connection refused`.
+
 ## [0.3.0] - 2026-08-29
 
 ### Added

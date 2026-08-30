@@ -3,23 +3,14 @@ import os
 import httpx
 
 
-EMBEDDING_BASE_URL = os.getenv(
-    "EMBEDDING_BASE_URL",
-    "http://127.0.0.1:11434",
-).rstrip("/")
-
-EMBEDDING_MODEL = os.getenv(
-    "EMBEDDING_MODEL",
-    "nomic-embed-text",
-)
-
-
 def embed(text: str) -> list[float]:
+    base_url = os.getenv("EMBEDDING_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
+    model = os.getenv("EMBEDDING_MODEL", "nomic-embed-text")
 
     response = httpx.post(
-        f"{EMBEDDING_BASE_URL}/api/embed",
+        f"{base_url}/api/embed",
         json={
-            "model": EMBEDDING_MODEL,
+            "model": model,
             "input": text,
         },
         timeout=300,
