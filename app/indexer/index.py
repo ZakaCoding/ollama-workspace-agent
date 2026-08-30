@@ -85,7 +85,7 @@ def index_project(
             if should_index(path)
         ]
 
-    console.print(f"[dim]found {len(files)} files to index[/dim]")
+        console.print(f"[dim]found {len(files)} files to index[/dim]")
 
         for file_path in files:
 
