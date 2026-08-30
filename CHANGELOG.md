@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-08-29
+
+### Fixed
+
+- `/model` showed wrong current model on restart — env was not reloaded before reading `LLM_MODEL`.
+- Model switch took effect only after restart — `LLMClient` now reads `LLM_MODEL` from env on every call instead of at init time.
+
 ## [0.4.0] - 2026-08-29
 
 ### Added
