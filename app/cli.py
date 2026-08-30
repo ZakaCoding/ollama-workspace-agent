@@ -47,6 +47,8 @@ def print_banner(mode: str):
 
 
 def run_model():
+    load_dotenv(ENV_PATH, override=True)
+    load_dotenv(Path.cwd() / ".env", override=True)
     base_url = os.getenv("LLM_BASE_URL", "").replace("/v1", "").rstrip("/")
     current = os.getenv("LLM_MODEL", "")
     models = []

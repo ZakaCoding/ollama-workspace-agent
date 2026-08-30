@@ -10,13 +10,11 @@ class LLMClient:
             "LLM_BASE_URL",
             "http://localhost:11434/v1",
         ).rstrip("/")
-
-        self.model = os.getenv(
-            "LLM_MODEL",
-            "ornith:9b",
-        )
-
         self.session = requests.Session()
+
+    @property
+    def model(self):
+        return os.getenv("LLM_MODEL", "ornith:9b")
 
     def chat(self, messages, tools=None):
         payload = {
