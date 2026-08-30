@@ -68,11 +68,27 @@ ollama pull nomic-embed-text
 | Command   | Description                        |
 |-----------|------------------------------------|
 | `/setup`  | Configure Ollama connection        |
+| `/model`  | Switch the active chat model       |
 | `/index`  | Rebuild the project index          |
 | `/status` | Show index status                  |
 | `/clear`  | Clear conversation history         |
 | `/help`   | Show available commands            |
 | `/quit`   | Exit                               |
+
+## Indexing
+
+OwA auto-indexes your project on first run. Common directories are excluded automatically (`node_modules`, `dist`, `build`, `.github`, `.git`, `.venv`, etc.).
+
+To exclude additional files or directories, create a `.owaignore` in your project root:
+
+```
+# .owaignore
+secrets.json
+fixtures/
+*.min.js
+```
+
+The local index is stored in `.owa/` and is automatically added to your `.gitignore` on first index.
 
 ## API Mode
 
