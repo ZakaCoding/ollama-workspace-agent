@@ -220,13 +220,10 @@ def main(argv=None):
             console.print()
             console.print("[assistant]assistant[/assistant]")
             chunks = []
-            for chunk in service.chat_stream(user_input):
-                print(chunk, end="", flush=True)
-                chunks.append(chunk)
-            print()
-            full = "".join(chunks)
-            if any(c in full for c in ("#", "*", "`", "-")):
-                console.print(Markdown(full))
+            with Status("[muted]thinking…[/muted]", console=console, spinner="dots"):
+                for chunk in service.chat_stream(user_input):
+                    chunks.append(chunk)
+            console.print(Markdown("".join(chunks)))
         except Exception as exc:
             console.print(f"\n[error]agent error:[/error] {exc}\n")
 
