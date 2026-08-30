@@ -219,14 +219,14 @@ def main(argv=None):
         try:
             console.print()
             console.print("[assistant]assistant[/assistant]")
-            if args.api_url:
-                for chunk in service.chat_stream(user_input):
-                    print(chunk, end="", flush=True)
-                print()
-            else:
-                with Status("[muted]thinking…[/muted]", console=console, spinner="dots"):
-                    response = service.chat(user_input)
-                console.print(Markdown(response))
+            chunks = []
+            for chunk in service.chat_stream(user_input):
+                print(chunk, end="", flush=True)
+                chunks.append(chunk)
+            print()
+            full = "".join(chunks)
+            if any(c in full for c in ("#", "*", "`", "-")):
+                console.print(Markdown(full))
         except Exception as exc:
             console.print(f"\n[error]agent error:[/error] {exc}\n")
 
