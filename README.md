@@ -4,105 +4,110 @@ Licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 An open-source local coding assistant powered by Ollama. Runs entirely on your own hardware — no cloud, no telemetry, no API keys required beyond your own Ollama server.
 
+## Install
+
+```bash
+pip install ollama-workspace-agent
+```
+
+Or with pipx for an isolated install:
+
+```bash
+pipx install ollama-workspace-agent
+```
+
 ## Requirements
 
 - Python 3.11+
 - Ollama running on a reachable machine
-- A chat model installed on Ollama, such as `ornith:9b`
+- A chat model installed on Ollama, such as `llama3.1:8b`
 - An embedding model installed on Ollama, such as `nomic-embed-text`
 
-## Setup
-
-Create and activate a virtual environment, then install the dependencies:
+## Quick Start
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install python-dotenv requests httpx pytest fastapi uvicorn rich
+cd your-project
+owa
 ```
 
-Create `.env` in the project root:
+On first run, type `/setup` to configure your Ollama connection. OwA will walk you through it interactively and save the config to `~/.config/owa/.env`.
+
+Then just start chatting — OwA will auto-index your project on startup.
+
+## Configuration
+
+Run `/setup` inside OwA, or manually create `~/.config/owa/.env`:
 
 ```env
 LLM_BASE_URL=http://YOUR_OLLAMA_HOST:11434/v1
-LLM_MODEL=ornith:9b
+LLM_MODEL=llama3.1:8b
 EMBEDDING_BASE_URL=http://YOUR_OLLAMA_HOST:11434
 EMBEDDING_MODEL=nomic-embed-text
 API_KEY=choose-a-private-api-key
 ```
 
-Keep `.env` private. It is excluded from Git by `.gitignore`.
+You can also place a `.env` in your project root to override the global config for that project.
 
-`LLM_BASE_URL` uses Ollama's OpenAI-compatible `/v1` API. `EMBEDDING_BASE_URL`
-uses Ollama's native `/api/embed` API. If Ollama runs on the same machine,
-replace `YOUR_OLLAMA_HOST` with `127.0.0.1`.
+`LLM_BASE_URL` uses Ollama's OpenAI-compatible `/v1` API. `EMBEDDING_BASE_URL` uses Ollama's native `/api/embed` API. If Ollama runs on the same machine, replace `YOUR_OLLAMA_HOST` with `127.0.0.1`.
 
 ## Verify Ollama
-
-From the agent machine:
 
 ```bash
 curl http://YOUR_OLLAMA_HOST:11434/api/tags
 ```
 
-A successful response contains a `models` list.
-
-Make sure the models named in `.env` are installed on that Ollama server. For
-example:
+A successful response contains a `models` list. Make sure the models in your config are installed:
 
 ```bash
-ollama pull ornith:9b
+ollama pull llama3.1:8b
 ollama pull nomic-embed-text
 ```
 
-If `ollama` is not installed locally, install the models through the Ollama
-machine's normal administration workflow instead.
+## CLI Commands
 
-## Run
+| Command   | Description                        |
+|-----------|------------------------------------|
+| `/setup`  | Configure Ollama connection        |
+| `/index`  | Rebuild the project index          |
+| `/status` | Show index status                  |
+| `/clear`  | Clear conversation history         |
+| `/help`   | Show available commands            |
+| `/quit`   | Exit                               |
 
-```bash
-source .venv/bin/activate
-python main.py
-```
+## API Mode
 
-Enter a request at the `›` prompt. Available commands are `/help`, `/index`,
-`/status`, `/clear`, and `/quit`.
-
-The CLI uses a rich terminal layout with a branded banner, spinner feedback, and Markdown-rendered responses.
-
-To use the CLI as a client for the FastAPI server:
-
-```bash
-python main.py --api-url http://127.0.0.1:8000
-```
-
-In API mode, chat responses stream through `/chat/stream`. Set `API_KEY` in
-`.env` or pass `--api-key` when the server requires authentication.
-
-Run the HTTP API with:
+Run the HTTP API:
 
 ```bash
 uvicorn app.api:app --host 127.0.0.1 --port 8000
 ```
 
-The API loads `.env` automatically and provides `GET /health`, `GET /status`,
-`POST /chat`, `POST /chat/stream`, `POST /clear`, and `POST /index`. Chat
-requests use `{"message": "your request"}`. Use `/chat/stream` for plain-text
-streaming; use `/chat` for tool-enabled agent tasks.
+Use the CLI as an API client:
 
-When `API_KEY` is configured, include it in the `X-API-Key` header for every
-endpoint except `/health`.
+```bash
+owa --api-url http://127.0.0.1:8000
+```
+
+Available endpoints: `GET /health`, `GET /status`, `POST /chat`, `POST /chat/stream`, `POST /clear`, `POST /index`.
+
+When `API_KEY` is configured, include it in the `X-API-Key` header for every endpoint except `/health`.
 
 ## Tools
 
 The agent can call these workspace tools:
 
-- `list_dir`: list files and directories
-- `read_file`: read UTF-8 text files
-- `code_review`: review Python files for common security risks
-- `run_command`: run a shell command after confirmation
-
-The current development phase forces tool calls when tools are supplied so the Ollama tool-calling protocol can be verified.
+| Tool          | Description                                          |
+|---------------|------------------------------------------------------|
+| `list_dir`    | List files and directories                           |
+| `read_file`   | Read UTF-8 text files                                |
+| `patch_file`  | Targeted search-and-replace edit on an existing file |
+| `write_file`  | Create or fully replace a file                       |
+| `search_code` | Semantic search over the indexed codebase            |
+| `code_review` | Review Python files for common security risks        |
+| `run_command` | Run a shell command after user confirmation          |
+| `git_status`  | Show Git branch and working tree status              |
+| `git_diff`    | Show current Git diff                                |
+| `git_log`     | Show recent Git commits                              |
 
 ## Project Layout
 
@@ -110,26 +115,38 @@ The current development phase forces tool calls when tools are supplied so the O
 .
 ├── app/
 │   ├── agent/       Agent orchestration and system prompt
-│   ├── api.py        FastAPI endpoints and request models
-│   ├── service.py    Shared chat, indexing, and status service
+│   ├── api.py       FastAPI endpoints and request models
+│   ├── cli.py       CLI entry point
+│   ├── config.py    Global config path resolution
+│   ├── service.py   Shared chat, indexing, and status service
 │   ├── indexer/     Code indexing and semantic search
 │   ├── llm/         OpenAI-compatible Ollama client
 │   └── tools/       Workspace tool implementations and registry
 ├── demo/            Small demo code
-├── main.py          CLI entry point
+├── main.py          Thin shim for `python main.py`
 ├── CHANGELOG.md     Project change history
 └── README.md        Project documentation
 ```
 
-## Development Check
+## Development
 
-Verify the environment before starting the interactive CLI:
+Clone and install in editable mode:
 
 ```bash
-python -c "import dotenv, requests, httpx; print('Dependencies OK')"
+git clone https://github.com/ZakaCoding/ollama-workspace-agent
+cd ollama-workspace-agent
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
 ```
 
-Compile the Python modules with:
+Run tests:
+
+```bash
+pytest tests/ -v
+```
+
+Compile check:
 
 ```bash
 python -m py_compile main.py app/agent/*.py app/indexer/*.py app/llm/*.py app/tools/*.py
