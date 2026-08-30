@@ -18,7 +18,7 @@ IGNORED_DIRS = {
     "__pycache__",
     ".idea",
     ".vscode",
-    ".ai",
+    ".owa",
 }
 
 
@@ -68,12 +68,26 @@ def should_index(path: Path) -> bool:
     )
 
 
+def _ensure_gitignore(workspace: Path):
+    gitignore = workspace / ".gitignore"
+    entry = ".owa/\n"
+    if gitignore.exists():
+        if ".owa" in gitignore.read_text():
+            return
+        gitignore.open("a").write(f"\n{entry}")
+    else:
+        gitignore.write_text(entry)
+    console.print("[dim]added .owa/ to .gitignore[/dim]")
+
+
 def index_project(
     workspace: Path,
     db_path: Path,
 ):
 
     workspace = workspace.resolve()
+
+    first_run = not db_path.exists()
 
     initialize(db_path)
 
@@ -121,3 +135,7 @@ def index_project(
                 )
 
     console.print("[dim]index complete[/dim]")
+
+    if first_run:
+        _ensure_gitignore(workspace)
+        console.print("[dim]tip: .owa/ holds the local index — add it to .gitignore if not done automatically[/dim]")

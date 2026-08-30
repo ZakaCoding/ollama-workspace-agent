@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-08-29
+
+### Changed
+
+- Renamed local index directory from `.ai/` to `.owa/` to avoid conflicts with other tools.
+- On first index, `.owa/` is automatically added to the project's `.gitignore`.
+- Added a tip message after first index reminding users about `.owa/` and `.gitignore`.
+
 ## [0.3.2] - 2026-08-29
 
 ### Fixed

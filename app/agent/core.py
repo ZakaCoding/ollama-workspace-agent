@@ -239,7 +239,7 @@ class Agent:
         self,
         task: str,
     ) -> str:
-        index_path = WORKSPACE / ".ai" / "index.db"
+        index_path = WORKSPACE / ".owa" / "index.db"
 
         if not index_path.exists():
             return ""

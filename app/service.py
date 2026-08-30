@@ -15,7 +15,7 @@ class AgentService:
         self.workspace = (
             workspace or Path.cwd()
         ).resolve()
-        self.index_path = self.workspace / ".ai" / "index.db"
+        self.index_path = self.workspace / ".owa" / "index.db"
         self.agent = agent or Agent()
 
     def chat(self, message: str) -> str:

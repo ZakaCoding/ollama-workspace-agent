@@ -8,7 +8,7 @@ def search_code(
     limit: int = 5,
 ) -> str:
 
-    db_path = Path(".ai/index.db")
+    db_path = Path(".owa/index.db")
 
     if not db_path.exists():
         return (
