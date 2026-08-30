@@ -1,5 +1,6 @@
 import json
 import re
+from importlib.metadata import version as pkg_version
 from pathlib import Path
 
 from rich.console import Console
@@ -72,8 +73,10 @@ def task_requires_code_search(task: str) -> bool:
     )
 
 
+OWA_VERSION = pkg_version("ollama-workspace-agent")
+
 SYSTEM_PROMPT = f"""
-You are OwA, the Ollama Workspace Agent —
+You are OwA (Ollama Workspace Agent) version {OWA_VERSION} —
 an open-source local coding assistant.
 
 You operate inside this workspace:
