@@ -9,6 +9,15 @@ description = "An open-source local coding assistant powered by Ollama."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
+keywords = ["ollama", "ai", "agent", "coding-assistant", "llm", "cli"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development",
+]
 dependencies = [
     "python-dotenv",
     "requests",
@@ -17,6 +26,12 @@ dependencies = [
     "uvicorn",
     "rich",
 ]
+
+[project.urls]
+Homepage = "https://github.com/ZakaCoding/ollama-workspace-agent"
+Repository = "https://github.com/ZakaCoding/ollama-workspace-agent"
+Changelog = "https://github.com/ZakaCoding/ollama-workspace-agent/blob/main/CHANGELOG.md"
+Issues = "https://github.com/ZakaCoding/ollama-workspace-agent/issues"
 
 [project.scripts]
 owa = "app.cli:main"
