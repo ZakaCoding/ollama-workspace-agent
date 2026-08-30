@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-08-29
+
+### Fixed
+
+- Missing `[project.scripts]` section header in `pyproject.toml` — `owa` entry point was not registered, causing `pipx install` to fail with "No apps associated with package".
+
 ## [0.3.1] - 2026-08-29
 
 ### Fixed

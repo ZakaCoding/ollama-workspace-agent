@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ollama-workspace-agent"
-version = "0.3.1"
+version = "0.3.2"
 description = "An open-source local coding assistant powered by Ollama."
 readme = "README.md"
 license = "MIT"
@@ -38,11 +38,11 @@ dev = [
     "httpx",
 ]
 
+[project.scripts]
+owa = "app.cli:main"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-
-
-owa = "app.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["app*"]
