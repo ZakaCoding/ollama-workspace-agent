@@ -4,6 +4,24 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-08-30
+
+### Added
+
+- Project messaging and docs were refreshed around the local-first, privacy-first open-source mission.
+- GitHub Pages landing page and sponsor configuration were prepared for public project discovery and funding support.
+
+### Changed
+
+- README and wiki now describe the project as a local Ollama-powered workspace agent built for developer workflows and small models.
+- Documentation structure was tightened up to better explain install, architecture, safety boundaries, and contributor workflow.
+
+### Fixed
+
+- Streaming responses in direct mode now work without blocking long waits on the CLI path.
+- Spinner behavior while a stream is being collected was corrected so output renders cleanly after completion.
+- Ignored directories were expanded to better fit typical local developer repos and to document `.owaignore` and `/model` usage clearly.
+
 ## [0.4.1] - 2026-08-29
 
 ### Fixed
