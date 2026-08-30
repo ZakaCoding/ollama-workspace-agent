@@ -207,6 +207,13 @@ class Agent:
             }
         ]
 
+    def _trim_messages(self, max_pairs: int = 20):
+        system = [m for m in self.messages if m["role"] == "system"]
+        non_system = [m for m in self.messages if m["role"] != "system"]
+        if len(non_system) > max_pairs * 2:
+            non_system = non_system[-(max_pairs * 2):]
+        self.messages = system + non_system
+
     def _allowed_tool_names(
         self,
         available_tools,
@@ -312,6 +319,7 @@ class Agent:
 
         while True:
             self.state.next_iteration()
+            self._trim_messages()
 
             available_tools = [] if retrieval_task else TOOLS
 
@@ -493,6 +501,7 @@ class Agent:
                 )
 
         content_parts = []
+        self._trim_messages()
         for content in self.llm.chat_stream(self.messages):
             content_parts.append(content)
             yield content
