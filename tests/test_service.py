@@ -35,7 +35,7 @@ def test_service_reports_missing_index(tmp_path):
 
 
 def test_service_reports_index_chunk_count(tmp_path):
-    index_path = tmp_path / ".ai" / "index.db"
+    index_path = tmp_path / ".owa" / "index.db"
     index_path.parent.mkdir()
     with sqlite3.connect(index_path) as db:
         db.execute(
