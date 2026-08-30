@@ -46,7 +46,8 @@ All notable changes to this project are documented here.
 - Added plain-text streaming through `POST /chat/stream` for conversational responses.
 - Added optional API-key protection for non-health FastAPI endpoints.
 - Added direct and API-backed CLI modes with streamed API chat responses.
-- Simplified the CLI presentation into a compact lightweight terminal interface.
+- Renamed project to **OwA — Ollama Workspace Agent**.
+- Overhauled CLI with `rich`: branded banner, styled prompt, dot spinner, Markdown-rendered responses, and colored error/status messages.
 
 ## [0.1.0] - 2026-08-27
 

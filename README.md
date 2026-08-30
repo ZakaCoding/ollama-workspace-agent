@@ -1,8 +1,8 @@
 Licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
-# Local Coding Agent
+# OwA — Ollama Workspace Agent
 
-A small Python CLI coding assistant that connects to a remote Ollama server and can inspect or operate on the project workspace through registered tools.
+An open-source local coding assistant powered by Ollama. Runs entirely on your own hardware — no cloud, no telemetry, no API keys required beyond your own Ollama server.
 
 ## Requirements
 
@@ -68,7 +68,7 @@ python main.py
 Enter a request at the `›` prompt. Available commands are `/help`, `/index`,
 `/status`, `/clear`, and `/quit`.
 
-The CLI uses a compact terminal layout and prints the active mode on startup.
+The CLI uses a rich terminal layout with a branded banner, spinner feedback, and Markdown-rendered responses.
 
 To use the CLI as a client for the FastAPI server:
 

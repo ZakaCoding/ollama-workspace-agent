@@ -42,7 +42,7 @@ def print_banner(mode: str):
 
 
 def parse_args(argv=None):
-    parser = argparse.ArgumentParser(description="Local coding agent CLI")
+    parser = argparse.ArgumentParser(description="OwA · Ollama Workspace Agent")
     parser.add_argument("--api-url", help="Use the FastAPI server instead of direct mode.")
     parser.add_argument("--api-key", default=os.getenv("API_KEY"), help="API key for the FastAPI server.")
     return parser.parse_args(argv)
