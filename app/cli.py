@@ -123,6 +123,26 @@ def run_setup():
     console.print("[muted]Restart owa for changes to take effect.[/muted]\n")
 
 
+def _inject_file_context(message: str) -> str:
+    import re
+    matches = re.findall(r"@(\S+)", message)
+    if not matches:
+        return message
+    injected = []
+    for ref in matches:
+        path = Path.cwd() / ref
+        if path.is_file():
+            try:
+                content = path.read_text(encoding="utf-8")
+                injected.append(f"--- @{ref} ---\n{content}\n--- end ---")
+                message = message.replace(f"@{ref}", ref)
+            except Exception:
+                pass
+    if injected:
+        message = "\n\n".join(injected) + "\n\n" + message
+    return message
+
+
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(description="OwA · Ollama Workspace Agent")
     parser.add_argument("--api-url", help="Use the FastAPI server instead of direct mode.")
@@ -186,10 +206,11 @@ def main(argv=None):
         if command == "/status":
             try:
                 status = service.status()
+                model = os.getenv("LLM_MODEL", "unknown")
                 if status["ready"]:
-                    console.print(f"[muted]index ready · {status['chunks']} chunks[/muted]")
+                    console.print(f"[muted]index ready · {status['chunks']} chunks · model {model}[/muted]")
                 else:
-                    console.print("[muted]index not found[/muted]")
+                    console.print(f"[muted]index not found · model {model}[/muted]")
             except Exception as exc:
                 console.print(f"[error]status error:[/error] {exc}")
             continue
@@ -220,8 +241,9 @@ def main(argv=None):
             console.print()
             console.print("[assistant]assistant[/assistant]")
             chunks = []
+            message = _inject_file_context(user_input)
             with Status("[muted]thinking…[/muted]", console=console, spinner="dots"):
-                for chunk in service.chat_stream(user_input):
+                for chunk in service.chat_stream(message):
                     chunks.append(chunk)
             console.print(Markdown("".join(chunks)))
         except Exception as exc:

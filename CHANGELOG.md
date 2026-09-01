@@ -6,14 +6,19 @@ All notable changes to this project are documented here.
 
 ### Planned
 
-- **Multi-model support** — auto-route tasks to different models based on intent (e.g. `LLM_MODEL` for chat, `CODE_MODEL` for code tasks like write/fix/refactor)
-- **`/status` show current model** — display active chat model alongside index chunk count
-- **`@filename` context** — attach a specific file to a message so the agent reads it without needing to call `read_file`
+- **Multi-model support** — auto-route tasks to different models based on intent
 
 ### Known Limitations
 
 - Emoji rendering broken with `ornith:9b` — model outputs mojibake, not an OwA bug
 - `agent.stream()` does not handle tool calls — tool activity shown via stderr, final response collected then rendered
+
+## [0.4.3] - 2026-08-30
+
+### Added
+
+- `@filename` context — mention a file in your message with `@path/to/file` and OwA injects its content automatically.
+- `/status` now shows the active chat model alongside index chunk count.
 
 ## [0.4.2] - 2026-08-30
 
