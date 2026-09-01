@@ -1,60 +1,56 @@
 # Indexing and Search
 
-The indexer gives the agent a local semantic view of source code. It is separate from the chat model and is stored in a SQLite database under `.ai/`.
+The indexer gives the agent a local semantic view of source code. It is separate from the chat model and stored in a SQLite database under `.owa/`.
 
-## Supported files
+## Auto-indexing
 
-The indexer currently considers common source and text extensions, including Python, JavaScript, TypeScript, PHP, Go, Rust, Java, C/C++, CSS, HTML, JSON, YAML, TOML, Markdown, text, SQL, and shell scripts.
+OwA auto-indexes your project on first run. The index is stored in `.owa/index.db` and `.owa/` is automatically added to your `.gitignore`.
 
-It ignores common generated or dependency directories such as `.git`, `.venv`, `venv`, `node_modules`, `__pycache__`, `.idea`, `.vscode`, and `.ai`.
+To rebuild the index manually, run `/index` inside OwA.
 
-## Indexing API
+## Excluded directories
 
-```python
-from pathlib import Path
-from app.indexer.index import index_project
+The following directories are always excluded from indexing:
 
-index_project(
-    workspace=Path.cwd(),
-    db_path=Path(".ai/index.db"),
-)
+`.git`, `.venv`, `venv`, `env`, `node_modules`, `__pycache__`, `.idea`, `.vscode`, `.owa`, `.github`, `.gitlab`, `dist`, `build`, `out`, `coverage`, `.next`, `.nuxt`, `.cache`, `vendor`, `target`, `bin`, `obj`
+
+## Custom exclusions with .owaignore
+
+Create a `.owaignore` file in your project root to exclude additional files or directories:
+
+```
+# .owaignore
+secrets.json
+fixtures/
+*.min.js
+logs/
 ```
 
-Each indexed chunk stores:
+Same syntax as `.gitignore` — one pattern per line, `#` for comments.
 
-- relative file path
-- chunk index
-- source content
-- serialized embedding
-- creation and update timestamps
+## Supported file types
 
-Existing `(path, chunk_index)` records are updated when re-indexed. The current indexer does not remove records for files or chunks that no longer exist, so a full cleanup strategy is an important future improvement.
+Python, JavaScript, TypeScript, JSX, TSX, PHP, Go, Rust, Java, C, C++, CSS, SCSS, HTML, JSON, YAML, TOML, Markdown, text, SQL, shell scripts, and Blade templates.
 
 ## Chunking
 
-`chunk_text` defaults to a 12,000-character chunk size with 1,000 characters of overlap. Empty input returns no chunks. An overlap equal to or larger than the chunk size raises `ValueError`.
+`chunk_text` defaults to a 12,000-character chunk size with 1,000 characters of overlap. Empty input returns no chunks.
 
 ## Query behavior
 
-`search_code(query, limit=5)` reads `.ai/index.db` and returns formatted results containing the file, chunk, similarity score, and content.
+`search_code(query, limit=5)` reads `.owa/index.db` and returns formatted results containing the file path, chunk index, similarity score, and content.
 
-Ranking behavior:
+Ranking:
 
-1. The query is embedded through Ollama.
-2. Each stored vector receives cosine similarity.
+1. The query is embedded through Ollama's `/api/embed`.
+2. Each stored vector receives a cosine similarity score.
 3. Results are sorted descending and limited.
-4. If the embedding request raises an HTTP error, keyword overlap is used as a fallback.
+4. If the embedding request fails with an HTTP error, keyword overlap is used as a fallback.
 
-The fallback is intentionally modest: it compares normalized alphanumeric and underscore terms. It is not a replacement for semantic retrieval.
+## Operational notes
 
-## Operational limits
-
-- The indexer requires an embedding service during indexing.
-- Vectors are loaded and scored in Python, which may be slow for large indexes.
+- The indexer requires Ollama's embedding service to be running during indexing.
+- Vectors are loaded and scored in Python — may be slow for very large repositories.
 - The database has no vector index.
-- Search currently catches HTTP errors, but network and configuration failures should be handled more comprehensively.
-- The database is local state and should be rebuilt when its schema or embedding model changes.
-
-## Research opportunities
-
-Useful experiments include comparing chunk sizes, measuring overlap waste, testing hybrid keyword and vector ranking, adding stale-record deletion, and evaluating retrieval quality on a fixed set of developer questions.
+- Rebuild the index after changing your embedding model — stored vectors will be incompatible.
+- The indexer does not remove records for deleted files — a full `/index` rebuild clears stale entries.

@@ -5,62 +5,79 @@
 ```text
 .
 ├── app/
-│   ├── agent/       Agent orchestration, state, and verification
+│   ├── agent/       Agent orchestration, state, context trimming, session memory
 │   ├── indexer/     Chunking, embeddings, SQLite storage, and search
 │   ├── llm/         Ollama-compatible chat client
-│   ├── memory/      Reserved package for future memory work
-│   └── tools/       Tool implementations and registry
-├── demo/            Small demonstration code
-├── tests/           Pytest coverage for guardrails and calculator behavior
-├── main.py          Interactive CLI entry point
-└── wiki/            Public project documentation
+│   ├── tools/       Tool implementations and registry
+│   ├── api.py       FastAPI endpoints
+│   ├── api_client.py  HTTP client for API mode
+│   ├── cli.py       CLI entry point — banner, prompt loop, commands
+│   ├── config.py    Global config path (~/.config/owa/.env)
+│   └── service.py   Shared service layer for CLI and API
+├── tests/           Pytest test suite
+├── wiki/            Project documentation
+├── main.py          Thin shim — delegates to app/cli.py
+├── pyproject.toml   Package metadata and entry point
+├── CHANGELOG.md     Version history
+├── RELEASE.md       Release process guide
+└── TODO.md          Feature backlog
 ```
 
-## Test and validation commands
-
-From the repository root with the virtual environment active:
+## Install for development
 
 ```bash
-PYTHONPATH=. pytest -q
-python -m compileall -q main.py app tests
-python -m py_compile main.py app/agent/core.py app/llm/client.py app/tools/registry.py
+git clone https://github.com/ZakaCoding/ollama-workspace-agent
+cd ollama-workspace-agent
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
 ```
 
-Run focused tests while working on one area:
+## Run
 
 ```bash
-PYTHONPATH=. pytest -q tests/test_agent_guardrails.py
-PYTHONPATH=. pytest -q tests/test_calculator.py
+python main.py
+# or
+owa
 ```
 
-## Adding code
+## Test
 
-Prefer small modules with explicit inputs and outputs. Keep public tool names stable once documented. Add tests for behavior at the boundary rather than testing implementation details that do not matter to callers.
+```bash
+pytest tests/ -v
+```
 
-For a new external dependency:
+## Compile check
 
-1. Add it to the setup documentation and project dependency metadata when available.
-2. Document required environment variables.
-3. Provide a useful failure message when the service is unavailable.
-4. Add a test that does not require the external service for ordinary CI.
+```bash
+python -m py_compile main.py app/agent/*.py app/indexer/*.py app/llm/*.py app/tools/*.py app/cli.py app/service.py app/api.py
+```
+
+## Contributing
+
+Contributions are welcome. A few guidelines:
+
+- Keep modules small with explicit inputs and outputs.
+- Keep public tool names stable once documented.
+- Add tests for behavior at the boundary, not implementation details.
+- For a new external dependency: document required env vars, provide a useful failure message when unavailable, and add a test that works without a live Ollama server.
 
 ## Review checklist
 
 - Does the change preserve workspace isolation?
-- Does it create or expose new side effects?
 - Are failures and unavailable services handled explicitly?
 - Does the model receive a precise schema and useful result text?
-- Are generated files ignored?
-- Are tests and documentation updated?
+- Are generated files (`.owa/`, `dist/`, `*.egg-info`) gitignored?
+- Are tests and wiki updated?
 - Does the change work without a live Ollama server where possible?
 
-## Troubleshooting
+## Release process
 
-Inspect the current state with:
+See [RELEASE.md](../RELEASE.md) for the full release steps. Short version:
 
-```bash
-git status --short --branch
-git diff --check
-```
+1. Bump `version` in `pyproject.toml`
+2. Add entry to `CHANGELOG.md`
+3. `git commit` and `git push`
+4. `git tag vX.Y.Z && git push origin vX.Y.Z`
 
-The agent prints request URL, model, status, and tool-call diagnostics. Avoid sharing those logs publicly if they contain private hostnames or prompts.
+The publish workflow builds and uploads to PyPI automatically on version tags.

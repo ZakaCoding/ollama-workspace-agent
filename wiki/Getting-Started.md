@@ -3,77 +3,97 @@
 ## Requirements
 
 - Python 3.11 or newer
-- Ollama reachable from the agent machine
-- A chat model installed in Ollama, such as `ornith:9b`
+- [Ollama](https://ollama.com) running on a reachable machine
+- A chat model installed in Ollama, such as `llama3.1:8b` or `qwen2.5-coder`
 - An embedding model installed in Ollama, such as `nomic-embed-text`
 
 ## Install
 
-From the repository root:
+The recommended install is via pipx for an isolated environment:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install python-dotenv requests httpx pytest
+pipx install ollama-workspace-agent
 ```
 
-The existing runtime uses `requests` for chat calls and `httpx` for embeddings.
+Or with pip:
+
+```bash
+pip install ollama-workspace-agent
+```
 
 ## Configure
 
-Create a private `.env` file in the repository root:
+Run OwA once and type `/setup` — it walks you through the configuration interactively and saves to `~/.config/owa/.env`.
+
+Or create the config manually:
 
 ```env
+# ~/.config/owa/.env
 LLM_BASE_URL=http://YOUR_OLLAMA_HOST:11434/v1
-LLM_MODEL=ornith:9b
+LLM_MODEL=llama3.1:8b
 EMBEDDING_BASE_URL=http://YOUR_OLLAMA_HOST:11434
 EMBEDDING_MODEL=nomic-embed-text
 ```
 
-`.env` is ignored by Git. Do not place credentials or private host details in source files or wiki pages.
+You can also place a `.env` in your project root to override the global config for that project.
 
-Check that Ollama is reachable:
+## Verify Ollama
 
 ```bash
 curl http://YOUR_OLLAMA_HOST:11434/api/tags
 ```
 
-## Run the agent
+Pull the models you need:
 
 ```bash
-source .venv/bin/activate
-python main.py
+ollama pull llama3.1:8b
+ollama pull nomic-embed-text
 ```
 
-Enter a request at the `You` prompt. Use `exit`, `quit`, `/exit`, or `/quit` to stop.
-
-## Build the code index
-
-The indexer currently exposes a Python API rather than a CLI command:
-
-```python
-from pathlib import Path
-from app.indexer.index import index_project
-
-index_project(Path.cwd(), Path(".ai/index.db"))
-```
-
-The operation calls Ollama's `/api/embed` endpoint and writes the SQLite index to `.ai/index.db`. The `.ai/` directory is ignored by Git.
-
-Once an index exists, the agent can use the registered `search_code` tool. It searches by embedding similarity and falls back to keyword overlap when the embedding request fails with an HTTP error.
-
-## Verify the installation
+## Run
 
 ```bash
-PYTHONPATH=. pytest -q
-python -m compileall -q main.py app tests
+cd your-project
+owa
 ```
 
-The test suite covers workspace path rejection, task-state isolation, shell confirmation behavior, and calculator operations.
+OwA auto-indexes your project on first run and saves the index to `.owa/`. Once ready, start chatting.
 
-## Common setup problems
+## CLI Commands
 
-- **`ModuleNotFoundError: app`**: run commands from the repository root or set `PYTHONPATH=.`.
-- **Embedding connection failure**: verify `EMBEDDING_BASE_URL`, Ollama availability, and the installed embedding model.
-- **No search results**: build the index first and confirm that the requested file extensions are supported.
-- **Unsafe command rejected**: commands are intentionally bounded to the configured workspace.
+| Command   | Description                        |
+|-----------|------------------------------------|
+| `/setup`  | Configure Ollama connection        |
+| `/model`  | Switch the active chat model       |
+| `/index`  | Rebuild the project index          |
+| `/status` | Show index status                  |
+| `/clear`  | Clear conversation history         |
+| `/help`   | Show available commands            |
+| `/quit`   | Exit                               |
+
+## Indexing
+
+OwA auto-indexes on first run. Common directories are excluded automatically (`node_modules`, `dist`, `build`, `.github`, `.git`, `.venv`, `vendor`, `target`, etc.).
+
+To exclude additional files or directories, create a `.owaignore` in your project root:
+
+```
+# .owaignore
+secrets.json
+fixtures/
+*.min.js
+```
+
+The local index is stored in `.owa/` and is automatically added to your `.gitignore` on first index.
+
+## Session memory
+
+Conversation history is saved to `.owa/history.json` and restored on next startup. Use `/clear` to wipe it.
+
+## Common problems
+
+- **`owa: command not found`** — make sure pipx's bin directory is on your PATH (`pipx ensurepath`), or activate your venv.
+- **Embedding connection failure** — verify `EMBEDDING_BASE_URL` and that Ollama is running. The first call may be slow while the model cold-loads.
+- **No search results** — run `/index` to build or rebuild the index.
+- **`/setup` shows your existing host** — expected behavior, it reads your saved config as the default value.
+- **Model goes off-topic in long sessions** — use `/clear` to reset context, or it trims automatically after 20 message pairs.
