@@ -489,6 +489,7 @@ class Agent:
     def stream(self, user_input: str):
         self.state = AgentState(task=user_input)
         retrieval_task = task_requires_code_search(user_input)
+        messages_snapshot = len(self.messages)
 
         if retrieval_task:
             search_context = self._build_search_context(user_input)
@@ -525,14 +526,16 @@ class Agent:
         content = "".join(content_parts)
 
         if not content.strip():
-            # Stream yielded nothing — fall back to non-streaming call
+            # Stream yielded nothing — restore messages and delegate to run()
+            # which has the full tool loop
+            self.messages = self.messages[:messages_snapshot]
             try:
-                response = self.llm.chat(messages=self.messages)
-                content = response["choices"][0]["message"].get("content", "") or ""
+                content = self.run(user_input) or ""
             except Exception:
                 content = ""
             if content:
                 yield content
+            return
 
         self.messages.append(
             {

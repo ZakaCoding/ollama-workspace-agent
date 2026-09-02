@@ -13,7 +13,13 @@ All notable changes to this project are documented here.
 - Emoji rendering broken with `ornith:9b` — model outputs mojibake, not an OwA bug
 - `agent.stream()` does not handle tool calls — tool activity shown via stderr, final response collected then rendered
 
-## [0.5.3] - 2026-08-31
+## [0.5.4] - 2026-08-31
+
+### Fixed
+
+- `(no response)` on conversational questions — the stream fallback was calling `chat()` with no tools, so when the model wanted to call a tool it returned empty again. Fallback now restores the message list and delegates to `run()` which has the full tool loop.
+- Duplicate message appends on fallback — `stream()` now snapshots the message list length before appending context and user message, and restores it before handing off to `run()`.
+
 
 ### Fixed
 
