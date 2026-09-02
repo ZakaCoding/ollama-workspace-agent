@@ -13,7 +13,14 @@ All notable changes to this project are documented here.
 - Emoji rendering broken with `ornith:9b` — model outputs mojibake, not an OwA bug
 - `agent.stream()` does not handle tool calls — tool activity shown via stderr, final response collected then rendered
 
-## [0.5.4] - 2026-08-31
+## [0.5.5] - 2026-08-31
+
+### Fixed
+
+- Model hallucination on ambiguous short inputs (e.g. `"yes please"`, `"ok"`, `"sure"`) — these now bypass the tool loop entirely and are treated as conversational continuations. Previously they entered `run()` with full tools available, causing small models to invent fictional agentic sessions.
+- Iteration limit now returns gracefully — `RuntimeError` from `state.next_iteration()` is caught in `run()` and returned as a message instead of crashing the CLI.
+- Added `task_is_conversational()` — detects inputs of 3 words or fewer with no action words and no retrieval prefix, plus an explicit set of common conversational phrases.
+
 
 ### Fixed
 

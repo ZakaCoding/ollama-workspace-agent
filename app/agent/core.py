@@ -59,6 +59,26 @@ EXPLICIT_ACTION_WORDS = (
 )
 
 
+CONVERSATIONAL_INPUTS = {
+    "yes", "no", "ok", "okay", "sure", "thanks", "thank you",
+    "yes please", "no thanks", "got it", "lol", "haha", "nice",
+    "cool", "great", "good", "fine", "alright", "yep", "nope",
+    "hi", "hello", "hey", "bye", "goodbye",
+}
+
+
+def task_is_conversational(task: str) -> bool:
+    """Short ambiguous inputs that should never trigger the tool loop."""
+    normalized = task.strip().lower().rstrip("!?.")
+    if normalized in CONVERSATIONAL_INPUTS:
+        return True
+    # 3 words or fewer with no action words and no retrieval prefix
+    words = normalized.split()
+    if len(words) <= 3 and not any(w in normalized for w in EXPLICIT_ACTION_WORDS):
+        return not normalized.startswith(RETRIEVAL_PREFIXES)
+    return False
+
+
 def task_is_read_only(task: str) -> bool:
     normalized = task.strip().lower()
     return not any(word in normalized for word in EXPLICIT_ACTION_WORDS)
@@ -300,6 +320,10 @@ class Agent:
         read_only_task = task_is_read_only(user_input)
         retrieval_task = task_requires_code_search(user_input)
 
+        # Short conversational inputs should not enter the tool loop
+        if task_is_conversational(user_input):
+            retrieval_task = False
+            read_only_task = True
         if retrieval_task:
             search_context = self._build_search_context(user_input)
             if search_context:
@@ -324,7 +348,11 @@ class Agent:
         )
 
         while True:
-            self.state.next_iteration()
+            try:
+                self.state.next_iteration()
+            except RuntimeError as exc:
+                self._save_history()
+                return str(exc)
             self._trim_messages()
 
             available_tools = [] if retrieval_task else TOOLS
