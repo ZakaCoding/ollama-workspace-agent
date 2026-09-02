@@ -612,10 +612,7 @@ class Agent:
                     continue
 
             if not tool_calls:
-                content = message.get(
-                    "content",
-                    "",
-                )
+                content = message.get("content") or ""
                 content = _dedup_response(
                     self._verify_answer(
                         self._add_verification_note(content),

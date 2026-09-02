@@ -109,3 +109,36 @@ def test_agent_reports_empty_response_instead_of_silence(monkeypatch):
     monkeypatch.setattr(agent, "_build_search_context", lambda _task: "")
 
     assert list(agent.stream("Explain this behavior")) == [NO_RESPONSE_MESSAGE]
+
+
+def test_agent_handles_null_content_after_tool_call(monkeypatch):
+    from app.agent.core import Agent, NO_RESPONSE_MESSAGE
+
+    class ToolThenNullLLM:
+        def __init__(self):
+            self.calls = 0
+
+        def chat(self, _messages, tools=None):
+            self.calls += 1
+            if self.calls == 1:
+                return {
+                    "choices": [{
+                        "message": {
+                            "content": None,
+                            "tool_calls": [{
+                                "id": "call-1",
+                                "function": {
+                                    "name": "git_log",
+                                    "arguments": {},
+                                },
+                            }],
+                        }
+                    }]
+                }
+            return {"choices": [{"message": {"content": None}}]}
+
+    agent = Agent()
+    agent.llm = ToolThenNullLLM()
+    monkeypatch.setattr(agent, "_save_history", lambda: None)
+
+    assert list(agent.stream("show the latest commit")) == [NO_RESPONSE_MESSAGE]
