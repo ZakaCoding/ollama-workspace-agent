@@ -4,6 +4,24 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-03
+
+### Added
+
+- **Evidence-first retrieval** — repository context is now retrieved before the LLM is called for both read-only questions and action tasks (implement, add, fix, refactor, update, patch). The model always receives verified evidence first.
+- **Path hallucination rejection** — every file path mentioned in an answer is validated against the workspace. Non-existent paths trigger an automatic retry; if the retry still fails, OwA refuses to answer rather than showing an unverified response.
+- **Hard verification with retry → refuse** — `VerificationResult` now carries `should_retry` and `should_refuse` flags. Citation failures and unverified completion claims retry once with a strict evidence-only prompt, then return a clear refusal instead of appending a soft warning.
+- **Fake tool narration detection** — patterns like "I'm checking...", "Let me search...", "I will inspect..." are detected and trigger a retry before the answer is shown to the user.
+- **Symbol and filename matching in reranker** — function names, class names, and route paths are extracted from content and matched against the query. Filename terms and a proximity bonus for early chunks (index 0–1) are also factored in.
+- **Token-aware context budget** — `ContextBuilder` now computes `max_chars` from the model's context window minus reserved slots for system prompt, tools, conversation, and output, replacing the previous hardcoded 12 000-character limit.
+- **Evaluation suite** — `tests/test_eval_suite.py` with 84 fixed test cases covering routing correctness (25 questions), tool set correctness, citation and hallucination detection, path validation, context budgeting, reranker signal quality, search integration, and intent edge cases.
+
+### Changed
+
+- Reranker weights rebalanced: base score 0.40, exact terms 0.20, symbol match 0.15, phrase match 0.10, path match 0.10, proximity bonus 0.05.
+- `_add_verification_note` retries once then refuses with a warning banner instead of appending a passive verification note.
+- `_STRICT_EVIDENCE_PROMPT` and `_REFUSE_MESSAGE` constants added to `core.py` for consistent retry and refusal messaging.
+
 ## [0.5.7] - 2026-09-02
 
 ### Fixed

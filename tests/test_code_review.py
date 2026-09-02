@@ -44,12 +44,19 @@ def test_code_review_is_registered():
     assert FUNCTIONS["code_review"] is review_file
 
 
-def test_agent_marks_unverified_completion_claims():
+def test_agent_marks_unverified_completion_claims(monkeypatch):
     agent = Agent()
+
+    # Mock the retry LLM call to return a clean answer without unverified claims.
+    def fake_chat(messages, tools=None):
+        return {"choices": [{"message": {"content": "The file was not created."}}]}
+
+    monkeypatch.setattr(agent.llm, "chat", fake_chat)
 
     result = agent._add_verification_note("I created app/new.py")
 
-    assert "not verified" in result
+    # After retry, the unverified claim is gone — result is the clean retry answer.
+    assert "I created" not in result
 
 
 def test_agent_accepts_completion_claims_with_matching_evidence():

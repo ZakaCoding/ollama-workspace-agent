@@ -1,14 +1,34 @@
+# Approximate token count: 1 token ≈ 4 chars for English/code text.
+_CHARS_PER_TOKEN = 4
+
+# Reserve budget for system prompt + tools + conversation + output.
+_SYSTEM_RESERVE_TOKENS = 1500
+_TOOLS_RESERVE_TOKENS = 800
+_CONVERSATION_RESERVE_TOKENS = 2000
+_OUTPUT_RESERVE_TOKENS = 1024
+
+
 class ContextBuilder:
 
     def __init__(
         self,
-        max_chars: int = 12000,
+        model_context_tokens: int = 8192,
         max_results: int = 5,
         score_threshold: float = 0.25,
         max_chunks_per_file: int = 2,
         max_chunk_chars: int = 3000,
     ):
-        self.max_chars = max_chars
+        # Token-aware budget: subtract all reserved slots.
+        reserved = (
+            _SYSTEM_RESERVE_TOKENS
+            + _TOOLS_RESERVE_TOKENS
+            + _CONVERSATION_RESERVE_TOKENS
+            + _OUTPUT_RESERVE_TOKENS
+        ) * _CHARS_PER_TOKEN
+        self.max_chars = max(
+            2000,
+            model_context_tokens * _CHARS_PER_TOKEN - reserved,
+        )
         self.max_results = max_results
         self.score_threshold = score_threshold
         self.max_chunks_per_file = max_chunks_per_file

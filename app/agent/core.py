@@ -7,7 +7,12 @@ from rich.console import Console
 
 from app.agent.state import AgentState
 from app.agent.context import ContextBuilder
-from app.agent.verifier import verify_evidence_citations, verify_tool_result
+from app.agent.verifier import (
+    verify_evidence_citations,
+    verify_tool_result,
+    validate_mentioned_paths,
+    detect_fake_narration,
+)
 from app.indexer.search import search
 from app.llm.client import LLMClient
 from app.tools.registry import TOOLS, FUNCTIONS
@@ -381,6 +386,20 @@ def _repository_context_message(search_context: str) -> str:
     )
 
 
+_STRICT_EVIDENCE_PROMPT = (
+    "Your previous answer could not be verified. "
+    "You MUST answer ONLY using the repository context provided. "
+    "Every file path you mention must exist in the EVIDENCE sections above. "
+    "If the context does not contain enough information, respond with exactly: "
+    "'OwA could not verify this in the repository.'"
+)
+
+_REFUSE_MESSAGE = (
+    "OwA could not verify this answer in the repository. "
+    "The retrieved context does not contain sufficient evidence to answer confidently."
+)
+
+
 class Agent:
 
     def __init__(self):
@@ -470,17 +489,54 @@ class Agent:
         if not retrieval_task:
             return content
 
-        verification = verify_evidence_citations(
+        # Priority 4: strip fake tool narration before showing to user.
+        narration_check = detect_fake_narration(content)
+        if not narration_check.passed:
+            # Retry once with a stricter prompt.
+            content = self._retry_with_strict_prompt(content)
+
+        # Priority 2: validate that mentioned file paths actually exist.
+        path_check = validate_mentioned_paths(content, WORKSPACE)
+        if not path_check.passed:
+            content = self._retry_with_strict_prompt(content)
+            # After retry, re-validate paths.
+            path_check2 = validate_mentioned_paths(content, WORKSPACE)
+            if not path_check2.passed:
+                return _REFUSE_MESSAGE
+
+        # Priority 3: hard citation verification.
+        citation_check = verify_evidence_citations(
             content,
             getattr(self, "_allowed_citations", set()),
             require_citation=bool(getattr(self, "_allowed_citations", set())),
         )
-        if verification.passed:
-            return content
-        return (
-            f"{content}\n\n"
-            f"Client verification: {verification.message}"
+        if not citation_check.passed:
+            content = self._retry_with_strict_prompt(content)
+            # After retry, check again — if still failing, refuse.
+            citation_check2 = verify_evidence_citations(
+                content,
+                getattr(self, "_allowed_citations", set()),
+                require_citation=bool(getattr(self, "_allowed_citations", set())),
+            )
+            if not citation_check2.passed:
+                return _REFUSE_MESSAGE
+
+        return content
+
+    def _retry_with_strict_prompt(self, failed_content: str) -> str:
+        """Retry the last LLM call with a stricter evidence-only prompt."""
+        retry_messages = [
+            m for m in self.messages
+            if not (m["role"] == "assistant" and m.get("content") == failed_content)
+        ]
+        retry_messages.append(
+            {"role": "system", "content": _STRICT_EVIDENCE_PROMPT}
         )
+        try:
+            response = self.llm.chat(messages=retry_messages, tools=[])
+            return response["choices"][0]["message"].get("content") or _REFUSE_MESSAGE
+        except Exception:
+            return _REFUSE_MESSAGE
 
     def _add_verification_note(self, content: str) -> str:
         changed_files = bool(
@@ -508,11 +564,20 @@ class Agent:
         if not unsupported:
             return content
 
-        return (
-            f"{content}\n\n"
-            "Client verification: no matching tool execution was recorded "
-            "for this response, so these claims are not verified."
-        )
+        # Priority 3: retry once, then refuse rather than appending a warning.
+        retried = self._retry_with_strict_prompt(content)
+        retried_unsupported = [
+            word
+            for word, has_evidence in claims.items()
+            if re.search(rf"\bI\s+{word}\b", retried, re.IGNORECASE)
+            and not has_evidence
+        ]
+        if retried_unsupported:
+            return (
+                f"{retried}\n\n"
+                "⚠ OwA could not verify these claims — no matching tool execution was recorded."
+            )
+        return retried
 
     def run(self, user_input: str):
         self.state = AgentState(task=user_input)
@@ -521,7 +586,30 @@ class Agent:
         retrieval_task = task_requires_code_search(user_input)
         git_task = task_requires_git_tools(user_input)
 
-        if retrieval_task and not git_task:
+        # Priority 1: evidence-first — retrieve context before calling LLM
+        # for both read-only repo questions AND action tasks that reference code.
+        needs_evidence = (
+            retrieval_task
+            or (
+                not git_task
+                and not read_only_task
+                and any(
+                    kw in user_input.lower()
+                    for kw in ("implement", "add", "fix", "refactor", "update", "patch")
+                )
+            )
+        )
+
+        if needs_evidence and not git_task:
+            search_context = self._build_search_context(user_input)
+            self.messages.append(
+                {
+                    "role": "system",
+                    "content": _repository_context_message(search_context),
+                }
+            )
+        elif retrieval_task and not git_task:
+            # Fallback: original path kept for safety.
             search_context = self._build_search_context(user_input)
             self.messages.append(
                 {
@@ -730,7 +818,27 @@ class Agent:
             yield _dedup_response(content)
             return
 
-        if retrieval_task:
+        # Priority 1: evidence-first for stream path too.
+        needs_evidence = (
+            retrieval_task
+            or (
+                not task_is_read_only(user_input)
+                and any(
+                    kw in user_input.lower()
+                    for kw in ("implement", "add", "fix", "refactor", "update", "patch")
+                )
+            )
+        )
+
+        if needs_evidence:
+            search_context = self._build_search_context(user_input)
+            self.messages.append(
+                {
+                    "role": "system",
+                    "content": _repository_context_message(search_context),
+                }
+            )
+        elif retrieval_task:
             search_context = self._build_search_context(user_input)
             self.messages.append(
                 {
