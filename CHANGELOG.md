@@ -13,6 +13,13 @@ All notable changes to this project are documented here.
 - Emoji rendering broken with `ornith:9b` — model outputs mojibake, not an OwA bug
 - `agent.stream()` does not handle tool calls — tool activity shown via stderr, final response collected then rendered
 
+## [0.5.2] - 2026-08-31
+
+### Fixed
+
+- Silent blank response when model returns empty stream — `stream()` now falls back to a non-streaming `chat()` call if the stream yields no content.
+- CLI now shows `(no response)` instead of a blank line if both stream and fallback return nothing.
+
 ## [0.5.1] - 2026-08-31
 
 ### Changed

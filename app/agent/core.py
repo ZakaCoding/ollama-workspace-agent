@@ -520,6 +520,17 @@ class Agent:
             yield content
 
         content = "".join(content_parts)
+
+        if not content.strip():
+            # Stream yielded nothing — fall back to non-streaming call
+            try:
+                response = self.llm.chat(messages=self.messages)
+                content = response["choices"][0]["message"].get("content", "") or ""
+            except Exception:
+                content = ""
+            if content:
+                yield content
+
         self.messages.append(
             {
                 "role": "assistant",

@@ -245,7 +245,11 @@ def main(argv=None):
             with Status("[muted]thinking…[/muted]", console=console, spinner="dots"):
                 for chunk in service.chat_stream(message):
                     chunks.append(chunk)
-            console.print(Markdown("".join(chunks)))
+            response = "".join(chunks)
+            if response.strip():
+                console.print(Markdown(response))
+            else:
+                console.print("[muted](no response)[/muted]")
         except Exception as exc:
             console.print(f"\n[error]agent error:[/error] {exc}\n")
 
