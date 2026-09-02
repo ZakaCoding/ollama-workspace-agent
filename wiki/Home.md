@@ -48,7 +48,8 @@ owa
 - [Indexing and Search](Indexing-and-Search.md) — how the local code index works
 - [Safety and Guardrails](Safety-and-Guardrails.md) — workspace isolation and confirmation behavior
 - [Development](Development.md) — contributing, testing, and extending OwA
-- [Research Notes](Research-Notes.md) — open questions and experiments
+- [Research Notes](Research-Notes.md) — open questions, experiments, and live self-run observations
+- [Journey](../JOURNEY.md) — a narrative record of OwA running inside its own repository
 
 ## Design principles
 

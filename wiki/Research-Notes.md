@@ -39,6 +39,21 @@ For every run, preserve:
 - human interventions
 - final outcome and reviewer judgment
 
+## Live self-run narrative
+
+A particularly useful research artifact is the repository's own self-hosted session: running OwA from inside the project and asking it to explain what it is, where it is running, and how the indexing/search loop behaves.
+
+This is documented in [../JOURNEY.md](../JOURNEY.md). It is not a synthetic demo; it is a real end-to-end session in which the agent is both the subject and the tool. The conversation captures a practical local validation loop:
+
+- the agent indexes the repository itself
+- it answers questions about the project using the current workspace as context
+- it explains its capabilities and limitations in plain language
+- it demonstrates context management and search behavior under realistic conditions
+
+This pattern is relevant to research because it gives a reproducible way to study the agent's behavior without needing a separate test harness or cloud environment. It also makes the limitations visible in a way that a scripted benchmark often does not: the agent is being observed in a real, human-centered session.
+
+The main value here is not that the model is "smart" in a broad sense, but that it can operate within a real workspace using only local tooling. That is a meaningful experiment in tool-using coding agents.
+
 ## Current limitations
 
 - There is no formal benchmark suite.
