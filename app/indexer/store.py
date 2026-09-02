@@ -8,6 +8,7 @@ def save_chunk(
     chunk_index: int,
     content: str,
     embedding: list[float],
+    file_hash: str = "",
 ):
     db.execute(
         """
@@ -15,13 +16,15 @@ def save_chunk(
             path,
             chunk_index,
             content,
-            embedding
+            embedding,
+            file_hash
         )
-        VALUES (?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?)
         ON CONFLICT(path, chunk_index)
         DO UPDATE SET
             content = excluded.content,
             embedding = excluded.embedding,
+            file_hash = excluded.file_hash,
             updated_at = CURRENT_TIMESTAMP
         """,
         (
@@ -29,6 +32,7 @@ def save_chunk(
             chunk_index,
             content,
             json.dumps(embedding),
+            file_hash,
         ),
     )
 

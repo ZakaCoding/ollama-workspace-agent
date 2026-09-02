@@ -1,65 +1,68 @@
-from typing import Any
-
-
 class ContextBuilder:
 
-    def build_search_context(
+    def __init__(
         self,
-        results: list[Any],
         max_chars: int = 12000,
-    ) -> str:
+        max_results: int = 5,
+        score_threshold: float = 0.25,
+        max_chunks_per_file: int = 2,
+        max_chunk_chars: int = 3000,
+    ):
+        self.max_chars = max_chars
+        self.max_results = max_results
+        self.score_threshold = score_threshold
+        self.max_chunks_per_file = max_chunks_per_file
+        self.max_chunk_chars = max_chunk_chars
 
+    def build(self, results: list[dict]) -> str:
         if not results:
             return ""
 
         sections = []
-        total = 0
+        used_chars = 0
+        chunks_per_file: dict[str, int] = {}
 
         for result in results:
+            if used_chars >= self.max_chars:
+                break
 
-            if isinstance(result, dict):
-                path = result.get("path", "unknown")
-                content = result.get(
-                    "content",
-                    result.get("text", ""),
-                )
-            else:
-                path = getattr(
-                    result,
-                    "path",
-                    "unknown",
-                )
+            if len(sections) >= self.max_results:
+                break
 
-                content = getattr(
-                    result,
-                    "content",
-                    getattr(result, "text", ""),
-                )
+            score = result.get("score", 0)
+            if score < self.score_threshold:
+                continue
+
+            path = result.get("path", "unknown")
+            if chunks_per_file.get(path, 0) >= self.max_chunks_per_file:
+                continue
+
+            chunk_index = result.get("chunk_index", "?")
+            content = result.get("content", "")
+
+            if len(content) > self.max_chunk_chars:
+                content = content[: self.max_chunk_chars]
 
             section = (
-                f"### {path}\n"
-                f"{content}"
+                f"FILE: {path}\n"
+                f"CHUNK: {chunk_index}\n"
+                f"RELEVANCE: {score:.4f}\n"
+                f"CONTENT:\n{content}\n"
             )
 
-            if total + len(section) > max_chars:
-                remaining = max_chars - total
-
-                if remaining <= 0:
-                    break
-
+            remaining = self.max_chars - used_chars
+            if len(section) > remaining:
                 section = section[:remaining]
 
             sections.append(section)
-            total += len(section)
-
-            if total >= max_chars:
-                break
+            used_chars += len(section)
+            chunks_per_file[path] = chunks_per_file.get(path, 0) + 1
 
         if not sections:
             return ""
 
         return (
-            "The following repository context was "
-            "retrieved from semantic search:\n\n"
-            + "\n\n".join(sections)
+            "REPOSITORY CONTEXT\n"
+            "==================\n\n"
+            + "\n---\n\n".join(sections)
         )

@@ -23,6 +23,7 @@ def initialize(db_path: str | Path):
                 chunk_index INTEGER NOT NULL,
                 content TEXT NOT NULL,
                 embedding BLOB NOT NULL,
+                file_hash TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(path, chunk_index)
@@ -36,5 +37,10 @@ def initialize(db_path: str | Path):
             ON documents(path)
             """
         )
+
+        try:
+            db.execute("ALTER TABLE documents ADD COLUMN file_hash TEXT")
+        except Exception:
+            pass
 
         db.commit()

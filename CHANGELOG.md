@@ -13,6 +13,21 @@ All notable changes to this project are documented here.
 - Emoji rendering broken with `ornith:9b` — model outputs mojibake, not an OwA bug
 - `agent.stream()` does not handle tool calls — tool activity shown via stderr, final response collected then rendered
 
+## [0.5.0] - 2026-08-31
+
+### Added
+
+- **Incremental indexing** — `/index` now skips unchanged files using SHA-256 content hashing. Only modified or new files are re-embedded. Deleted files are automatically removed from the index. Summary shows `N updated, N unchanged` after each run.
+- **Better intent router** — `task_requires_code_search()` now catches a much wider range of retrieval questions: `explain`, `describe`, `find`, `list`, `show`, `search`, `summarize`, `trace`, `walk me through`, and more. Small models are kept out of the tool loop for all of these.
+
+### Changed
+
+- `ContextBuilder` rebuilt for small-model optimization: score threshold (`0.25`) drops irrelevant chunks, per-file cap (`2 chunks`) prevents one file dominating context, per-chunk char cap (`3000`) prevents budget overflow, `max_chars` reduced from `16000` to `12000`.
+- Context retrieval fetches `10` candidates before filtering down to the best `5`, giving the per-file cap room to work.
+- Context system message now injected before the user message with an explicit instruction to answer from context before exploring the filesystem.
+- `ContextBuilder` instantiated once in `Agent.__init__()` instead of per-call.
+- `run` in `EXPLICIT_ACTION_WORDS` — `"Run the test suite"` and similar prompts correctly route to the tool loop instead of retrieval.
+
 ## [0.4.3] - 2026-08-30
 
 ### Added
@@ -42,7 +57,7 @@ All notable changes to this project are documented here.
 
 ### Fixed
 
-- `/model` showed wrong current model on restart — env was not reloaded before reading `LLM_MODEL`.
+- `/model` showed wrong currewnt model on restart — env was not reloaded before reading `LLM_MODEL`.
 - Model switch took effect only after restart — `LLMClient` now reads `LLM_MODEL` from env on every call instead of at init time.
 
 ## [0.4.0] - 2026-08-29

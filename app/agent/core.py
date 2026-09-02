@@ -18,25 +18,25 @@ WORKSPACE = Path.cwd().resolve()
 HISTORY_PATH = WORKSPACE / ".owa" / "history.json"
 
 
-READ_ONLY_PREFIXES = (
+RETRIEVAL_PREFIXES = (
     "where ",
     "what ",
     "how ",
     "which ",
     "why ",
-    "can you explain ",
-    "check ",
-    "inspect ",
+    "explain ",
+    "describe ",
+    "find ",
+    "list ",
     "show ",
-)
-
-
-CODE_QUESTION_PREFIXES = (
-    "where ",
-    "what ",
-    "how ",
-    "which ",
-    "why ",
+    "search ",
+    "look ",
+    "tell me ",
+    "can you explain ",
+    "can you describe ",
+    "summarize ",
+    "trace ",
+    "walk me ",
 )
 
 
@@ -51,26 +51,24 @@ EXPLICIT_ACTION_WORDS = (
     "remove ",
     "update ",
     "write ",
+    "refactor ",
+    "rename ",
+    "move ",
+    "patch ",
+    "run ",
 )
 
 
 def task_is_read_only(task: str) -> bool:
     normalized = task.strip().lower()
-
-    if normalized.startswith(READ_ONLY_PREFIXES):
-        return not any(
-            word in normalized
-            for word in EXPLICIT_ACTION_WORDS
-        )
-
-    return False
+    return not any(word in normalized for word in EXPLICIT_ACTION_WORDS)
 
 
 def task_requires_code_search(task: str) -> bool:
     normalized = task.strip().lower()
-    return task_is_read_only(normalized) and normalized.startswith(
-        CODE_QUESTION_PREFIXES
-    )
+    if any(word in normalized for word in EXPLICIT_ACTION_WORDS):
+        return False
+    return normalized.startswith(RETRIEVAL_PREFIXES)
 
 
 OWA_VERSION = pkg_version("ollama-workspace-agent")
@@ -189,6 +187,7 @@ class Agent:
 
     def __init__(self):
         self.llm = LLMClient()
+        self.context_builder = ContextBuilder()
         self.state = None
         self.messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         self._load_history()
@@ -255,22 +254,14 @@ class Agent:
 
         return valid, invalid
 
-    def _build_search_context(
-        self,
-        task: str,
-    ) -> str:
+    def _build_search_context(self, task: str) -> str:
         index_path = WORKSPACE / ".owa" / "index.db"
 
         if not index_path.exists():
             return ""
 
-        results = search(
-            index_path,
-            task,
-            limit=5,
-        )
-
-        return ContextBuilder().build_search_context(results)
+        results = search(index_path, task, limit=10)
+        return self.context_builder.build(results)
 
     def _add_verification_note(self, content: str) -> str:
         changed_files = bool(
@@ -309,23 +300,28 @@ class Agent:
         read_only_task = task_is_read_only(user_input)
         retrieval_task = task_requires_code_search(user_input)
 
+        if retrieval_task:
+            search_context = self._build_search_context(user_input)
+            if search_context:
+                self.messages.append(
+                    {
+                        "role": "system",
+                        "content": (
+                            "Relevant repository context retrieved by OwA.\n\n"
+                            "Use this context to answer the user's question. "
+                            "Do not explore the filesystem unless the supplied "
+                            "context is insufficient.\n\n"
+                            + search_context
+                        ),
+                    }
+                )
+
         self.messages.append(
             {
                 "role": "user",
                 "content": user_input,
             }
         )
-
-        if retrieval_task:
-            search_context = self._build_search_context(user_input)
-
-            if search_context:
-                self.messages.append(
-                    {
-                        "role": "system",
-                        "content": search_context,
-                    }
-                )
 
         while True:
             self.state.next_iteration()
@@ -494,22 +490,28 @@ class Agent:
         self.state = AgentState(task=user_input)
         retrieval_task = task_requires_code_search(user_input)
 
-        self.messages.append(
-            {
-                "role": "user",
-                "content": user_input,
-            }
-        )
-
         if retrieval_task:
             search_context = self._build_search_context(user_input)
             if search_context:
                 self.messages.append(
                     {
                         "role": "system",
-                        "content": search_context,
+                        "content": (
+                            "Relevant repository context retrieved by OwA.\n\n"
+                            "Use this context to answer the user's question. "
+                            "Do not explore the filesystem unless the supplied "
+                            "context is insufficient.\n\n"
+                            + search_context
+                        ),
                     }
                 )
+
+        self.messages.append(
+            {
+                "role": "user",
+                "content": user_input,
+            }
+        )
 
         content_parts = []
         self._trim_messages()
