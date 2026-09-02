@@ -1,11 +1,12 @@
 import hashlib
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from rich.console import Console
 
 from app.indexer.chunker import chunk_text
 from app.indexer.database import connect, initialize
-from app.indexer.embeddings import embed
+from app.indexer.embeddings import embed_batch
 from app.indexer.store import save_chunk
 
 console = Console(stderr=True)
@@ -132,9 +133,42 @@ def _delete_removed_files(db_path: Path, current_paths: set[str]) -> set[str]:
     return removed
 
 
+def _index_file(
+    file_path: Path,
+    relative_path: str,
+    current_hash: str,
+    db_path: Path,
+) -> str:
+    """Read, chunk, batch-embed, and save one file. Returns relative_path on success."""
+    try:
+        content = file_path.read_text(encoding="utf-8")
+    except (UnicodeDecodeError, OSError):
+        return ""
+
+    chunks = chunk_text(content)
+    if not chunks:
+        return ""
+
+    vectors = embed_batch(chunks)
+
+    with connect(db_path) as db:
+        for index, (chunk, vector) in enumerate(zip(chunks, vectors)):
+            save_chunk(
+                db=db,
+                path=relative_path,
+                chunk_index=index,
+                content=chunk,
+                embedding=vector,
+                file_hash=current_hash,
+            )
+
+    return relative_path
+
+
 def index_project(
     workspace: Path,
     db_path: Path,
+    workers: int = 4,
 ):
     workspace = workspace.resolve()
     first_run = not db_path.exists()
@@ -159,45 +193,46 @@ def index_project(
 
     indexed_hashes = _load_indexed_hashes(db_path)
 
+    pending = []
     skipped = 0
+
+    for file_path in files:
+        relative_path = str(file_path.relative_to(workspace))
+        try:
+            current_hash = _file_hash(file_path)
+        except OSError:
+            continue
+        if indexed_hashes.get(relative_path) == current_hash:
+            skipped += 1
+        else:
+            pending.append((file_path, relative_path, current_hash))
+
     updated = 0
+    failed = 0
 
-    with connect(db_path) as db:
-        for file_path in files:
-            relative_path = str(file_path.relative_to(workspace))
-
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {
+            pool.submit(_index_file, fp, rp, fh, db_path): rp
+            for fp, rp, fh in pending
+        }
+        for future in as_completed(futures):
+            rel = futures[future]
             try:
-                current_hash = _file_hash(file_path)
-            except OSError:
-                continue
+                result = future.result()
+                if result:
+                    console.print(f"[dim]indexed {result}[/dim]")
+                    updated += 1
+                else:
+                    console.print(f"[dim]skip {rel} (unreadable)[/dim]")
+                    failed += 1
+            except Exception as exc:
+                console.print(f"[dim]error {rel}: {exc}[/dim]")
+                failed += 1
 
-            if indexed_hashes.get(relative_path) == current_hash:
-                skipped += 1
-                continue
-
-            try:
-                content = file_path.read_text(encoding="utf-8")
-            except (UnicodeDecodeError, OSError):
-                console.print(f"[dim]skip {relative_path}[/dim]")
-                continue
-
-            chunks = chunk_text(content)
-            console.print(f"[dim]indexing {relative_path} ({len(chunks)} chunks)[/dim]")
-
-            for index, chunk in enumerate(chunks):
-                vector = embed(chunk)
-                save_chunk(
-                    db=db,
-                    path=relative_path,
-                    chunk_index=index,
-                    content=chunk,
-                    embedding=vector,
-                    file_hash=current_hash,
-                )
-
-            updated += 1
-
-    console.print(f"[dim]index complete — {updated} updated, {skipped} unchanged[/dim]")
+    parts = [f"{updated} updated", f"{skipped} unchanged"]
+    if failed:
+        parts.append(f"{failed} failed")
+    console.print(f"[dim]index complete — {', '.join(parts)}[/dim]")
 
     if first_run:
         _ensure_gitignore(workspace)

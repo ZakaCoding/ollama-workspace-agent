@@ -13,6 +13,15 @@ All notable changes to this project are documented here.
 - Emoji rendering broken with `ornith:9b` — model outputs mojibake, not an OwA bug
 - `agent.stream()` does not handle tool calls — tool activity shown via stderr, final response collected then rendered
 
+## [0.5.1] - 2026-08-31
+
+### Changed
+
+- **Parallel embedding** — `/index` now processes files concurrently using a `ThreadPoolExecutor` (4 workers by default). Each file's chunks are sent to Ollama in a single batched `/api/embed` request instead of one HTTP call per chunk. On large repos this reduces index time by 4–8x.
+- `embed_batch()` added to `app/indexer/embeddings.py` — sends a list of texts in one request and returns all vectors.
+- `_index_file()` worker function handles read → chunk → embed_batch → save for one file, enabling safe parallel execution.
+- Index summary now reports `N updated, N unchanged` (and `N failed` if any errors occurred).
+
 ## [0.5.0] - 2026-08-31
 
 ### Added
