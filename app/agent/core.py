@@ -515,9 +515,12 @@ class Agent:
 
         content_parts = []
         self._trim_messages()
-        for content in self.llm.chat_stream(self.messages):
-            content_parts.append(content)
-            yield content
+        try:
+            for content in self.llm.chat_stream(self.messages):
+                content_parts.append(content)
+                yield content
+        except Exception:
+            pass
 
         content = "".join(content_parts)
 

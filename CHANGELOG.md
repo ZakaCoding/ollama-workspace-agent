@@ -13,7 +13,14 @@ All notable changes to this project are documented here.
 - Emoji rendering broken with `ornith:9b` — model outputs mojibake, not an OwA bug
 - `agent.stream()` does not handle tool calls — tool activity shown via stderr, final response collected then rendered
 
-## [0.5.2] - 2026-08-31
+## [0.5.3] - 2026-08-31
+
+### Fixed
+
+- Response cuts off mid-sentence — `chat_stream` timeout changed from a flat `300s` to `(10s connect, 60s read)`. The read timeout bounds per-chunk idle time so a slow or stalled Ollama generation raises `ReadTimeout` instead of hanging or silently dropping the connection.
+- Stream iteration now wrapped in `try/except` — a `ReadTimeout` or dropped connection mid-stream falls through to the non-streaming fallback added in 0.5.2, recovering a complete response.
+- `finish_reason` other than `stop` (e.g. `tool_calls`, `length`) now causes the stream to exit early and trigger the fallback instead of returning partial content.
+
 
 ### Fixed
 

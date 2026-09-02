@@ -45,7 +45,7 @@ class LLMClient:
         response = self.session.post(
             f"{self.base_url}/chat/completions",
             json=payload,
-            timeout=300,
+            timeout=(10, 60),
             stream=True,
         )
         response.raise_for_status()
@@ -68,6 +68,13 @@ class LLMClient:
                 continue
 
             delta = choices[0].get("delta", {})
+
+            finish_reason = choices[0].get("finish_reason")
+            if finish_reason and finish_reason != "stop":
+                # Model stopped for a non-content reason (tool_call, length, etc.)
+                # Signal empty so caller can fall back to non-streaming
+                return
+
             content = delta.get("content")
             if content:
                 yield content
