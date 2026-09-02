@@ -17,9 +17,9 @@ All notable changes to this project are documented here.
 
 ### Fixed
 
-- Model hallucination on ambiguous short inputs (e.g. `"yes please"`, `"ok"`, `"sure"`) — these now bypass the tool loop entirely and are treated as conversational continuations. Previously they entered `run()` with full tools available, causing small models to invent fictional agentic sessions.
-- Iteration limit now returns gracefully — `RuntimeError` from `state.next_iteration()` is caught in `run()` and returned as a message instead of crashing the CLI.
-- Added `task_is_conversational()` — detects inputs of 3 words or fewer with no action words and no retrieval prefix, plus an explicit set of common conversational phrases.
+- Model hallucination on ambiguous short inputs (`"yes please"`, `"ok"`, `"sure"`, etc.) — these now stay in `stream()` and retry the stream once on empty response. They never reach `run()` or the tool loop.
+- Iteration limit `RuntimeError` from `state.next_iteration()` is now caught in `run()` and returned as a message instead of crashing.
+- `task_is_conversational()` added — detects inputs of 3 words or fewer with no action words/retrieval prefix, plus an explicit set of common phrases. Checked in `stream()` before any fallback decision.
 
 
 ### Fixed

@@ -320,10 +320,6 @@ class Agent:
         read_only_task = task_is_read_only(user_input)
         retrieval_task = task_requires_code_search(user_input)
 
-        # Short conversational inputs should not enter the tool loop
-        if task_is_conversational(user_input):
-            retrieval_task = False
-            read_only_task = True
         if retrieval_task:
             search_context = self._build_search_context(user_input)
             if search_context:
@@ -554,15 +550,26 @@ class Agent:
         content = "".join(content_parts)
 
         if not content.strip():
-            # Stream yielded nothing — restore messages and delegate to run()
-            # which has the full tool loop
-            self.messages = self.messages[:messages_snapshot]
-            try:
-                content = self.run(user_input) or ""
-            except Exception:
-                content = ""
-            if content:
-                yield content
+            if task_is_conversational(user_input):
+                # For conversational inputs, retry stream once — never enter tool loop
+                try:
+                    retry_parts = []
+                    for chunk in self.llm.chat_stream(self.messages):
+                        retry_parts.append(chunk)
+                    content = "".join(retry_parts)
+                except Exception:
+                    content = ""
+                if content:
+                    yield content
+            else:
+                # Non-conversational: restore messages and delegate to run() with tool loop
+                self.messages = self.messages[:messages_snapshot]
+                try:
+                    content = self.run(user_input) or ""
+                except Exception:
+                    content = ""
+                if content:
+                    yield content
             return
 
         self.messages.append(
