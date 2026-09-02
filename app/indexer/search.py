@@ -39,6 +39,37 @@ def keyword_similarity(query: str, content: str) -> float:
     return len(query_terms & content_terms) / len(query_terms)
 
 
+def _fts_query(query: str) -> str:
+    terms = re.findall(r"[a-z0-9_]+", query.lower())
+    return " OR ".join(f'"{term}"' for term in terms)
+
+
+def _fts_scores(db: sqlite3.Connection, query: str) -> dict[int, float]:
+    match_query = _fts_query(query)
+    if not match_query:
+        return {}
+
+    rows = db.execute(
+        """
+        SELECT rowid, bm25(documents_fts)
+        FROM documents_fts
+        WHERE documents_fts MATCH ?
+        ORDER BY bm25(documents_fts)
+        """,
+        (match_query,),
+    ).fetchall()
+    if not rows:
+        return {}
+
+    best = min(row[1] for row in rows)
+    worst = max(row[1] for row in rows)
+    spread = worst - best
+    return {
+        rowid: 1.0 if spread == 0 else (worst - rank) / spread
+        for rowid, rank in rows
+    }
+
+
 def search(
     db_path: str | Path,
     query: str,
@@ -64,6 +95,7 @@ def search(
         """
     ).fetchall()
 
+    fts_scores = _fts_scores(db, query)
     db.close()
 
     results = []
@@ -78,13 +110,18 @@ def search(
 
         vector = json.loads(embedding_json)
 
-        if query_vector is None:
-            score = keyword_similarity(query, content)
-        else:
-            score = cosine_similarity(
-                query_vector,
-                vector,
-            )
+        keyword_score = keyword_similarity(query, content)
+        semantic_score = (
+            0.0
+            if query_vector is None
+            else cosine_similarity(query_vector, vector)
+        )
+        lexical_score = fts_scores.get(document_id, keyword_score)
+        score = (
+            0.55 * semantic_score
+            + 0.30 * lexical_score
+            + 0.15 * keyword_score
+        )
 
         results.append(
             {
@@ -93,6 +130,9 @@ def search(
                 "chunk_index": chunk_index,
                 "content": content,
                 "score": score,
+                "semantic_score": semantic_score,
+                "lexical_score": lexical_score,
+                "keyword_score": keyword_score,
             }
         )
 

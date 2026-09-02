@@ -1,4 +1,6 @@
-from app.llm.client import LLMClient
+import pytest
+
+from app.llm.client import IncompleteStreamError, LLMClient
 
 
 class FakeResponse:
@@ -32,3 +34,78 @@ def test_chat_stream_parses_openai_compatible_chunks():
     ]
     assert client.session.kwargs["stream"] is True
     assert client.session.kwargs["json"]["stream"] is True
+
+
+def test_chat_stream_rejects_non_terminal_finish_reason():
+    class TruncatedResponse(FakeResponse):
+        def iter_lines(self, decode_unicode=True):
+            return [
+                'data: {"choices":[{"delta":{"content":"partial"},"finish_reason":"length"}]}',
+            ]
+
+    class TruncatedSession(FakeSession):
+        def post(self, *args, **kwargs):
+            self.args = args
+            self.kwargs = kwargs
+            return TruncatedResponse()
+
+    client = LLMClient()
+    client.session = TruncatedSession()
+
+    with pytest.raises(IncompleteStreamError):
+        list(client.chat_stream([{"role": "user", "content": "hi"}]))
+
+
+def test_agent_discards_partial_stream_before_fallback(monkeypatch):
+    from app.agent.core import Agent
+
+    class FailingStreamLLM:
+        def chat_stream(self, _messages):
+            yield "partial"
+            raise IncompleteStreamError("truncated")
+
+        def chat(self, messages, tools=None):
+            return {
+                "choices": [
+                    {"message": {"content": "complete response"}}
+                ]
+            }
+
+    agent = Agent()
+    agent.llm = FailingStreamLLM()
+    monkeypatch.setattr(agent, "_build_search_context", lambda _task: "")
+
+    assert list(agent.stream("Explain this behavior")) == ["complete response"]
+
+
+def test_agent_yields_complete_stream_response(monkeypatch):
+    from app.agent.core import Agent
+
+    class CompleteStreamLLM:
+        def chat_stream(self, _messages):
+            yield "complete "
+            yield "stream"
+
+    agent = Agent()
+    agent.llm = CompleteStreamLLM()
+    monkeypatch.setattr(agent, "_build_search_context", lambda _task: "")
+
+    assert list(agent.stream("Explain this behavior")) == ["complete stream"]
+
+
+def test_agent_reports_empty_response_instead_of_silence(monkeypatch):
+    from app.agent.core import Agent, NO_RESPONSE_MESSAGE
+
+    class EmptyLLM:
+        def chat_stream(self, _messages):
+            return
+            yield
+
+        def chat(self, _messages, tools=None):
+            return {"choices": [{"message": {"content": ""}}]}
+
+    agent = Agent()
+    agent.llm = EmptyLLM()
+    monkeypatch.setattr(agent, "_build_search_context", lambda _task: "")
+
+    assert list(agent.stream("Explain this behavior")) == [NO_RESPONSE_MESSAGE]

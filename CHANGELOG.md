@@ -4,6 +4,20 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.5.6] - 2026-09-02
+
+### Added
+
+- Hybrid repository retrieval combining SQLite FTS5, embeddings, and keyword overlap.
+- FTS5 index synchronization for document inserts, updates, and deletes.
+
+### Fixed
+
+- Repository-grounded questions now stay in an evidence-only path and do not receive filesystem tools.
+- Missing repository evidence now produces an explicit, concise unverified response instead of invented architecture.
+- Incomplete model streams are discarded so truncated output can be replaced by a complete fallback response.
+- Successful streamed responses are emitted correctly, and empty responses now return a visible retry message.
+
 ### Planned
 
 - **Multi-model support** — auto-route tasks to different models based on intent

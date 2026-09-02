@@ -4,6 +4,10 @@ import os
 import requests
 
 
+class IncompleteStreamError(RuntimeError):
+    """Raised when Ollama ends a stream without a complete response."""
+
+
 class LLMClient:
     def __init__(self):
         self.base_url = os.getenv(
@@ -49,6 +53,9 @@ class LLMClient:
             stream=True,
         )
         response.raise_for_status()
+        response.encoding = "utf-8"
+
+        completed = False
 
         for line in response.iter_lines(decode_unicode=True):
             if not line or not line.startswith("data:"):
@@ -56,6 +63,7 @@ class LLMClient:
 
             data = line[5:].strip()
             if data == "[DONE]":
+                completed = True
                 break
 
             try:
@@ -71,10 +79,13 @@ class LLMClient:
 
             finish_reason = choices[0].get("finish_reason")
             if finish_reason and finish_reason != "stop":
-                # Model stopped for a non-content reason (tool_call, length, etc.)
-                # Signal empty so caller can fall back to non-streaming
-                return
+                raise IncompleteStreamError(
+                    f"Model stream ended with finish reason: {finish_reason}"
+                )
 
             content = delta.get("content")
             if content:
                 yield content
+
+        if not completed:
+            raise IncompleteStreamError("Model stream ended before [DONE].")

@@ -13,14 +13,22 @@ from app.llm.client import LLMClient
 from app.tools.registry import TOOLS, FUNCTIONS
 
 console = Console(stderr=True)
+NO_RESPONSE_MESSAGE = "I couldn't produce a response. Please try again."
 
 WORKSPACE = Path.cwd().resolve()
 HISTORY_PATH = WORKSPACE / ".owa" / "history.json"
 
 
 RETRIEVAL_PREFIXES = (
+    "according to ",
+    "based on this repository",
+    "based on the repository",
+    "in this repository",
+    "in the repository",
+    "from this repository",
     "where ",
     "what ",
+    "what's ",
     "how ",
     "which ",
     "why ",
@@ -37,6 +45,12 @@ RETRIEVAL_PREFIXES = (
     "summarize ",
     "trace ",
     "walk me ",
+    "last ",
+    "latest ",
+    "recent ",
+    "is there ",
+    "does ",
+    "do ",
 )
 
 
@@ -79,6 +93,21 @@ def task_is_conversational(task: str) -> bool:
     return False
 
 
+def _dedup_response(text: str) -> str:
+    """Truncate model output that contains repeated sentences (loop detection)."""
+    sentences = re.split(r"(?<=[.!?])\s+", text.strip())
+    seen: dict[str, int] = {}
+    for i, s in enumerate(sentences):
+        key = s.strip().lower()
+        if not key:
+            continue
+        if key in seen:
+            # Second occurrence — truncate here
+            return " ".join(sentences[: seen[key] + 1]).strip()
+        seen[key] = i
+    return text
+
+
 def task_is_read_only(task: str) -> bool:
     normalized = task.strip().lower()
     return not any(word in normalized for word in EXPLICIT_ACTION_WORDS)
@@ -88,7 +117,12 @@ def task_requires_code_search(task: str) -> bool:
     normalized = task.strip().lower()
     if any(word in normalized for word in EXPLICIT_ACTION_WORDS):
         return False
-    return normalized.startswith(RETRIEVAL_PREFIXES)
+    if normalized.startswith(RETRIEVAL_PREFIXES):
+        return True
+    return (
+        "repository" in normalized
+        and normalized.endswith("?")
+    )
 
 
 OWA_VERSION = pkg_version("ollama-workspace-agent")
@@ -201,6 +235,28 @@ Treat an explicit request to modify files as the boundary that permits
 write tools. Do not infer permission to edit from a question or from a
 discovered issue.
 """
+
+
+def _repository_context_message(search_context: str) -> str:
+    if search_context:
+        return (
+            "Relevant repository context retrieved by OwA.\n\n"
+            "Answer only with claims directly supported by this context. "
+            "If the context does not mention the requested subject, say that "
+            "OwA could not verify it in this repository. Do not infer that a "
+            "technology, file, or architecture exists from the user's wording. "
+            "Do not explore the filesystem or use tools for this read-only "
+            "repository question.\n\n"
+            + search_context
+        )
+
+    return (
+        "No relevant repository evidence was found for this question.\n\n"
+        "This is a read-only repository question. Do not use tools or invent "
+            "files, technologies, dependencies, or architecture. Reply in one "
+            "short sentence saying that OwA could not verify the requested subject "
+            "in this repository."
+    )
 
 
 class Agent:
@@ -322,19 +378,12 @@ class Agent:
 
         if retrieval_task:
             search_context = self._build_search_context(user_input)
-            if search_context:
-                self.messages.append(
-                    {
-                        "role": "system",
-                        "content": (
-                            "Relevant repository context retrieved by OwA.\n\n"
-                            "Use this context to answer the user's question. "
-                            "Do not explore the filesystem unless the supplied "
-                            "context is insufficient.\n\n"
-                            + search_context
-                        ),
-                    }
-                )
+            self.messages.append(
+                {
+                    "role": "system",
+                    "content": _repository_context_message(search_context),
+                }
+            )
 
         self.messages.append(
             {
@@ -413,7 +462,7 @@ class Agent:
                     "content",
                     "",
                 )
-                content = self._add_verification_note(content)
+                content = _dedup_response(self._add_verification_note(content))
 
                 self.messages.append(
                     {
@@ -517,19 +566,12 @@ class Agent:
 
         if retrieval_task:
             search_context = self._build_search_context(user_input)
-            if search_context:
-                self.messages.append(
-                    {
-                        "role": "system",
-                        "content": (
-                            "Relevant repository context retrieved by OwA.\n\n"
-                            "Use this context to answer the user's question. "
-                            "Do not explore the filesystem unless the supplied "
-                            "context is insufficient.\n\n"
-                            + search_context
-                        ),
-                    }
-                )
+            self.messages.append(
+                {
+                    "role": "system",
+                    "content": _repository_context_message(search_context),
+                }
+            )
 
         self.messages.append(
             {
@@ -543,9 +585,10 @@ class Agent:
         try:
             for content in self.llm.chat_stream(self.messages):
                 content_parts.append(content)
-                yield content
         except Exception:
-            pass
+            # Partial output cannot be shown safely because the fallback may
+            # replace it with a complete non-streaming response.
+            content_parts = []
 
         content = "".join(content_parts)
 
@@ -561,6 +604,8 @@ class Agent:
                     content = ""
                 if content:
                     yield content
+                else:
+                    yield NO_RESPONSE_MESSAGE
             else:
                 # Non-conversational: restore messages and delegate to run() with tool loop
                 self.messages = self.messages[:messages_snapshot]
@@ -569,13 +614,17 @@ class Agent:
                 except Exception:
                     content = ""
                 if content:
-                    yield content
+                    yield _dedup_response(content)
+                else:
+                    yield NO_RESPONSE_MESSAGE
             return
+
+        yield _dedup_response(content)
 
         self.messages.append(
             {
                 "role": "assistant",
-                "content": self._add_verification_note(content),
+                "content": _dedup_response(self._add_verification_note(content)),
             }
         )
         self.state.completed = True

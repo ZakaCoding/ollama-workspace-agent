@@ -48,12 +48,38 @@ def test_code_questions_require_search_then_file_verification():
     assert not task_requires_code_search("Implement the search policy")
 
 
+def test_repository_phrasing_requires_search_and_disables_tools():
+    assert task_requires_code_search(
+        "According to this repository, what is the Redis caching architecture?"
+    )
+
+
 def test_system_prompt_requires_retrieved_context_and_read_only_questions():
     assert "client retrieves relevant repository" in SYSTEM_PROMPT
     assert "semantic search -> context builder -> answer" in SYSTEM_PROMPT
     assert "DO NOT write files" in SYSTEM_PROMPT
     assert "DO NOT fix anything unless explicitly requested." in SYSTEM_PROMPT
     assert "DO NOT create tests unless explicitly requested." in SYSTEM_PROMPT
+
+
+def test_missing_repository_evidence_forbids_invention_and_tools():
+    from app.agent.core import _repository_context_message
+
+    message = _repository_context_message("")
+
+    assert "No relevant repository evidence was found" in message
+    assert "Do not use tools or invent" in message
+    assert "could not verify" in message
+
+
+def test_repository_context_requires_explicit_evidence():
+    from app.agent.core import _repository_context_message
+
+    message = _repository_context_message("FILE: app/api.py\nCONTENT: FastAPI app")
+
+    assert "directly supported by this context" in message
+    assert "could not verify it" in message
+    assert "Do not explore the filesystem" in message
 
 
 def test_tool_descriptions_prioritize_search_and_protect_writes():

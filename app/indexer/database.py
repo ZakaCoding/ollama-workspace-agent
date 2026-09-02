@@ -38,6 +38,46 @@ def initialize(db_path: str | Path):
             """
         )
 
+        db.execute(
+            """
+            CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
+                path,
+                content,
+                content='documents',
+                content_rowid='id'
+            )
+            """
+        )
+
+        db.executescript(
+            """
+            CREATE TRIGGER IF NOT EXISTS documents_fts_insert
+            AFTER INSERT ON documents
+            BEGIN
+                INSERT INTO documents_fts(rowid, path, content)
+                VALUES (new.id, new.path, new.content);
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS documents_fts_delete
+            AFTER DELETE ON documents
+            BEGIN
+                INSERT INTO documents_fts(documents_fts, rowid, path, content)
+                VALUES ('delete', old.id, old.path, old.content);
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS documents_fts_update
+            AFTER UPDATE OF path, content ON documents
+            BEGIN
+                INSERT INTO documents_fts(documents_fts, rowid, path, content)
+                VALUES ('delete', old.id, old.path, old.content);
+                INSERT INTO documents_fts(rowid, path, content)
+                VALUES (new.id, new.path, new.content);
+            END;
+            """
+        )
+
+        db.execute("INSERT INTO documents_fts(documents_fts) VALUES ('rebuild')")
+
         try:
             db.execute("ALTER TABLE documents ADD COLUMN file_hash TEXT")
         except Exception:
