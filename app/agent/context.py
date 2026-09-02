@@ -44,9 +44,11 @@ class ContextBuilder:
                 content = content[: self.max_chunk_chars]
 
             section = (
+                f"EVIDENCE: [{path}#chunk={chunk_index}]\n"
                 f"FILE: {path}\n"
                 f"CHUNK: {chunk_index}\n"
                 f"RELEVANCE: {score:.4f}\n"
+                f"CITE THIS EVIDENCE AS: [{path}#chunk={chunk_index}]\n"
                 f"CONTENT:\n{content}\n"
             )
 

@@ -5,8 +5,13 @@ import pytest
 from app.agent.core import (
     SYSTEM_PROMPT,
     WORKSPACE,
+    _tools_for_task,
+    task_is_changelog_request,
+    task_is_commit_message_request,
+    task_is_resume_request,
     task_is_read_only,
     task_requires_code_search,
+    task_requires_git_tools,
 )
 from app.agent.state import AgentState
 from app.tools.filesystem import resolve_path
@@ -54,6 +59,62 @@ def test_repository_phrasing_requires_search_and_disables_tools():
     )
 
 
+def test_git_history_questions_use_git_tools():
+    assert task_requires_git_tools(
+        "what ever. can u check, last commit? what is new of this project/repo?"
+    )
+    assert task_requires_git_tools("show the latest commit")
+
+
+def test_changelog_and_resume_requests_have_dedicated_intents():
+    assert task_is_changelog_request("update CHANGELOG from the diff")
+    assert task_is_resume_request("resume from git diff")
+    assert task_requires_git_tools("update CHANGELOG from the diff")
+    assert task_is_commit_message_request("create a commit message")
+
+
+def test_git_history_routing_exposes_git_tools_without_filesystem_tools():
+    names = {
+        tool["function"]["name"]
+        for tool in _tools_for_task(True, True, "show the latest commit")
+    }
+
+    assert names == {"git_status", "git_diff", "git_log"}
+
+
+def test_mixed_git_and_code_question_exposes_search_tools():
+    names = {
+        tool["function"]["name"]
+        for tool in _tools_for_task(
+            True,
+            True,
+            "what changed in the implementation of the search architecture?",
+        )
+    }
+
+    assert "git_log" in names
+    assert "search_code" in names
+    assert "read_file" in names
+
+
+def test_changelog_update_allows_only_changelog_patch_tools():
+    names = {
+        tool["function"]["name"]
+        for tool in _tools_for_task(True, False, "update CHANGELOG")
+    }
+
+    assert names == {"git_status", "git_diff", "git_log", "read_file", "patch_file"}
+
+
+def test_resume_workflow_allows_relevant_read_tools():
+    names = {
+        tool["function"]["name"]
+        for tool in _tools_for_task(True, False, "resume from git diff")
+    }
+
+    assert names == {"git_status", "git_diff", "git_log", "read_file", "search_code"}
+
+
 def test_system_prompt_requires_retrieved_context_and_read_only_questions():
     assert "client retrieves relevant repository" in SYSTEM_PROMPT
     assert "semantic search -> context builder -> answer" in SYSTEM_PROMPT
@@ -80,6 +141,39 @@ def test_repository_context_requires_explicit_evidence():
     assert "directly supported by this context" in message
     assert "could not verify it" in message
     assert "Do not explore the filesystem" in message
+
+
+def test_evidence_verifier_requires_supported_citations():
+    from app.agent.verifier import verify_evidence_citations
+
+    supported = verify_evidence_citations(
+        "The router is here [app/router.py#chunk=0].",
+        {"app/router.py#chunk=0"},
+        require_citation=True,
+    )
+    unsupported = verify_evidence_citations(
+        "Redis is configured here [config.py#chunk=2].",
+        {"app/router.py#chunk=0"},
+        require_citation=True,
+    )
+
+    assert supported.passed
+    assert not unsupported.passed
+
+
+def test_context_builder_emits_stable_citations():
+    from app.agent.context import ContextBuilder
+
+    context = ContextBuilder().build(
+        [{
+            "path": "app/router.py",
+            "chunk_index": 0,
+            "score": 0.9,
+            "content": "def route_request(): pass",
+        }]
+    )
+
+    assert "[app/router.py#chunk=0]" in context
 
 
 def test_tool_descriptions_prioritize_search_and_protect_writes():

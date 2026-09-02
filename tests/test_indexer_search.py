@@ -3,6 +3,7 @@ import sqlite3
 from app.indexer.database import initialize
 from app.indexer.search import search
 from app.indexer.store import save_chunk
+from app.indexer.reranker import rerank
 
 
 def test_search_combines_embedding_and_exact_term_relevance(tmp_path, monkeypatch):
@@ -39,3 +40,16 @@ def test_database_fts_index_tracks_updates_and_deletes(tmp_path):
         assert db.execute(
             "SELECT COUNT(*) FROM documents_fts WHERE documents_fts MATCH 'new_symbol'"
         ).fetchone()[0] == 0
+
+
+def test_local_reranker_prefers_exact_phrase_over_semantic_score():
+    results = rerank(
+        "route_request",
+        [
+            {"path": "app/other.py", "content": "route handling", "score": 0.95},
+            {"path": "app/router.py", "content": "def route_request(): pass", "score": 0.80},
+        ],
+        limit=2,
+    )
+
+    assert results[0]["path"] == "app/router.py"

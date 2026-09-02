@@ -7,6 +7,7 @@ from pathlib import Path
 import httpx
 
 from app.indexer.embeddings import embed
+from app.indexer.reranker import rerank
 
 
 def cosine_similarity(
@@ -136,9 +137,4 @@ def search(
             }
         )
 
-    results.sort(
-        key=lambda item: item["score"],
-        reverse=True,
-    )
-
-    return results[:limit]
+    return rerank(query, results, limit)

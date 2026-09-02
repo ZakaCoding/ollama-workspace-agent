@@ -7,7 +7,7 @@ from rich.console import Console
 
 from app.agent.state import AgentState
 from app.agent.context import ContextBuilder
-from app.agent.verifier import verify_tool_result
+from app.agent.verifier import verify_evidence_citations, verify_tool_result
 from app.indexer.search import search
 from app.llm.client import LLMClient
 from app.tools.registry import TOOLS, FUNCTIONS
@@ -73,6 +73,37 @@ EXPLICIT_ACTION_WORDS = (
 )
 
 
+GIT_INTENT_PHRASES = (
+    "last commit",
+    "latest commit",
+    "recent commit",
+    "commit history",
+    "recent changes",
+    "what changed",
+    "what is new",
+    "what's new",
+    "git status",
+    "git diff",
+    "release changes",
+    "branch",
+)
+
+
+RESUME_INTENT_PHRASES = (
+    "resume from git diff",
+    "resume from the git diff",
+    "continue from git diff",
+    "continue previous work",
+    "what was i working on",
+)
+
+
+COMMIT_MESSAGE_PHRASES = (
+    "commit message",
+    "commit messages",
+)
+
+
 CONVERSATIONAL_INPUTS = {
     "yes", "no", "ok", "okay", "sure", "thanks", "thank you",
     "yes please", "no thanks", "got it", "lol", "haha", "nice",
@@ -113,6 +144,31 @@ def task_is_read_only(task: str) -> bool:
     return not any(word in normalized for word in EXPLICIT_ACTION_WORDS)
 
 
+def task_requires_git_tools(task: str) -> bool:
+    normalized = " ".join(task.strip().lower().split())
+    return (
+        any(phrase in normalized for phrase in GIT_INTENT_PHRASES)
+        or task_is_resume_request(task)
+        or task_is_changelog_request(task)
+        or task_is_commit_message_request(task)
+    )
+
+
+def task_is_resume_request(task: str) -> bool:
+    normalized = " ".join(task.strip().lower().split())
+    return any(phrase in normalized for phrase in RESUME_INTENT_PHRASES)
+
+
+def task_is_changelog_request(task: str) -> bool:
+    normalized = " ".join(task.strip().lower().split())
+    return "changelog" in normalized or "change log" in normalized
+
+
+def task_is_commit_message_request(task: str) -> bool:
+    normalized = " ".join(task.strip().lower().split())
+    return any(phrase in normalized for phrase in COMMIT_MESSAGE_PHRASES)
+
+
 def task_requires_code_search(task: str) -> bool:
     normalized = task.strip().lower()
     if any(word in normalized for word in EXPLICIT_ACTION_WORDS):
@@ -123,6 +179,72 @@ def task_requires_code_search(task: str) -> bool:
         "repository" in normalized
         and normalized.endswith("?")
     )
+
+
+def _tools_for_task(
+    git_task: bool,
+    retrieval_task: bool,
+    task: str = "",
+):
+    if not git_task:
+        return [] if retrieval_task else TOOLS
+
+    git_names = {"git_status", "git_diff", "git_log"}
+    normalized = " ".join(task.strip().lower().split())
+    changelog_task = task_is_changelog_request(task)
+    resume_task = task_is_resume_request(task)
+    commit_message_task = task_is_commit_message_request(task)
+    if changelog_task:
+        git_names.add("read_file")
+        if any(word in normalized for word in ("update", "add", "edit", "change", "patch")):
+            git_names.add("patch_file")
+    elif resume_task:
+        git_names.update({"read_file", "search_code"})
+    elif commit_message_task:
+        git_names.add("read_file")
+    mixed_search = retrieval_task and any(
+        marker in normalized
+        for marker in (
+            "implemented",
+            "implementation",
+            "how does",
+            "where is",
+            "which file",
+            "architecture",
+        )
+    )
+    if mixed_search:
+        git_names.update({"search_code", "read_file"})
+    return [
+        tool for tool in TOOLS
+        if tool["function"]["name"] in git_names
+    ]
+
+
+def _workflow_message(task: str) -> str:
+    if task_is_changelog_request(task):
+        return (
+            "CHANGELOG WORKFLOW: inspect CHANGELOG.md and the relevant Git "
+            "status/diff/log first. Only discuss or modify CHANGELOG.md. "
+            "Do not create or modify Ollama configuration, files outside the "
+            "workspace, or unrelated files. If the user asks only for a "
+            "message or suggestion, do not patch anything."
+        )
+    if task_is_resume_request(task):
+        return (
+            "RESUME WORKFLOW: inspect Git status, diff, recent log, and only "
+            "the relevant files. Conclude with current state, what changed, "
+            "what remains, and the next verified step. Never claim a command "
+            "ran unless its tool result shows it."
+        )
+    if task_is_commit_message_request(task):
+        return (
+            "COMMIT MESSAGE WORKFLOW: inspect Git status, diff, and recent log "
+            "before drafting a message. Return a commit message only. Do not "
+            "run git add, git commit, or any write command. A positive reply "
+            "such as 'yes please' is not commit authorization."
+        )
+    return ""
 
 
 OWA_VERSION = pkg_version("ollama-workspace-agent")
@@ -334,10 +456,31 @@ class Agent:
         index_path = WORKSPACE / ".owa" / "index.db"
 
         if not index_path.exists():
+            self._allowed_citations = set()
             return ""
 
         results = search(index_path, task, limit=10)
+        self._allowed_citations = {
+            f"{result.get('path', 'unknown')}#chunk={result.get('chunk_index', '?')}"
+            for result in results
+        }
         return self.context_builder.build(results)
+
+    def _verify_answer(self, content: str, retrieval_task: bool) -> str:
+        if not retrieval_task:
+            return content
+
+        verification = verify_evidence_citations(
+            content,
+            getattr(self, "_allowed_citations", set()),
+            require_citation=bool(getattr(self, "_allowed_citations", set())),
+        )
+        if verification.passed:
+            return content
+        return (
+            f"{content}\n\n"
+            f"Client verification: {verification.message}"
+        )
 
     def _add_verification_note(self, content: str) -> str:
         changed_files = bool(
@@ -358,7 +501,7 @@ class Agent:
         unsupported = [
             word
             for word, has_evidence in claims.items()
-            if re.search(rf"\b{word}\b", content, re.IGNORECASE)
+            if re.search(rf"\bI\s+{word}\b", content, re.IGNORECASE)
             and not has_evidence
         ]
 
@@ -373,10 +516,12 @@ class Agent:
 
     def run(self, user_input: str):
         self.state = AgentState(task=user_input)
+        self._allowed_citations = set()
         read_only_task = task_is_read_only(user_input)
         retrieval_task = task_requires_code_search(user_input)
+        git_task = task_requires_git_tools(user_input)
 
-        if retrieval_task:
+        if retrieval_task and not git_task:
             search_context = self._build_search_context(user_input)
             self.messages.append(
                 {
@@ -391,6 +536,11 @@ class Agent:
                 "content": user_input,
             }
         )
+        workflow_message = _workflow_message(user_input)
+        if workflow_message:
+            self.messages.append(
+                {"role": "system", "content": workflow_message}
+            )
 
         while True:
             try:
@@ -400,7 +550,11 @@ class Agent:
                 return str(exc)
             self._trim_messages()
 
-            available_tools = [] if retrieval_task else TOOLS
+            available_tools = _tools_for_task(
+                git_task,
+                retrieval_task,
+                user_input,
+            )
 
             response = self.llm.chat(
                 messages=self.messages,
@@ -462,7 +616,12 @@ class Agent:
                     "content",
                     "",
                 )
-                content = _dedup_response(self._add_verification_note(content))
+                content = _dedup_response(
+                    self._verify_answer(
+                        self._add_verification_note(content),
+                        retrieval_task and not git_task,
+                    )
+                )
 
                 self.messages.append(
                     {
@@ -561,8 +720,18 @@ class Agent:
 
     def stream(self, user_input: str):
         self.state = AgentState(task=user_input)
+        self._allowed_citations = set()
         retrieval_task = task_requires_code_search(user_input)
+        git_task = task_requires_git_tools(user_input)
         messages_snapshot = len(self.messages)
+
+        if git_task:
+            try:
+                content = self.run(user_input) or NO_RESPONSE_MESSAGE
+            except Exception:
+                content = NO_RESPONSE_MESSAGE
+            yield _dedup_response(content)
+            return
 
         if retrieval_task:
             search_context = self._build_search_context(user_input)
@@ -619,12 +788,18 @@ class Agent:
                     yield NO_RESPONSE_MESSAGE
             return
 
-        yield _dedup_response(content)
+        content = _dedup_response(
+            self._verify_answer(
+                self._add_verification_note(content),
+                retrieval_task,
+            )
+        )
+        yield content
 
         self.messages.append(
             {
                 "role": "assistant",
-                "content": _dedup_response(self._add_verification_note(content)),
+                "content": content,
             }
         )
         self.state.completed = True

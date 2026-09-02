@@ -4,7 +4,13 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
-## [0.5.6] - 2026-09-02
+## [0.5.7] - 2026-09-02
+
+### Fixed
+
+- Git history questions now route to `git_log`, `git_status`, and `git_diff` instead of the search-only evidence path.
+- CLI streaming delegates Git questions to the tool loop so recent commits and changes are answered from actual Git output.
+- Changelog, resume-from-diff, and commit-message requests now use constrained workflows that prevent unrelated file changes and accidental commits.
 
 ### Added
 
