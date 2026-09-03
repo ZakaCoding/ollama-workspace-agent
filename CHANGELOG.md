@@ -4,6 +4,19 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-09-04
+
+### Added
+
+- **Response mode contracts** — user questions are classified into `location_question`, `change_summary`, or `general_question`. A strict output contract is injected as a system message to enforce focused, short answers and prevent unsolicited assessments.
+- **History drift sanitization** — assistant messages containing known hallucination patterns (stale version numbers, invented paths, recycled self-assessments) are detected and removed on history load. If more than half the history is drifted, it is discarded automatically.
+- **History isolation rule** — a context isolation reminder is injected for every retrieval task, preventing the model from recycling previous conversation assessments as repository evidence.
+
+### Fixed
+
+- Removed dead `skip_next_user` variable in `_sanitize_history`.
+- Collapsed duplicate search context injection branches in `stream()` into a single `if needs_evidence or retrieval_task` block, consistent with `run()`.
+
 ## [0.6.0] - 2026-09-03
 
 ### Added

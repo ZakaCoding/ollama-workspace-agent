@@ -13,6 +13,13 @@ from app.agent.verifier import (
     validate_mentioned_paths,
     detect_fake_narration,
 )
+from app.agent.response_mode import (
+    response_mode_contract,
+    HISTORY_ISOLATION_RULE,
+    classify_response_mode,
+    LOCATION_QUESTION,
+    CHANGE_SUMMARY,
+)
 from app.indexer.search import search
 from app.llm.client import LLMClient
 from app.tools.registry import TOOLS, FUNCTIONS
@@ -400,6 +407,38 @@ _REFUSE_MESSAGE = (
 )
 
 
+# Patterns that indicate a drifted/hallucinated assistant message in history.
+_DRIFT_PATTERNS = (
+    re.compile(r"Honest Assessment of OwA", re.IGNORECASE),
+    re.compile(r"Production Readiness", re.IGNORECASE),
+    re.compile(r"OwA v0\.[0-4]\.", re.IGNORECASE),  # old versions
+    re.compile(r"src/app/core/agents"),               # hallucinated path
+    re.compile(r"\$\(OWA_WORKDIR\)"),                 # hallucinated shell var
+    re.compile(r"find \$\("),                         # hallucinated shell cmd
+)
+
+
+def _is_drifted_message(msg: dict) -> bool:
+    """Return True if an assistant message contains known drift/hallucination patterns."""
+    if msg.get("role") != "assistant":
+        return False
+    content = msg.get("content") or ""
+    return any(p.search(content) for p in _DRIFT_PATTERNS)
+
+
+def _sanitize_history(messages: list[dict]) -> list[dict]:
+    """Remove drifted assistant messages and their preceding user messages."""
+    clean = []
+    for msg in messages:
+        if _is_drifted_message(msg):
+            # Also drop the user message that triggered this drifted response.
+            if clean and clean[-1].get("role") == "user":
+                clean.pop()
+            continue
+        clean.append(msg)
+    return clean
+
+
 class Agent:
 
     def __init__(self):
@@ -413,7 +452,14 @@ class Agent:
         if HISTORY_PATH.exists():
             try:
                 saved = json.loads(HISTORY_PATH.read_text())
-                self.messages += [m for m in saved if m["role"] != "system"]
+                non_system = [m for m in saved if m["role"] != "system"]
+                sanitized = _sanitize_history(non_system)
+                # If more than half the history was drifted, discard it all.
+                if len(non_system) > 0 and len(sanitized) < len(non_system) // 2:
+                    console.print("[dim]history contained drift — cleared automatically[/dim]")
+                    HISTORY_PATH.unlink(missing_ok=True)
+                    return
+                self.messages += sanitized
             except Exception:
                 pass
 
@@ -434,11 +480,14 @@ class Agent:
             pass
 
     def _trim_messages(self, max_pairs: int = 20):
-        system = [m for m in self.messages if m["role"] == "system"]
+        # Keep only the original system prompt (first message).
+        # Per-request system injections (context, mode, isolation) are
+        # single-turn and must not accumulate across conversation turns.
+        system_prompt = [self.messages[0]] if self.messages and self.messages[0]["role"] == "system" else []
         non_system = [m for m in self.messages if m["role"] != "system"]
         if len(non_system) > max_pairs * 2:
             non_system = non_system[-(max_pairs * 2):]
-        self.messages = system + non_system
+        self.messages = system_prompt + non_system
 
     def _allowed_tool_names(
         self,
@@ -628,6 +677,15 @@ class Agent:
         if workflow_message:
             self.messages.append(
                 {"role": "system", "content": workflow_message}
+            )
+
+        # Inject response mode contract for retrieval tasks.
+        if needs_evidence or retrieval_task:
+            self.messages.append(
+                {"role": "system", "content": HISTORY_ISOLATION_RULE}
+            )
+            self.messages.append(
+                {"role": "system", "content": response_mode_contract(user_input)}
             )
 
         while True:
@@ -830,15 +888,7 @@ class Agent:
             )
         )
 
-        if needs_evidence:
-            search_context = self._build_search_context(user_input)
-            self.messages.append(
-                {
-                    "role": "system",
-                    "content": _repository_context_message(search_context),
-                }
-            )
-        elif retrieval_task:
+        if needs_evidence or retrieval_task:
             search_context = self._build_search_context(user_input)
             self.messages.append(
                 {
@@ -853,6 +903,15 @@ class Agent:
                 "content": user_input,
             }
         )
+
+        # Inject response mode contract for retrieval tasks.
+        if needs_evidence or retrieval_task:
+            self.messages.append(
+                {"role": "system", "content": HISTORY_ISOLATION_RULE}
+            )
+            self.messages.append(
+                {"role": "system", "content": response_mode_contract(user_input)}
+            )
 
         content_parts = []
         self._trim_messages()
