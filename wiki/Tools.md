@@ -2,6 +2,13 @@
 
 The model sees JSON schemas from `app/tools/registry.py` and receives tool results as text. Tool names are the public contract between the agent and the model.
 
+Before execution, the agent validates arguments against the available tool's
+schema. Malformed JSON, non-object arguments, missing or unexpected fields,
+and incorrect string/integer types return a tool error asking the model to
+correct the call. Values are not coerced, and rejected arguments do not execute
+the tool or record file changes. Retries share the existing runtime budgets;
+tool availability and workspace checks still apply.
+
 ## Current tools
 
 | Tool | Purpose | Safety boundary |

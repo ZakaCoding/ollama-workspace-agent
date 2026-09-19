@@ -13,6 +13,10 @@ All notable changes to this project are documented here.
 - Added intent-based focused tool sets for edits, tests, and security reviews
   to reduce prompt size for small models.
 - Added the developer roadmap in `DEVELOPMENT_PLAN.md`.
+- Added bounded planning and post-change verification for multi-file tasks.
+- Added pre-execution tool argument validation for malformed JSON, non-object
+  arguments, missing or unexpected fields, and incorrect types. Invalid calls
+  return correction feedback without executing tools or recording changes.
 
 ## [0.6.1] - 2026-09-04
 

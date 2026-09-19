@@ -30,9 +30,9 @@ from using a larger model.
 
 - [x] Route conversational, retrieval, Git, and change tasks with minimal tool
   sets.
-- [ ] Add a compact planning step for multi-file changes.
-- [ ] Validate tool arguments before execution and recover from malformed calls.
-- [ ] Keep one clear verification step after every write or command.
+- [x] Add a compact planning step for multi-file changes.
+- [x] Validate tool arguments before execution and recover from malformed calls.
+- [x] Keep one clear verification step after every write or command.
 
 ### Phase 3 — Efficient project grounding
 
@@ -60,6 +60,10 @@ from using a larger model.
 The first implementation slices are complete: context and output budgets are
 configurable, bounded, documented, and covered by tests; cited claims are
 checked against the retrieved chunk, retried with a stricter prompt, and
-refused when the model continues to invent unsupported content. The next
-engineering task is a compact planning and verification step for multi-file
-changes, while preserving the focused tool sets selected here.
+refused when the model continues to invent unsupported content. Multi-file
+changes now receive a bounded plan before tool execution and require a
+read-only check or relevant test after writes and commands. Tool arguments are
+validated against the current tool schemas before execution, with correction
+feedback for malformed arguments and retries bounded by the existing runtime
+budgets. Focused tool sets and workspace boundaries remain enforced. Startup
+budget and model-capability diagnostics remain an open resource-aware task.

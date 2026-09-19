@@ -31,6 +31,12 @@ class AgentState:
         default_factory=list
     )
 
+    plan: str = ""
+
+    verification_required: bool = False
+
+    verification_done: bool = False
+
     completed: bool = False
 
     def record_file_change(self, path: str):

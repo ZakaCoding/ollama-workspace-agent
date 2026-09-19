@@ -10,6 +10,7 @@ from app.agent.core import (
     task_is_commit_message_request,
     task_is_resume_request,
     task_is_read_only,
+    task_requires_compact_plan,
     task_requires_code_search,
     task_requires_git_tools,
 )
@@ -42,6 +43,12 @@ def test_read_only_task_detection_blocks_questions_but_allows_explicit_actions()
     assert task_is_read_only("Check the current setup")
     assert not task_is_read_only("Implement the search policy")
     assert not task_is_read_only("Run the test suite")
+
+
+def test_multi_file_changes_require_a_compact_plan():
+    assert task_requires_compact_plan("Refactor several files and update tests")
+    assert task_requires_compact_plan("Update app/api.py and app/config.py and tests")
+    assert not task_requires_compact_plan("Fix app/api.py")
 
 
 def test_code_questions_require_search_then_file_verification():

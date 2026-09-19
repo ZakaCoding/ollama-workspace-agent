@@ -24,6 +24,7 @@ from app.agent.response_mode import (
 from app.indexer.search import search
 from app.llm.client import LLMClient
 from app.tools.registry import TOOLS, FUNCTIONS
+from app.tools.validation import validate_arguments
 
 console = Console(stderr=True)
 NO_RESPONSE_MESSAGE = "I couldn't produce a response. Please try again."
@@ -117,6 +118,17 @@ COMMIT_MESSAGE_PHRASES = (
 )
 
 
+MULTI_FILE_CHANGE_MARKERS = (
+    "multiple files",
+    "several files",
+    "across files",
+    "across the project",
+    "in both ",
+    "in all ",
+    "each file",
+)
+
+
 CONVERSATIONAL_INPUTS = {
     "yes", "no", "ok", "okay", "sure", "thanks", "thank you",
     "yes please", "no thanks", "got it", "lol", "haha", "nice",
@@ -155,6 +167,16 @@ def _dedup_response(text: str) -> str:
 def task_is_read_only(task: str) -> bool:
     normalized = task.strip().lower()
     return not any(word in normalized for word in EXPLICIT_ACTION_WORDS)
+
+
+def task_requires_compact_plan(task: str) -> bool:
+    """Return whether a requested change is broad enough to plan first."""
+    normalized = " ".join(task.strip().lower().split())
+    has_change_intent = any(word.strip() in normalized for word in EXPLICIT_ACTION_WORDS)
+    return has_change_intent and (
+        any(marker in normalized for marker in MULTI_FILE_CHANGE_MARKERS)
+        or normalized.count(" and ") >= 2
+    )
 
 
 def task_requires_git_tools(task: str) -> bool:
@@ -627,6 +649,54 @@ class Agent:
         except Exception:
             return _REFUSE_MESSAGE
 
+    def _build_compact_plan(self, task: str) -> str:
+        """Ask the model for a bounded implementation plan without tools."""
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "Create a compact implementation plan for the requested "
+                    "multi-file change. Use at most 3 numbered steps. Name "
+                    "only files that are supported by the repository context. "
+                    "Include one final verification step. Do not edit files, "
+                    "call tools, or claim that work is complete."
+                ),
+            },
+            {
+                "role": "system",
+                "content": (
+                    "Repository evidence for planning:\n"
+                    + (getattr(self, "_evidence_context", "") or "No evidence retrieved.")
+                ),
+            },
+            {"role": "user", "content": task},
+        ]
+        try:
+            response = self.llm.chat(messages=messages, tools=[])
+            plan = response["choices"][0]["message"].get("content") or ""
+            return plan.strip()[:2000]
+        except Exception as exc:
+            self.state.record_error(f"planning failed: {exc}")
+            return ""
+
+    def _prepare_change_plan(self, task: str):
+        if not task_requires_compact_plan(task):
+            return
+        plan = self._build_compact_plan(task)
+        if not plan:
+            return
+        self.state.plan = plan
+        self.messages.append(
+            {
+                "role": "system",
+                "content": (
+                    "COMPACT IMPLEMENTATION PLAN (advisory; verify each step):\n"
+                    + plan
+                    + "\nComplete the requested change using the available tools."
+                ),
+            }
+        )
+
     def _add_verification_note(self, content: str) -> str:
         changed_files = bool(
             self.state
@@ -714,6 +784,7 @@ class Agent:
                 "content": user_input,
             }
         )
+        self._prepare_change_plan(user_input)
         workflow_message = _workflow_message(user_input)
         if workflow_message:
             self.messages.append(
@@ -799,6 +870,18 @@ class Agent:
                     continue
 
             if not tool_calls:
+                if self.state.verification_required and not self.state.verification_done:
+                    self.messages.append(
+                        {
+                            "role": "system",
+                            "content": (
+                                "VERIFICATION REQUIRED: before giving a final answer, "
+                                "use one available read-only tool or run the smallest "
+                                "relevant test to verify the change."
+                            ),
+                        }
+                    )
+                    continue
                 content = message.get("content") or ""
                 content = _dedup_response(
                     self._verify_answer(
@@ -840,23 +923,28 @@ class Agent:
                     {},
                 )
 
-                if isinstance(arguments, str):
-                    try:
-                        arguments = json.loads(arguments)
-                    except json.JSONDecodeError as exc:
-                        result = (
-                            "Invalid tool arguments: "
-                            f"{exc}"
-                        )
-                        self.messages.append(
-                            {
-                                "role": "tool",
-                                "tool_call_id": tool_call["id"],
-                                "content": result,
-                            }
-                        )
-                        self.state.record_error(result)
-                        continue
+                schema = next(
+                    tool["function"]["parameters"]
+                    for tool in available_tools
+                    if tool["function"]["name"] == name
+                )
+                try:
+                    arguments = validate_arguments(arguments, schema)
+                except ValueError as exc:
+                    result = (
+                        f"Invalid tool arguments for '{name}': {exc}. "
+                        "The tool was not executed. Retry with corrected arguments "
+                        "matching the tool schema."
+                    )
+                    self.messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": tool_call["id"],
+                            "content": result,
+                        }
+                    )
+                    self.state.record_error(result)
+                    continue
 
                 console.print(f"[dim]  ⚙ {name}({json.dumps(arguments, ensure_ascii=False)})[/dim]")
 
@@ -891,6 +979,12 @@ class Agent:
                     arguments=arguments,
                     result=result,
                 )
+
+                if name in {"write_file", "patch_file", "run_command"}:
+                    self.state.verification_required = True
+                    self.state.verification_done = False
+                elif self.state.verification_required:
+                    self.state.verification_done = True
 
                 self.messages.append(
                     {
@@ -945,6 +1039,7 @@ class Agent:
                 "content": user_input,
             }
         )
+        self._prepare_change_plan(user_input)
 
         # Inject response mode contract for retrieval tasks.
         if needs_evidence or retrieval_task:
