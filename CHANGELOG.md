@@ -6,6 +6,10 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Added in-memory model request latency, failure counts, and reported input/output
+  token totals to CLI/API status. Streaming usage is collected, interrupted
+  requests are counted, and missing usage remains distinguishable from zero.
+- Added Codespaces Tailscale startup hooks and a proxy-enabled OwA launcher.
 - Added startup and `/status` diagnostics for active context/output budgets,
   evidence character limits, and Ollama model capabilities and maximum context.
   API clients report server settings; unavailable model metadata remains unknown.

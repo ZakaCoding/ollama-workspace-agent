@@ -69,6 +69,23 @@ def print_status(status: dict):
         style="muted", markup=False,
     )
 
+    metrics = runtime.get("metrics")
+    if metrics and metrics["requests"]:
+        last = metrics["last_request"]
+        outcome = "ok" if last["succeeded"] else "failed/interrupted"
+        console.print(
+            f"Model requests: {metrics['requests']} · failed/interrupted: "
+            f"{metrics['failed_requests']} · last: {last['duration_ms']:.0f} ms ({outcome}) · "
+            f"total: {metrics['total_duration_ms']:.0f} ms",
+            style="muted", markup=False,
+        )
+        console.print(
+            f"Reported tokens: {metrics['prompt_tokens']} input / "
+            f"{metrics['completion_tokens']} output · complete usage for "
+            f"{metrics['requests_with_usage']}/{metrics['requests']} requests",
+            style="muted", markup=False,
+        )
+
 
 def run_model():
     load_dotenv(ENV_PATH, override=True)

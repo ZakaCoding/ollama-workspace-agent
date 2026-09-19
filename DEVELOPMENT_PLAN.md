@@ -24,7 +24,7 @@ from using a larger model.
 - [x] Add bounds and tests for invalid and excessive settings.
 - [x] Reject citation laundering when a cited chunk does not support the claim.
 - [x] Add startup status showing active budgets and model capabilities.
-- [ ] Add latency and token-use measurements without sending telemetry.
+- [x] Add latency and token-use measurements without sending telemetry.
 
 ### Phase 2 — Reliable small-model orchestration
 
@@ -69,5 +69,8 @@ budgets. Focused tool sets and workspace boundaries remain enforced. Startup
 and `/status` now show active context/output budgets, the evidence character
 cap, and available Ollama model capabilities and maximum context metadata.
 API clients display the server's settings, and unavailable metadata is shown
-as unknown. The next resource-aware task is local latency and token-use
-measurements without telemetry.
+as unknown. Model request latency, failures, and reported token use are now
+measured in memory and exposed through status without telemetry. Missing usage
+is identified explicitly; retries and interrupted streams are counted as
+separate attempts. The next grounding task is embedding-model metadata in
+the index so incompatible vectors can be detected reliably.

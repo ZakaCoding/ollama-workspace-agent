@@ -138,6 +138,16 @@ Ollama. OwA's context budget controls retrieval and does not configure Ollama's
 context allocation. Metadata requests use a short two-second timeout and do
 not generate a response. In API mode, diagnostics come from the server.
 
+After model requests, `/status` also shows request counts, failures/interrupted
+streams, last and total elapsed time, and reported input/output token totals.
+Usage coverage shows how many requests supplied both token counts; missing
+usage is not estimated. Each planning, retry, and fallback request counts
+separately. These measurements live only in memory for the lifetime of the
+agent client; `/clear` clears conversation history but does not reset them.
+Metrics store no prompts or response text and send no telemetry. Request
+latency includes transport and model time (and consumer time for streaming),
+not the entire user task. Embedding and metadata requests are excluded.
+
 ---
 
 ## Indexing
@@ -261,6 +271,9 @@ Compared to heavier frameworks, OwA aims to be:
 ---
 
 ## Development
+
+For automatic Tailscale startup and remote Ollama access in GitHub Codespaces,
+see [Codespaces setup](wiki/Codespaces.md).
 
 Clone and install in editable mode:
 

@@ -21,6 +21,25 @@ class ChatResponse(BaseModel):
     completed: bool = True
 
 
+class RequestMetrics(BaseModel):
+    model: str
+    streaming: bool
+    succeeded: bool
+    duration_ms: float
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+
+
+class SessionMetrics(BaseModel):
+    requests: int
+    failed_requests: int
+    total_duration_ms: float
+    prompt_tokens: int
+    completion_tokens: int
+    requests_with_usage: int
+    last_request: RequestMetrics | None = None
+
+
 class RuntimeStatus(BaseModel):
     model: str
     context_budget_tokens: int
@@ -28,6 +47,7 @@ class RuntimeStatus(BaseModel):
     max_output_tokens: int
     capabilities: list[str] | None = None
     model_context_tokens: int | None = None
+    metrics: SessionMetrics | None = None
 
 
 class StatusResponse(BaseModel):

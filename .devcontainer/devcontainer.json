@@ -1,0 +1,5 @@
+{
+  "name": "OwA development",
+  "postCreateCommand": "bash scripts/install-tailscale.sh",
+  "postStartCommand": "bash scripts/start-tailscale.sh"
+}

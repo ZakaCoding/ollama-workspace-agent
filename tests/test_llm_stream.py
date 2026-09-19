@@ -5,6 +5,9 @@ from app.llm.client import IncompleteStreamError, LLMClient
 
 class FakeResponse:
 
+    def close(self):
+        pass
+
     def raise_for_status(self):
         pass
 

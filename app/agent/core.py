@@ -517,6 +517,7 @@ class Agent:
             "context_budget_tokens": self.context_builder.model_context_tokens,
             "evidence_max_chars": self.context_builder.max_chars,
             "max_output_tokens": max_output_tokens(),
+            "metrics": self.llm.metrics.snapshot(),
             **self.llm.model_metadata(),
         }
 

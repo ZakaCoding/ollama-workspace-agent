@@ -77,6 +77,12 @@ shown as `unknown`. The model's reported maximum context is separate from
 OwA's retrieval budget and Ollama's actual context allocation. API clients show
 the server's runtime settings.
 
+After chatting, `/status` also reports model request latency, failed/interrupted
+attempts, and reported token totals with usage coverage. These are in-memory
+counters for the current agent client, with no telemetry or prompt/response
+logging. Planning and retries count separately. Restarting resets counters;
+`/clear` only clears the conversation.
+
 ## Indexing
 
 OwA auto-indexes on first run. Common directories are excluded automatically (`node_modules`, `dist`, `build`, `.github`, `.git`, `.venv`, `vendor`, `target`, etc.).

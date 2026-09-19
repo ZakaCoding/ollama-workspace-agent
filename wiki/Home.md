@@ -43,6 +43,7 @@ owa
 ## Wiki pages
 
 - [Getting Started](Getting-Started.md) — install, configure, and run OwA
+- [Codespaces](Codespaces.md) — automatic Tailscale startup and remote Ollama access
 - [Architecture](Architecture.md) — runtime flow and module boundaries
 - [Tools](Tools.md) — workspace tools exposed to the model
 - [Indexing and Search](Indexing-and-Search.md) — how the local code index works
