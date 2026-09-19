@@ -23,7 +23,7 @@ from using a larger model.
 - [x] Make model response size configurable with `OWA_MAX_OUTPUT_TOKENS`.
 - [x] Add bounds and tests for invalid and excessive settings.
 - [x] Reject citation laundering when a cited chunk does not support the claim.
-- [ ] Add startup status showing active budgets and model capabilities.
+- [x] Add startup status showing active budgets and model capabilities.
 - [ ] Add latency and token-use measurements without sending telemetry.
 
 ### Phase 2 — Reliable small-model orchestration
@@ -66,4 +66,8 @@ read-only check or relevant test after writes and commands. Tool arguments are
 validated against the current tool schemas before execution, with correction
 feedback for malformed arguments and retries bounded by the existing runtime
 budgets. Focused tool sets and workspace boundaries remain enforced. Startup
-budget and model-capability diagnostics remain an open resource-aware task.
+and `/status` now show active context/output budgets, the evidence character
+cap, and available Ollama model capabilities and maximum context metadata.
+API clients display the server's settings, and unavailable metadata is shown
+as unknown. The next resource-aware task is local latency and token-use
+measurements without telemetry.

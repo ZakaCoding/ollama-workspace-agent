@@ -125,10 +125,18 @@ You can also place a `.env` in your project root to override the global config f
 | `/setup`  | Configure Ollama connection        |
 | `/model`  | Switch the active chat model       |
 | `/index`  | Rebuild the project index          |
-| `/status` | Show index status                  |
+| `/status` | Show index, budgets, and model capabilities |
 | `/clear`  | Clear conversation history         |
 | `/help`   | Show available commands            |
 | `/quit`   | Exit                               |
+
+Startup and `/status` show the active model, OwA context budget, evidence
+character cap, and output token limit. Model capabilities and maximum context
+are read from Ollama when available; unavailable metadata displays as `unknown`.
+The model maximum is metadata, not the context size currently allocated by
+Ollama. OwA's context budget controls retrieval and does not configure Ollama's
+context allocation. Metadata requests use a short two-second timeout and do
+not generate a response. In API mode, diagnostics come from the server.
 
 ---
 

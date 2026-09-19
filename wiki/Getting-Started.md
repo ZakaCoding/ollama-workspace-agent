@@ -66,10 +66,16 @@ OwA auto-indexes your project on first run and saves the index to `.owa/`. Once 
 | `/setup`  | Configure Ollama connection        |
 | `/model`  | Switch the active chat model       |
 | `/index`  | Rebuild the project index          |
-| `/status` | Show index status                  |
+| `/status` | Show index, budgets, and model capabilities |
 | `/clear`  | Clear conversation history         |
 | `/help`   | Show available commands            |
 | `/quit`   | Exit                               |
+
+Startup and `/status` include the active model, context/output budgets, evidence
+character cap, and capabilities reported by Ollama. Missing model metadata is
+shown as `unknown`. The model's reported maximum context is separate from
+OwA's retrieval budget and Ollama's actual context allocation. API clients show
+the server's runtime settings.
 
 ## Indexing
 

@@ -33,19 +33,18 @@ class AgentService:
             self.index_path,
         )
 
-    def status(self) -> dict[str, int | bool]:
-        if not self.index_path.exists():
-            return {
-                "ready": False,
-                "chunks": 0,
-            }
+    def status(self) -> dict:
+        ready = self.index_path.exists()
+        chunks = 0
+        if ready:
+            with sqlite3.connect(self.index_path) as db:
+                chunks = db.execute(
+                    "SELECT COUNT(*) FROM documents"
+                ).fetchone()[0]
 
-        with sqlite3.connect(self.index_path) as db:
-            chunks = db.execute(
-                "SELECT COUNT(*) FROM documents"
-            ).fetchone()[0]
-
-        return {
-            "ready": True,
-            "chunks": chunks,
-        }
+        status = {"ready": ready, "chunks": chunks}
+        # Custom agents can continue providing index-only status.
+        runtime_status = getattr(self.agent, "runtime_status", None)
+        if callable(runtime_status):
+            status["runtime"] = runtime_status()
+        return status

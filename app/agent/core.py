@@ -25,6 +25,7 @@ from app.indexer.search import search
 from app.llm.client import LLMClient
 from app.tools.registry import TOOLS, FUNCTIONS
 from app.tools.validation import validate_arguments
+from app.config import max_output_tokens
 
 console = Console(stderr=True)
 NO_RESPONSE_MESSAGE = "I couldn't produce a response. Please try again."
@@ -509,6 +510,15 @@ class Agent:
                 self.messages += sanitized
             except Exception:
                 pass
+
+    def runtime_status(self) -> dict:
+        return {
+            "model": self.llm.model,
+            "context_budget_tokens": self.context_builder.model_context_tokens,
+            "evidence_max_chars": self.context_builder.max_chars,
+            "max_output_tokens": max_output_tokens(),
+            **self.llm.model_metadata(),
+        }
 
     def _save_history(self):
         try:

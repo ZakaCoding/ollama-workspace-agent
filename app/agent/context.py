@@ -23,6 +23,7 @@ class ContextBuilder:
     ):
         if model_context_tokens is None:
             model_context_tokens = context_window_tokens()
+        self.model_context_tokens = model_context_tokens
 
         # Token-aware budget: subtract all reserved slots.
         reserved = (

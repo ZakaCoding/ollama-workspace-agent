@@ -6,6 +6,9 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Added startup and `/status` diagnostics for active context/output budgets,
+  evidence character limits, and Ollama model capabilities and maximum context.
+  API clients report server settings; unavailable model metadata remains unknown.
 - Added bounded `OWA_CONTEXT_TOKENS` and `OWA_MAX_OUTPUT_TOKENS` settings for
   tuning OwA on small models and low-resource machines.
 - Added a citation claim check that retries or refuses answers when a valid

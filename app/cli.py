@@ -27,7 +27,7 @@ console = Console(theme=THEME)
 
 HELP_TEXT = """[cmd]Commands[/cmd]
   [cmd]/index[/cmd]   rebuild project index
-  [cmd]/status[/cmd]  show index status
+  [cmd]/status[/cmd]  show index, budgets, and model capabilities
   [cmd]/model[/cmd]   switch chat model
   [cmd]/clear[/cmd]   clear conversation
   [cmd]/setup[/cmd]   configure Ollama connection
@@ -44,6 +44,30 @@ def print_banner(mode: str):
         expand=False,
         width=62,
     ))
+
+
+def print_status(status: dict):
+    index = (f"index ready · {status['chunks']} chunks"
+             if status["ready"] else "index not found")
+    console.print(index, style="muted", markup=False)
+    runtime = status.get("runtime")
+    if not runtime:
+        console.print("Runtime diagnostics unavailable.", style="muted")
+        return
+    capabilities = runtime.get("capabilities")
+    capability_text = "unknown" if capabilities is None else ", ".join(capabilities) or "none reported"
+    model_context = runtime.get("model_context_tokens")
+    console.print(
+        f"model {runtime['model']} · capabilities: {capability_text} · "
+        f"model max context: {model_context if model_context is not None else 'unknown'}",
+        style="muted", markup=False,
+    )
+    console.print(
+        f"OwA context budget: {runtime['context_budget_tokens']} tokens · "
+        f"evidence cap: {runtime['evidence_max_chars']} chars · "
+        f"output limit: {runtime['max_output_tokens']} tokens",
+        style="muted", markup=False,
+    )
 
 
 def run_model():
@@ -159,7 +183,7 @@ def main(argv=None):
     mode = "api client" if args.api_url else "direct"
     print_banner(mode)
 
-    if not os.getenv("LLM_BASE_URL"):
+    if not args.api_url and not os.getenv("LLM_BASE_URL"):
         console.print("[error]No config found.[/error] [muted]Run /setup to configure OwA.[/muted]\n")
 
     service = (
@@ -168,8 +192,14 @@ def main(argv=None):
         else AgentService()
     )
 
-    if not args.api_url:
+    status = None
+    try:
         status = service.status()
+        print_status(status)
+    except Exception as exc:
+        console.print(f"[error]status error:[/error] {exc}")
+
+    if not args.api_url and status is not None:
         if not status["ready"]:
             console.print("[muted]No index found — indexing workspace…[/muted]")
             try:
@@ -205,12 +235,7 @@ def main(argv=None):
 
         if command == "/status":
             try:
-                status = service.status()
-                model = os.getenv("LLM_MODEL", "unknown")
-                if status["ready"]:
-                    console.print(f"[muted]index ready · {status['chunks']} chunks · model {model}[/muted]")
-                else:
-                    console.print(f"[muted]index not found · model {model}[/muted]")
+                print_status(service.status())
             except Exception as exc:
                 console.print(f"[error]status error:[/error] {exc}")
             continue

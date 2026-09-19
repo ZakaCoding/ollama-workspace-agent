@@ -22,6 +22,31 @@ class LLMClient:
     def model(self):
         return os.getenv("LLM_MODEL", "ornith:9b")
 
+    def model_metadata(self) -> dict:
+        """Read optional Ollama metadata without loading or generating with a model."""
+        metadata = {"capabilities": None, "model_context_tokens": None}
+        # Remove only the compatibility API suffix, preserving proxy prefixes.
+        url = self.base_url.removesuffix("/v1") + "/api/show"
+        try:
+            response = self.session.post(url, json={"model": self.model}, timeout=2)
+            response.raise_for_status()
+            data = response.json()
+        except (requests.RequestException, ValueError):
+            return metadata
+        if not isinstance(data, dict):
+            return metadata
+
+        capabilities = data.get("capabilities")
+        if isinstance(capabilities, list) and all(isinstance(c, str) for c in capabilities):
+            metadata["capabilities"] = capabilities
+        info = data.get("model_info")
+        if isinstance(info, dict):
+            architecture = info.get("general.architecture")
+            context = info.get(f"{architecture}.context_length")
+            if type(context) is int and context > 0:
+                metadata["model_context_tokens"] = context
+        return metadata
+
     def chat(self, messages, tools=None):
         payload = {
             "model": self.model,

@@ -21,9 +21,19 @@ class ChatResponse(BaseModel):
     completed: bool = True
 
 
+class RuntimeStatus(BaseModel):
+    model: str
+    context_budget_tokens: int
+    evidence_max_chars: int
+    max_output_tokens: int
+    capabilities: list[str] | None = None
+    model_context_tokens: int | None = None
+
+
 class StatusResponse(BaseModel):
     ready: bool
     chunks: int
+    runtime: RuntimeStatus | None = None
 
 
 class IndexResponse(BaseModel):
@@ -73,7 +83,7 @@ def create_app(
     def health() -> dict[str, str]:
         return {"status": "ok"}
 
-    @app.get("/status", response_model=StatusResponse)
+    @app.get("/status", response_model=StatusResponse, response_model_exclude_none=True)
     def status(
         _: None = Depends(require_api_key),
     ) -> StatusResponse:
