@@ -19,9 +19,11 @@ classifiers = [
 ]
 dependencies = [
     "python-dotenv",
-    "requests",
-    "httpx",
-    "fastapi",
+    "requests[socks]",
+    "httpx[socks]",
+    "anyio<4.15",
+    "fastapi>=0.115,<0.116",
+    "starlette<0.46",
     "uvicorn",
     "rich",
 ]
@@ -35,7 +37,6 @@ Issues = "https://github.com/ZakaCoding/ollama-workspace-agent/issues"
 [project.optional-dependencies]
 dev = [
     "pytest",
-    "httpx",
 ]
 
 [project.scripts]
