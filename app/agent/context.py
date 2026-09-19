@@ -1,4 +1,7 @@
 # Approximate token count: 1 token ≈ 4 chars for English/code text.
+from app.config import context_window_tokens
+
+
 _CHARS_PER_TOKEN = 4
 
 # Reserve budget for system prompt + tools + conversation + output.
@@ -12,12 +15,15 @@ class ContextBuilder:
 
     def __init__(
         self,
-        model_context_tokens: int = 8192,
+        model_context_tokens: int | None = None,
         max_results: int = 5,
         score_threshold: float = 0.25,
         max_chunks_per_file: int = 2,
         max_chunk_chars: int = 3000,
     ):
+        if model_context_tokens is None:
+            model_context_tokens = context_window_tokens()
+
         # Token-aware budget: subtract all reserved slots.
         reserved = (
             _SYSTEM_RESERVE_TOKENS

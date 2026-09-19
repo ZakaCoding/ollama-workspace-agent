@@ -4,6 +4,16 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- Added bounded `OWA_CONTEXT_TOKENS` and `OWA_MAX_OUTPUT_TOKENS` settings for
+  tuning OwA on small models and low-resource machines.
+- Added a citation claim check that retries or refuses answers when a valid
+  evidence citation is attached to unrelated content.
+- Added intent-based focused tool sets for edits, tests, and security reviews
+  to reduce prompt size for small models.
+- Added the developer roadmap in `DEVELOPMENT_PLAN.md`.
+
 ## [0.6.1] - 2026-09-04
 
 ### Added

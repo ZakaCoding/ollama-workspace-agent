@@ -3,6 +3,8 @@ import os
 
 import requests
 
+from app.config import max_output_tokens
+
 
 class IncompleteStreamError(RuntimeError):
     """Raised when Ollama ends a stream without a complete response."""
@@ -25,6 +27,7 @@ class LLMClient:
             "model": self.model,
             "messages": messages,
             "stream": False,
+            "max_tokens": max_output_tokens(),
         }
 
         if tools:
@@ -44,6 +47,7 @@ class LLMClient:
             "model": self.model,
             "messages": messages,
             "stream": True,
+            "max_tokens": max_output_tokens(),
         }
 
         response = self.session.post(

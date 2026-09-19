@@ -83,9 +83,15 @@ EMBEDDING_MODEL=nomic-embed-text
 
 # Optional: protect the HTTP API
 API_KEY=choose-a-private-api-key
+
+# Optional small-model resource controls
+OWA_CONTEXT_TOKENS=8192
+OWA_MAX_OUTPUT_TOKENS=1024
 ```
 
 You can also place a `.env` in your project root to override the global config for that project.
+
+`OWA_CONTEXT_TOKENS` controls the repository evidence budget. `OWA_MAX_OUTPUT_TOKENS` limits each model response. Both settings are bounded by OwA and can be lowered for small models or low-resource machines.
 
 - `LLM_BASE_URL` uses Ollama’s OpenAI‑compatible `/v1` API.
 - `EMBEDDING_BASE_URL` uses Ollama’s native `/api/embed` API.

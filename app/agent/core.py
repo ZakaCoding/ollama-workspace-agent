@@ -9,6 +9,7 @@ from app.agent.state import AgentState
 from app.agent.context import ContextBuilder
 from app.agent.verifier import (
     verify_evidence_citations,
+    detect_unsupported_claims,
     verify_tool_result,
     validate_mentioned_paths,
     detect_fake_narration,
@@ -199,7 +200,31 @@ def _tools_for_task(
     task: str = "",
 ):
     if not git_task:
-        return [] if retrieval_task else TOOLS
+        if retrieval_task:
+            return []
+
+        normalized = " ".join(task.strip().lower().split())
+
+        if any(word in normalized for word in ("review", "security", "vulnerability")):
+            focused_names = {"read_file", "code_review"}
+        elif any(word in normalized for word in ("test", "pytest", "compile", "lint")):
+            focused_names = {"read_file", "run_command", "git_status"}
+        elif any(word in normalized for word in EXPLICIT_ACTION_WORDS):
+            focused_names = {
+                "search_code",
+                "read_file",
+                "patch_file",
+                "write_file",
+                "run_command",
+            }
+        else:
+            # Preserve the complete tool set when intent is ambiguous.
+            return TOOLS
+
+        return [
+            tool for tool in TOOLS
+            if tool["function"]["name"] in focused_names
+        ]
 
     git_names = {"git_status", "git_diff", "git_log"}
     normalized = " ".join(task.strip().lower().split())
@@ -525,6 +550,7 @@ class Agent:
 
         if not index_path.exists():
             self._allowed_citations = set()
+            self._evidence_context = ""
             return ""
 
         results = search(index_path, task, limit=10)
@@ -532,7 +558,8 @@ class Agent:
             f"{result.get('path', 'unknown')}#chunk={result.get('chunk_index', '?')}"
             for result in results
         }
-        return self.context_builder.build(results)
+        self._evidence_context = self.context_builder.build(results)
+        return self._evidence_context
 
     def _verify_answer(self, content: str, retrieval_task: bool) -> str:
         if not retrieval_task:
@@ -568,6 +595,19 @@ class Agent:
                 require_citation=bool(getattr(self, "_allowed_citations", set())),
             )
             if not citation_check2.passed:
+                return _REFUSE_MESSAGE
+
+        claim_check = detect_unsupported_claims(
+            content,
+            getattr(self, "_evidence_context", ""),
+        )
+        if not claim_check.passed:
+            content = self._retry_with_strict_prompt(content)
+            claim_check2 = detect_unsupported_claims(
+                content,
+                getattr(self, "_evidence_context", ""),
+            )
+            if not claim_check2.passed:
                 return _REFUSE_MESSAGE
 
         return content
@@ -631,6 +671,7 @@ class Agent:
     def run(self, user_input: str):
         self.state = AgentState(task=user_input)
         self._allowed_citations = set()
+        self._evidence_context = ""
         read_only_task = task_is_read_only(user_input)
         retrieval_task = task_requires_code_search(user_input)
         git_task = task_requires_git_tools(user_input)
@@ -864,6 +905,7 @@ class Agent:
     def stream(self, user_input: str):
         self.state = AgentState(task=user_input)
         self._allowed_citations = set()
+        self._evidence_context = ""
         retrieval_task = task_requires_code_search(user_input)
         git_task = task_requires_git_tools(user_input)
         messages_snapshot = len(self.messages)

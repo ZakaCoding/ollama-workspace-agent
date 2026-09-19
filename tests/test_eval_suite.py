@@ -110,6 +110,39 @@ def test_search_question_exposes_no_write_tools():
     assert tools == []
 
 
+def test_file_change_exposes_focused_edit_tools():
+    names = {
+        t["function"]["name"]
+        for t in _tools_for_task(False, False, "Fix the bug in app/api.py")
+    }
+
+    assert names == {
+        "search_code",
+        "read_file",
+        "patch_file",
+        "write_file",
+        "run_command",
+    }
+
+
+def test_test_task_exposes_execution_tools_only():
+    names = {
+        t["function"]["name"]
+        for t in _tools_for_task(False, False, "Run the pytest suite")
+    }
+
+    assert names == {"read_file", "run_command", "git_status"}
+
+
+def test_review_task_exposes_review_tools_only():
+    names = {
+        t["function"]["name"]
+        for t in _tools_for_task(False, False, "Review app/api.py for security")
+    }
+
+    assert names == {"read_file", "code_review"}
+
+
 def test_git_question_exposes_only_git_tools():
     names = {t["function"]["name"] for t in _tools_for_task(True, False, "show git status")}
     assert names == {"git_status", "git_diff", "git_log"}

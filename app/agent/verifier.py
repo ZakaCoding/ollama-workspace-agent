@@ -20,6 +20,23 @@ _PATH_RE = re.compile(
     re.MULTILINE,
 )
 
+_CITATION_RE = re.compile(r"\[([^\]]+#chunk=\d+)\]")
+_TERM_RE = re.compile(r"[a-zA-Z][a-zA-Z0-9_]{2,}")
+_GENERIC_TERMS = {
+    "about", "after", "also", "and", "answer", "because", "contains",
+    "does", "file", "from", "here", "into", "more", "only", "repository",
+    "that", "this", "uses", "with", "would", "your", "implemented",
+    "implementation", "configured", "located", "defined", "function",
+}
+
+
+def _terms(text: str) -> set[str]:
+    return {
+        part
+        for term in _TERM_RE.findall(text.lower())
+        for part in term.split("_")
+    }
+
 
 def _extract_mentioned_paths(content: str) -> list[str]:
     return [m.group(1) for m in _PATH_RE.finditer(content)]
@@ -75,6 +92,58 @@ def verify_evidence_citations(
     return VerificationResult(
         passed=True,
         message="Evidence citations are present and supported.",
+    )
+
+
+def detect_unsupported_claims(
+    content: str,
+    evidence_context: str,
+) -> VerificationResult:
+    """Detect claims that cite a real chunk but are absent from that chunk.
+
+    This is intentionally a conservative lexical check. It does not try to
+    replace model reasoning; it catches citation laundering, where a small
+    model attaches a valid citation to an unrelated claim.
+    """
+    if not evidence_context:
+        return VerificationResult(
+            passed=True,
+            message="No retrieved evidence was available for claim checking.",
+        )
+
+    for sentence in re.split(r"(?<=[.!?])\s+|\n+", content):
+        citations = _CITATION_RE.findall(sentence)
+        if not citations:
+            continue
+
+        for citation in citations:
+            marker = f"EVIDENCE: [{citation}]"
+            start = evidence_context.find(marker)
+            if start < 0:
+                continue
+
+            end = evidence_context.find("\nEVIDENCE:", start + len(marker))
+            section = evidence_context[start:] if end < 0 else evidence_context[start:end]
+
+            claim = _CITATION_RE.sub("", sentence)
+            claim_terms = _terms(claim)
+            citation_terms = _terms(citation.split("#", 1)[0])
+            evidence_terms = _terms(section)
+            meaningful_claim_terms = claim_terms - citation_terms - _GENERIC_TERMS
+
+            if meaningful_claim_terms and not meaningful_claim_terms & evidence_terms:
+                return VerificationResult(
+                    passed=False,
+                    message=(
+                        "Response makes a claim that is not supported by its "
+                        f"cited evidence: [{citation}]."
+                    ),
+                    should_retry=True,
+                )
+
+    return VerificationResult(
+        passed=True,
+        message="Cited claims overlap with retrieved evidence.",
     )
 
 

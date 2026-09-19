@@ -41,6 +41,20 @@ python main.py
 owa
 ```
 
+## Resource-aware local models
+
+OwA is designed to remain useful with small local models. Developers can tune
+the request budgets in the project `.env`:
+
+```env
+OWA_CONTEXT_TOKENS=8192
+OWA_MAX_OUTPUT_TOKENS=1024
+```
+
+The first setting limits retrieved repository context and the second limits
+chat response length. OwA clamps both values to safe ranges so an invalid or
+excessive setting cannot make requests unbounded.
+
 ## Test
 
 ```bash
