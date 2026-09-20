@@ -170,9 +170,12 @@ def test_text_tool_call_cannot_bypass_read_only_tool_allowlist(monkeypatch):
     from app.agent import core
     agent = Agent()
     monkeypatch.setitem(core.FUNCTIONS, "write_file", lambda **kwargs: pytest.fail("write must be blocked"))
+    monkeypatch.setitem(core.FUNCTIONS, "read_file", lambda **kwargs: "return a - b")
     answers = iter([
         response('{"name":"write_file","arguments":{"path":"x","content":"x"}}'),
         response("I cannot modify files for this inspection."),
+        response(tool="read_file", arguments='{"path":"calculator.py"}'),
+        response("The function returns a - b."),
     ])
     monkeypatch.setattr(agent.llm, "chat", lambda **kwargs: next(answers))
     agent.run("Read calculator.py")

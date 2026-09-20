@@ -126,6 +126,11 @@ skips dependency directories and symlinks, and stays within the context budget.
 It reads excerpts from at most six files; it does not train the model or retain
 permanent project knowledge.
 
+Direct requests such as `List files`, `Show calculator.py`, or
+`Run python --version` use the corresponding tools. Explicit fixes can combine
+Git inspection, edits, and test execution in one request. OwA checks that a
+requested command actually ran before accepting a completion response.
+
 For a live small-model agent check, run
 `python scripts/eval-agent.py --model qwen2.5-coder:7b --output .owa/eval.json`.
 It uses your configured Ollama connection and disposable projects. See

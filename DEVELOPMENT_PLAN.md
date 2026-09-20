@@ -50,7 +50,7 @@ from using a larger model.
 
 ### Phase 5 — Evaluation and release quality
 
-- [ ] Maintain a fixed small-model evaluation set for coding tasks.
+- [x] Maintain a fixed small-model evaluation set for coding tasks.
 - [ ] Track groundedness, tool success, patch correctness, and latency.
 - [ ] Document resource profiles for common local machines.
 - [ ] Promote stable milestones through the changelog and release process.
@@ -91,5 +91,11 @@ index or embeddings. Discovery prunes dependencies, ignored directories, and
 symlinks. Legacy indexes without FTS remain readable through lexical fallback.
 Text-only tool calls now have a continuation/finish protocol, repeated failures
 stop explicitly, and failed test commands require successful command verification.
-The live evaluation set includes five additional cases for these workflows;
-the previously recorded model results cover only the original four cases.
+The live evaluation set now contains 18 cases covering every registered tool,
+informal requests, combined Git/edit tasks, read-only constraints, and actual
+patch/test behavior. Repeated and subset runs save incremental traces and
+report pass rates, latency, tool calls, and model requests. Infrastructure
+failures are separated from agent failures. Live Qwen testing exposed routing
+gaps in direct inspection, plain commands, informal edits, and combined Git/edit
+requests; these now have focused regression coverage. Larger real-project and
+multi-turn benchmarks remain future work.

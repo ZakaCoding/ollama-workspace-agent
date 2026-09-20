@@ -141,6 +141,47 @@ CONVERSATIONAL_INPUTS = {
 
 GREETING_INPUTS = {"hi", "hello", "hey", "bye", "goodbye"}
 
+_REQUEST_PREFIX = (
+    r"(?:^|[.;!?]\s*|\b(?:and|then)\s+)"
+    r"(?:(?:please|can you|can u|could you|could u|would you|help me|"
+    r"i want you to|i need you to|i would like you to)\s+)*"
+)
+
+
+def _direct_tool_names(task: str) -> set[str]:
+    """Recognize explicit tool invocations, not questions about a tool."""
+    normalized = task.strip().lower()
+    requested = set()
+    for tool in TOOLS:
+        name = tool["function"]["name"]
+        direct = re.search(
+            _REQUEST_PREFIX + r"(?:use|call|invoke)\s+`?"
+            + re.escape(name) + r"\b", normalized,
+        )
+        inspection = name not in {"write_file", "patch_file", "run_command"} and re.search(
+            _REQUEST_PREFIX + r"(?:find|search|list|show|read|review|inspect|check)\b"
+            + r"[^.;!?]*\busing\s+`?" + re.escape(name) + r"\b", normalized,
+        )
+        if direct or inspection:
+            requested.add(name)
+    return requested
+
+
+def _requires_direct_inspection(task: str) -> bool:
+    normalized = task.strip().lower()
+    return bool(_direct_tool_names(task)) or bool(re.search(
+        _REQUEST_PREFIX
+        + r"(?:list\s+(?:(?:the|all)\s+)*(?:files|directories|folders)\b"
+        + r"|(?:read|show|open|inspect)\s+(?:me\s+)?`?[\w./-]+\.[\w]+\b)",
+        normalized,
+    ))
+
+
+def _has_execution_intent(task: str) -> bool:
+    return "run_command" in _direct_tool_names(task) or bool(re.search(
+        _REQUEST_PREFIX + r"(?:run|execute)\b", task.strip().lower(),
+    ))
+
 
 def task_is_conversational(task: str) -> bool:
     """Recognized social replies that should never trigger the tool loop."""
@@ -178,8 +219,13 @@ def _has_action_intent(task: str, *, changes_only: bool = False) -> bool:
              if not changes_only or word.strip() != "run"]
     # An action verb must introduce a request/clause, not name a symbol such
     # as "the add function" or occur inside another word.
-    prefix = r"(?:^|[.;!?]\s*|\b(?:and|then)\s+)(?:(?:please|can you|could you|would you|help me|i want you to)\s+)*"
-    return bool(re.search(prefix + "(?:" + "|".join(verbs) + r")\b", task.strip().lower()))
+    direct_actions = {"write_file", "patch_file"}
+    if not changes_only:
+        direct_actions.add("run_command")
+        verbs.append("execute")
+    return bool(_direct_tool_names(task) & direct_actions) or bool(re.search(
+        _REQUEST_PREFIX + "(?:" + "|".join(verbs) + r")\b", task.strip().lower(),
+    ))
 
 
 def task_requires_compact_plan(task: str) -> bool:
@@ -223,6 +269,8 @@ def task_requires_code_search(task: str) -> bool:
         return False
     if is_project_learning_request(task):
         return True
+    if _requires_direct_inspection(task):
+        return False
     if normalized.startswith(RETRIEVAL_PREFIXES):
         return True
     return (
@@ -238,6 +286,22 @@ def _tools_for_task(
 ):
     if task_is_conversational(task) and not git_task:
         return []
+    # A Git mention must not suppress tools needed for an explicit edit.
+    # Keep the dedicated changelog and commit-message workflows scoped.
+    if (_has_action_intent(task, changes_only=True)
+            and not task_is_changelog_request(task)
+            and not task_is_commit_message_request(task)):
+        names = {"list_dir", "search_code", "read_file", "patch_file", "write_file", "run_command"}
+        if git_task:
+            names.add("git_status")
+            if "diff" in task.lower():
+                names.add("git_diff")
+            if any(word in task.lower() for word in ("commit", "history", "log")):
+                names.add("git_log")
+        if "review" in task.lower() or "security" in task.lower():
+            names.add("code_review")
+        names.update(_direct_tool_names(task))
+        return [tool for tool in TOOLS if tool["function"]["name"] in names]
     if not git_task:
         if retrieval_task:
             return []
@@ -251,11 +315,13 @@ def _tools_for_task(
             }
         elif any(word in normalized for word in ("review", "security", "vulnerability")):
             focused_names = {"read_file", "code_review"}
-        elif any(word in normalized for word in ("test", "pytest", "compile", "lint")):
+        elif (not task_is_read_only(task)
+              or any(word in normalized for word in ("test", "pytest", "compile", "lint"))):
             focused_names = {"read_file", "run_command", "git_status"}
         else:
             focused_names = {"list_dir", "read_file", "search_code"}
 
+        focused_names.update(_direct_tool_names(task))
         return [
             tool for tool in TOOLS
             if tool["function"]["name"] in focused_names
@@ -1007,10 +1073,21 @@ class Agent:
                 content = message.get("content") or ""
                 describes_tool_call = '"name"' in content and '"arguments"' in content
                 unperformed_change = (
-                    not git_task and _has_action_intent(user_input, changes_only=True)
+                    _has_action_intent(user_input, changes_only=True)
+                    and not task_is_commit_message_request(user_input)
                     and not self.state.files_changed and not self.state.errors
                 )
-                if available_tools and (describes_tool_call or unperformed_change):
+                unperformed_execution = (
+                    _has_execution_intent(user_input)
+                    and not self.state.commands_run and not self.state.errors
+                    and any(tool["function"]["name"] == "run_command" for tool in available_tools)
+                )
+                unperformed_inspection = (
+                    read_only_task and _requires_direct_inspection(user_input)
+                    and not self.state.tool_calls
+                )
+                if available_tools and (describes_tool_call or unperformed_change
+                                        or unperformed_execution or unperformed_inspection):
                     if text_corrections >= 2:
                         return "OwA could not complete the task: the model described actions without executing the required tools."
                     text_corrections += 1
@@ -1030,8 +1107,11 @@ class Agent:
                             "role": "system",
                             "content": (
                                 "VERIFICATION REQUIRED: before giving a final answer, "
-                                "use one available read-only tool or run the smallest "
-                                "relevant test to verify the change."
+                                + ("rerun the failing command after correcting its cause. "
+                                   "Reading files cannot verify a failed command."
+                                   if self.state.verification_command_failed else
+                                   "use one available read-only tool or run the smallest "
+                                   "relevant test to verify the change.")
                             ),
                         }
                     )

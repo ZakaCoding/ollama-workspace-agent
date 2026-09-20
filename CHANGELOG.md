@@ -6,6 +6,13 @@ All notable changes to this project are documented here.
 
 ### Fixed
 
+- Direct file listing/display and explicit tool requests now reach tools without
+  requiring an index. Plain command requests expose the command tool, informal
+  `can u` and `I need you to` requests recognize edit intent, and Git inspection
+  can be combined with edits and tests.
+- Completion checks require execution for direct inspection and command
+  requests. Requested tests cannot be replaced by reading back an edited file;
+  failed-command verification now explicitly asks for another command run.
 - Legacy indexes without full-text tables remain searchable without modification;
   lexical fallback scores retain meaningful evidence thresholds.
 - Text-only tool models receive an explicit continuation and finish protocol.
@@ -27,6 +34,9 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Expanded the live agent benchmark to 18 cases covering all registered tools,
+  with repeated/subset runs, incremental reports, unexpected-file checks,
+  latency summaries, and separate infrastructure-failure reporting.
 - Added bounded, cited project overviews from current file excerpts, available
   without an index or embeddings through requests such as `learn this project`.
 - Expanded live evaluation with project orientation, legacy search, test-failure
