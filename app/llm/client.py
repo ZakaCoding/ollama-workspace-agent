@@ -56,6 +56,7 @@ class LLMClient:
             "messages": messages,
             "stream": False,
             "max_tokens": max_output_tokens(),
+            "temperature": 0,
         }
 
         if tools:
@@ -89,6 +90,7 @@ class LLMClient:
             "stream": True,
             "stream_options": {"include_usage": True},
             "max_tokens": max_output_tokens(),
+            "temperature": 0,
         }
 
         started = perf_counter()

@@ -3,14 +3,14 @@ import os
 import httpx
 
 
-def _get_config() -> tuple[str, str]:
+def get_config() -> tuple[str, str]:
     base_url = os.getenv("EMBEDDING_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
     model = os.getenv("EMBEDDING_MODEL", "nomic-embed-text")
     return base_url, model
 
 
-def embed(text: str) -> list[float]:
-    base_url, model = _get_config()
+def embed(text: str, *, config: tuple[str, str] | None = None) -> list[float]:
+    base_url, model = config if config is not None else get_config()
 
     response = httpx.post(
         f"{base_url}/api/embed",
@@ -27,12 +27,12 @@ def embed(text: str) -> list[float]:
     return embeddings[0]
 
 
-def embed_batch(texts: list[str]) -> list[list[float]]:
+def embed_batch(texts: list[str], *, config: tuple[str, str] | None = None) -> list[list[float]]:
     """Embed multiple texts in a single Ollama request."""
     if not texts:
         return []
 
-    base_url, model = _get_config()
+    base_url, model = config if config is not None else get_config()
 
     response = httpx.post(
         f"{base_url}/api/embed",

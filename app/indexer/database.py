@@ -1,4 +1,5 @@
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 
@@ -14,7 +15,18 @@ def connect(db_path: str | Path):
 
 
 def initialize(db_path: str | Path):
-    with connect(db_path) as db:
+    with closing(connect(db_path)) as db, db:
+        db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS index_metadata (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                format_version INTEGER NOT NULL,
+                model TEXT NOT NULL,
+                endpoint_hash TEXT NOT NULL,
+                dimensions INTEGER
+            )
+            """
+        )
         db.execute(
             """
             CREATE TABLE IF NOT EXISTS documents (

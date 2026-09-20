@@ -26,7 +26,7 @@ THEME = Theme({
 console = Console(theme=THEME)
 
 HELP_TEXT = """[cmd]Commands[/cmd]
-  [cmd]/index[/cmd]   rebuild project index
+  [cmd]/index[/cmd]   update project index (/index --force to rebuild all vectors)
   [cmd]/status[/cmd]  show index, budgets, and model capabilities
   [cmd]/model[/cmd]   switch chat model
   [cmd]/clear[/cmd]   clear conversation
@@ -50,6 +50,16 @@ def print_status(status: dict):
     index = (f"index ready · {status['chunks']} chunks"
              if status["ready"] else "index not found")
     console.print(index, style="muted", markup=False)
+    embedding = status.get("embedding")
+    if embedding:
+        model = embedding.get("model") or "unknown"
+        dimensions = embedding.get("dimensions") or "unknown"
+        console.print(f"Index embeddings: {model} · dimensions: {dimensions}", style="muted", markup=False)
+        if not embedding["compatible"]:
+            console.print(
+                f"Lexical search only: {embedding['reason']}. Run /index --force.",
+                style="yellow", markup=False,
+            )
     runtime = status.get("runtime")
     if not runtime:
         console.print("Runtime diagnostics unavailable.", style="muted")
@@ -265,10 +275,10 @@ def main(argv=None):
                 console.print(f"[error]clear error:[/error] {exc}")
             continue
 
-        if command == "/index":
+        if command in {"/index", "/index --force"}:
             try:
                 with Status("[muted]indexing…[/muted]", console=console, spinner="dots"):
-                    result = service.index()
+                    result = service.index(force=True) if command.endswith(" --force") else service.index()
                 msg = result.get("status", "complete") if isinstance(result, dict) else "complete"
                 console.print(f"[muted]index {msg}[/muted]")
             except Exception as exc:

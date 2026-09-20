@@ -70,6 +70,7 @@ RETRIEVAL_PREFIXES = (
 
 
 EXPLICIT_ACTION_WORDS = (
+    "edit ",
     "add ",
     "change ",
     "create ",
@@ -137,17 +138,19 @@ CONVERSATIONAL_INPUTS = {
     "hi", "hello", "hey", "bye", "goodbye",
 }
 
+GREETING_INPUTS = {"hi", "hello", "hey", "bye", "goodbye"}
+
 
 def task_is_conversational(task: str) -> bool:
-    """Short ambiguous inputs that should never trigger the tool loop."""
+    """Recognized social replies that should never trigger the tool loop."""
     normalized = task.strip().lower().rstrip("!?.")
     if normalized in CONVERSATIONAL_INPUTS:
         return True
-    # 3 words or fewer with no action words and no retrieval prefix
-    words = normalized.split()
-    if len(words) <= 3 and not any(w in normalized for w in EXPLICIT_ACTION_WORDS):
-        return not normalized.startswith(RETRIEVAL_PREFIXES)
     return False
+
+
+def task_is_greeting(task: str) -> bool:
+    return task.strip().lower().rstrip("!?.") in GREETING_INPUTS
 
 
 def _dedup_response(text: str) -> str:
@@ -166,14 +169,22 @@ def _dedup_response(text: str) -> str:
 
 
 def task_is_read_only(task: str) -> bool:
-    normalized = task.strip().lower()
-    return not any(word in normalized for word in EXPLICIT_ACTION_WORDS)
+    return not _has_action_intent(task)
+
+
+def _has_action_intent(task: str, *, changes_only: bool = False) -> bool:
+    verbs = [word.strip() for word in EXPLICIT_ACTION_WORDS
+             if not changes_only or word.strip() != "run"]
+    # An action verb must introduce a request/clause, not name a symbol such
+    # as "the add function" or occur inside another word.
+    prefix = r"(?:^|[.;!?]\s*|\b(?:and|then)\s+)(?:(?:please|can you|could you|would you|help me|i want you to)\s+)*"
+    return bool(re.search(prefix + "(?:" + "|".join(verbs) + r")\b", task.strip().lower()))
 
 
 def task_requires_compact_plan(task: str) -> bool:
     """Return whether a requested change is broad enough to plan first."""
     normalized = " ".join(task.strip().lower().split())
-    has_change_intent = any(word.strip() in normalized for word in EXPLICIT_ACTION_WORDS)
+    has_change_intent = _has_action_intent(task, changes_only=True)
     return has_change_intent and (
         any(marker in normalized for marker in MULTI_FILE_CHANGE_MARKERS)
         or normalized.count(" and ") >= 2
@@ -207,7 +218,7 @@ def task_is_commit_message_request(task: str) -> bool:
 
 def task_requires_code_search(task: str) -> bool:
     normalized = task.strip().lower()
-    if any(word in normalized for word in EXPLICIT_ACTION_WORDS):
+    if not task_is_read_only(task):
         return False
     if normalized.startswith(RETRIEVAL_PREFIXES):
         return True
@@ -222,27 +233,25 @@ def _tools_for_task(
     retrieval_task: bool,
     task: str = "",
 ):
+    if task_is_conversational(task) and not git_task:
+        return []
     if not git_task:
         if retrieval_task:
             return []
 
         normalized = " ".join(task.strip().lower().split())
 
-        if any(word in normalized for word in ("review", "security", "vulnerability")):
+        if _has_action_intent(task, changes_only=True):
+            focused_names = {
+                "list_dir", "search_code", "read_file", "patch_file",
+                "write_file", "run_command",
+            }
+        elif any(word in normalized for word in ("review", "security", "vulnerability")):
             focused_names = {"read_file", "code_review"}
         elif any(word in normalized for word in ("test", "pytest", "compile", "lint")):
             focused_names = {"read_file", "run_command", "git_status"}
-        elif any(word in normalized for word in EXPLICIT_ACTION_WORDS):
-            focused_names = {
-                "search_code",
-                "read_file",
-                "patch_file",
-                "write_file",
-                "run_command",
-            }
         else:
-            # Preserve the complete tool set when intent is ambiguous.
-            return TOOLS
+            focused_names = {"list_dir", "read_file", "search_code"}
 
         return [
             tool for tool in TOOLS
@@ -542,10 +551,37 @@ class Agent:
         # Per-request system injections (context, mode, isolation) are
         # single-turn and must not accumulate across conversation turns.
         system_prompt = [self.messages[0]] if self.messages and self.messages[0]["role"] == "system" else []
-        non_system = [m for m in self.messages if m["role"] != "system"]
-        if len(non_system) > max_pairs * 2:
-            non_system = non_system[-(max_pairs * 2):]
-        self.messages = system_prompt + non_system
+        turns = []
+        for message in self.messages:
+            if message["role"] == "user":
+                turns.append([])
+            if turns and message["role"] != "system":
+                turns[-1].append(message)
+        # Keep whole turns so tool results never lose their tool-call messages.
+        # Match the conversation reservation in ContextBuilder (2,000 tokens).
+        kept = []
+        remaining = 8000
+        for turn in reversed(turns[-max_pairs:]):
+            size = len(json.dumps(turn))
+            if size > remaining:
+                break
+            kept.append(turn)
+            remaining -= size
+        self.messages = system_prompt + [m for turn in reversed(kept) for m in turn]
+
+    def _request_messages(self, user_input: str) -> list[dict]:
+        if task_is_greeting(user_input):
+            # A greeting must not resume an old coding task or copy its output.
+            return [
+                {"role": "system", "content": "You are OwA, a local coding assistant. Respond briefly to the greeting. Do not perform or resume a coding task."},
+                {"role": "user", "content": user_input},
+            ]
+        if task_requires_code_search(user_input) and not task_requires_git_tools(user_input):
+            return [
+                {"role": "system", "content": "You are OwA, a local coding assistant. Answer the current repository question using the supplied evidence. Tools are unavailable for this answer. Return a concise answer with evidence citations, never a tool call or a command."},
+                *self.messages[getattr(self, "_request_start", 1):],
+            ]
+        return self.messages
 
     def _allowed_tool_names(
         self,
@@ -648,7 +684,7 @@ class Agent:
     def _retry_with_strict_prompt(self, failed_content: str) -> str:
         """Retry the last LLM call with a stricter evidence-only prompt."""
         retry_messages = [
-            m for m in self.messages
+            m for m in (self._request_messages(self.state.task) if self.state else self.messages)
             if not (m["role"] == "assistant" and m.get("content") == failed_content)
         ]
         retry_messages.append(
@@ -750,12 +786,15 @@ class Agent:
         return retried
 
     def run(self, user_input: str):
+        self._trim_messages()
+        self._request_start = len(self.messages)
         self.state = AgentState(task=user_input)
         self._allowed_citations = set()
         self._evidence_context = ""
         read_only_task = task_is_read_only(user_input)
         retrieval_task = task_requires_code_search(user_input)
         git_task = task_requires_git_tools(user_input)
+        text_corrections = 0
 
         # Priority 1: evidence-first — retrieve context before calling LLM
         # for both read-only repo questions AND action tasks that reference code.
@@ -776,19 +815,12 @@ class Agent:
             self.messages.append(
                 {
                     "role": "system",
-                    "content": _repository_context_message(search_context),
+                    "content": (
+                        _repository_context_message(search_context) if read_only_task
+                        else "Repository evidence for the requested change (use tools to inspect, edit, and verify):\n" + search_context
+                    ),
                 }
             )
-        elif retrieval_task and not git_task:
-            # Fallback: original path kept for safety.
-            search_context = self._build_search_context(user_input)
-            self.messages.append(
-                {
-                    "role": "system",
-                    "content": _repository_context_message(search_context),
-                }
-            )
-
         self.messages.append(
             {
                 "role": "user",
@@ -803,7 +835,7 @@ class Agent:
             )
 
         # Inject response mode contract for retrieval tasks.
-        if needs_evidence or retrieval_task:
+        if retrieval_task:
             self.messages.append(
                 {"role": "system", "content": HISTORY_ISOLATION_RULE}
             )
@@ -817,7 +849,6 @@ class Agent:
             except RuntimeError as exc:
                 self._save_history()
                 return str(exc)
-            self._trim_messages()
 
             available_tools = _tools_for_task(
                 git_task,
@@ -826,12 +857,21 @@ class Agent:
             )
 
             response = self.llm.chat(
-                messages=self.messages,
+                messages=self._request_messages(user_input),
                 tools=available_tools,
             )
 
             choice = response["choices"][0]
             message = choice["message"]
+
+            # Some small Ollama models emit a complete JSON tool call as text.
+            # Accept only that narrow format; the normal allowlist, argument
+            # validation, and read-only guards still apply before execution.
+            if not message.get("tool_calls") and available_tools:
+                from app.tools.calls import parse_text_tool_call
+                parsed = parse_text_tool_call(message.get("content"), self.state.iteration)
+                if parsed:
+                    message = {"content": None, "tool_calls": [parsed]}
 
             tool_calls = message.get(
                 "tool_calls",
@@ -881,6 +921,26 @@ class Agent:
                     continue
 
             if not tool_calls:
+                content = message.get("content") or ""
+                describes_tool_call = '"name"' in content and '"arguments"' in content
+                unperformed_change = (
+                    not git_task and _has_action_intent(user_input, changes_only=True)
+                    and not self.state.files_changed and not self.state.errors
+                )
+                if available_tools and (describes_tool_call or unperformed_change):
+                    if text_corrections >= 2:
+                        return "OwA could not complete the task: the model described actions without executing the required tools."
+                    text_corrections += 1
+                    self.messages.append({
+                        "role": "system",
+                        "content": (
+                            "The task is not complete. Text describing a tool call does not execute it. "
+                            "Call the next required tool now. Use a native tool call, or return exactly "
+                            "one JSON object with keys name and arguments. No prose or code fences. "
+                            "Use only the provided tool names and argument schemas."
+                        ),
+                    })
+                    continue
                 if self.state.verification_required and not self.state.verification_done:
                     self.messages.append(
                         {
@@ -985,16 +1045,20 @@ class Agent:
                 if not verification.passed:
                     self.state.record_error(verification.message)
 
-                self.state.update_from_tool_result(
-                    tool_name=name,
-                    arguments=arguments,
-                    result=result,
-                )
+                if verification.passed or (name == "run_command" and "EXIT_CODE=" in result):
+                    self.state.update_from_tool_result(
+                        tool_name=name,
+                        arguments=arguments,
+                        result=result,
+                    )
 
-                if name in {"write_file", "patch_file", "run_command"}:
+                if name in {"write_file", "patch_file"} and verification.passed:
                     self.state.verification_required = True
                     self.state.verification_done = False
-                elif self.state.verification_required:
+                elif name == "run_command" and "EXIT_CODE=" in result:
+                    self.state.verification_required = True
+                    self.state.verification_done = verification.passed
+                elif self.state.verification_required and verification.passed:
                     self.state.verification_done = True
 
                 self.messages.append(
@@ -1008,34 +1072,24 @@ class Agent:
                 console.print(f"[dim]    ✓ done[/dim]")
 
     def stream(self, user_input: str):
-        self.state = AgentState(task=user_input)
-        self._allowed_citations = set()
-        self._evidence_context = ""
+        # Streaming text without tool schemas cannot execute an agent task.
+        # Use the same tool loop as the synchronous API for actionable requests.
         retrieval_task = task_requires_code_search(user_input)
         git_task = task_requires_git_tools(user_input)
-        messages_snapshot = len(self.messages)
-
-        if git_task:
+        if git_task or (not retrieval_task and not task_is_conversational(user_input)):
             try:
                 content = self.run(user_input) or NO_RESPONSE_MESSAGE
             except Exception:
                 content = NO_RESPONSE_MESSAGE
             yield _dedup_response(content)
             return
-
-        # Priority 1: evidence-first for stream path too.
-        needs_evidence = (
-            retrieval_task
-            or (
-                not task_is_read_only(user_input)
-                and any(
-                    kw in user_input.lower()
-                    for kw in ("implement", "add", "fix", "refactor", "update", "patch")
-                )
-            )
-        )
-
-        if needs_evidence or retrieval_task:
+        self._trim_messages()
+        self._request_start = len(self.messages)
+        self.state = AgentState(task=user_input)
+        self._allowed_citations = set()
+        self._evidence_context = ""
+        messages_snapshot = list(self.messages)
+        if retrieval_task:
             search_context = self._build_search_context(user_input)
             self.messages.append(
                 {
@@ -1050,10 +1104,8 @@ class Agent:
                 "content": user_input,
             }
         )
-        self._prepare_change_plan(user_input)
-
         # Inject response mode contract for retrieval tasks.
-        if needs_evidence or retrieval_task:
+        if retrieval_task:
             self.messages.append(
                 {"role": "system", "content": HISTORY_ISOLATION_RULE}
             )
@@ -1062,9 +1114,8 @@ class Agent:
             )
 
         content_parts = []
-        self._trim_messages()
         try:
-            for content in self.llm.chat_stream(self.messages):
+            for content in self.llm.chat_stream(self._request_messages(user_input)):
                 content_parts.append(content)
         except Exception:
             # Partial output cannot be shown safely because the fallback may
@@ -1078,7 +1129,7 @@ class Agent:
                 # For conversational inputs, retry stream once — never enter tool loop
                 try:
                     retry_parts = []
-                    for chunk in self.llm.chat_stream(self.messages):
+                    for chunk in self.llm.chat_stream(self._request_messages(user_input)):
                         retry_parts.append(chunk)
                     content = "".join(retry_parts)
                 except Exception:
@@ -1089,7 +1140,7 @@ class Agent:
                     yield NO_RESPONSE_MESSAGE
             else:
                 # Non-conversational: restore messages and delegate to run() with tool loop
-                self.messages = self.messages[:messages_snapshot]
+                self.messages = messages_snapshot
                 try:
                     content = self.run(user_input) or ""
                 except Exception:

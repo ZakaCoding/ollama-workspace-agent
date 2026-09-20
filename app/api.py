@@ -50,10 +50,18 @@ class RuntimeStatus(BaseModel):
     metrics: SessionMetrics | None = None
 
 
+class EmbeddingStatus(BaseModel):
+    model: str | None = None
+    dimensions: int | None = None
+    compatible: bool
+    reason: str | None = None
+
+
 class StatusResponse(BaseModel):
     ready: bool
     chunks: int
     runtime: RuntimeStatus | None = None
+    embedding: EmbeddingStatus | None = None
 
 
 class IndexResponse(BaseModel):
@@ -151,10 +159,14 @@ def create_app(
 
     @app.post("/index", response_model=IndexResponse)
     def index(
+        force: bool = False,
         _: None = Depends(require_api_key),
     ) -> IndexResponse:
         try:
-            agent_service.index()
+            if force:
+                agent_service.index(force=True)
+            else:
+                agent_service.index()
         except Exception as exc:
             raise HTTPException(
                 status_code=500,

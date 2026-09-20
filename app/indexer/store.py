@@ -9,6 +9,8 @@ def save_chunk(
     content: str,
     embedding: list[float],
     file_hash: str = "",
+    *,
+    commit: bool = True,
 ):
     db.execute(
         """
@@ -36,4 +38,5 @@ def save_chunk(
         ),
     )
 
-    db.commit()
+    if commit:
+        db.commit()

@@ -4,8 +4,31 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed current-turn repository evidence, planning, and verification instructions
+  being discarded before model requests. Prior history is bounded by whole turns;
+  greetings use a short isolated prompt, and tests use temporary history files.
+- Routed CLI streaming action requests through the same tool loop as the API.
+  Symbol names such as `add` no longer grant edit intent, and fix requests retain
+  editing tools when they mention tests.
+- Added validated compatibility handling for complete JSON tool calls emitted as
+  text by small models, with bounded correction for described but unexecuted
+  actions. Model requests now use temperature zero.
+- Failed writes no longer count as changed files; command exit codes determine
+  verification success, and successful test commands complete verification.
+
 ### Added
 
+- Added `scripts/eval-agent.py` for opt-in live Ollama agent checks in disposable
+  projects: conversation isolation, file reading, cited retrieval, and a bug fix
+  verified by actual unit tests.
+- Added embedding model, endpoint fingerprint, and dimension metadata to the
+  index, compatibility diagnostics, lexical fallback for incompatible vectors,
+  and forced rebuilds through `/index --force` and `POST /index?force=true`.
+- Index updates now publish a complete snapshot only after all files succeed,
+  remove obsolete chunks and full-text records, and reuse the full-text index
+  during incremental updates.
 - Added in-memory model request latency, failure counts, and reported input/output
   token totals to CLI/API status. Streaming usage is collected, interrupted
   requests are counted, and missing usage remains distinguishable from zero.

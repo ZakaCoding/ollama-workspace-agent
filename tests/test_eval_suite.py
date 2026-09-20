@@ -28,6 +28,8 @@ from app.indexer.database import initialize
 from app.indexer.reranker import rerank
 from app.indexer.search import search
 from app.indexer.store import save_chunk
+from app.indexer.embeddings import get_config
+from app.indexer.metadata import write_metadata
 
 
 # ---------------------------------------------------------------------------
@@ -117,6 +119,7 @@ def test_file_change_exposes_focused_edit_tools():
     }
 
     assert names == {
+        "list_dir",
         "search_code",
         "read_file",
         "patch_file",
@@ -318,10 +321,11 @@ def test_search_returns_most_relevant_chunk(tmp_path, monkeypatch):
     initialize(db_path)
 
     with sqlite3.connect(db_path) as db:
+        write_metadata(db, get_config(), 2)
         save_chunk(db, "app/indexer/search.py", 0, "def search(db_path, query): pass", [1.0, 0.0])
         save_chunk(db, "app/tools/git.py", 0, "def git_log(): pass", [0.0, 1.0])
 
-    monkeypatch.setattr("app.indexer.search.embed", lambda _: [1.0, 0.0])
+    monkeypatch.setattr("app.indexer.search.embed", lambda _, **kwargs: [1.0, 0.0])
 
     results = search(db_path, "search function", limit=2)
     assert results[0]["path"] == "app/indexer/search.py"

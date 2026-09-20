@@ -65,11 +65,17 @@ OwA auto-indexes your project on first run and saves the index to `.owa/`. Once 
 |-----------|------------------------------------|
 | `/setup`  | Configure Ollama connection        |
 | `/model`  | Switch the active chat model       |
-| `/index`  | Rebuild the project index          |
+| `/index`  | Update changed files in the project index |
+| `/index --force` | Rebuild all indexed embeddings |
 | `/status` | Show index, budgets, and model capabilities |
 | `/clear`  | Clear conversation history         |
 | `/help`   | Show available commands            |
 | `/quit`   | Exit                               |
+
+`/status` also reports the indexed embedding model, dimensions, and compatibility.
+Changing the embedding model or endpoint triggers a full rebuild on the next
+`/index`; search uses lexical matches until then. Use `/index --force` if a model
+was replaced under the same name. Failed updates leave the previous index intact.
 
 Startup and `/status` include the active model, context/output budgets, evidence
 character cap, and capabilities reported by Ollama. Missing model metadata is

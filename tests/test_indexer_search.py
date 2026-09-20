@@ -4,6 +4,8 @@ from app.indexer.database import initialize
 from app.indexer.search import search
 from app.indexer.store import save_chunk
 from app.indexer.reranker import rerank
+from app.indexer.embeddings import get_config
+from app.indexer.metadata import write_metadata
 
 
 def test_search_combines_embedding_and_exact_term_relevance(tmp_path, monkeypatch):
@@ -11,17 +13,19 @@ def test_search_combines_embedding_and_exact_term_relevance(tmp_path, monkeypatc
     initialize(db_path)
 
     with sqlite3.connect(db_path) as db:
+        write_metadata(db, get_config(), 2)
         save_chunk(db, "app/router.py", 0, "def route_request(): pass", [1.0, 0.0])
         save_chunk(db, "app/other.py", 0, "def handle_request(): pass", [0.99, 0.01])
 
     monkeypatch.setattr(
         "app.indexer.search.embed",
-        lambda _query: [0.99, 0.01],
+        lambda _query, **kwargs: [0.99, 0.01],
     )
 
     results = search(db_path, "route_request", limit=2)
 
     assert results[0]["path"] == "app/router.py"
+    assert results[0]["semantic_score"] > 0
     assert results[0]["lexical_score"] > results[1]["lexical_score"]
 
 

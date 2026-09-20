@@ -37,9 +37,9 @@ class ApiClient:
         )
         response.raise_for_status()
 
-    def index(self) -> dict:
+    def index(self, force: bool = False) -> dict:
         response = self.session.post(
-            f"{self.base_url}/index",
+            f"{self.base_url}/index" + ("?force=true" if force else ""),
             headers=self._headers(),
             timeout=300,
         )

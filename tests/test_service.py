@@ -48,4 +48,10 @@ def test_service_reports_index_chunk_count(tmp_path):
 
     service = AgentService(tmp_path, FakeAgent())
 
-    assert service.status() == {"ready": True, "chunks": 2}
+    assert service.status() == {
+        "ready": True, "chunks": 2,
+        "embedding": {
+            "model": None, "dimensions": None, "compatible": False,
+            "reason": "embedding metadata is missing",
+        },
+    }

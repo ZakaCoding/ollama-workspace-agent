@@ -3,11 +3,16 @@ import math
 import re
 import sqlite3
 from pathlib import Path
+from contextlib import closing
 
 import httpx
+from rich.console import Console
 
-from app.indexer.embeddings import embed
+from app.indexer.embeddings import embed, get_config
+from app.indexer.metadata import compatibility_reason, read_metadata, vector_dimensions
 from app.indexer.reranker import rerank
+
+console = Console(stderr=True)
 
 
 def cosine_similarity(
@@ -77,14 +82,11 @@ def search(
     limit: int = 5,
 ) -> list[dict]:
 
-    try:
-        query_vector = embed(query)
-    except httpx.HTTPError:
-        query_vector = None
-
-    db = sqlite3.connect(db_path)
-
-    rows = db.execute(
+    config = get_config()
+    with closing(sqlite3.connect(Path(db_path).resolve().as_uri() + "?mode=ro", uri=True)) as db:
+        db.execute("BEGIN")
+        metadata = read_metadata(db)
+        rows = db.execute(
         """
         SELECT
             id,
@@ -94,10 +96,24 @@ def search(
             embedding
         FROM documents
         """
-    ).fetchall()
+        ).fetchall()
+        fts_scores = _fts_scores(db, query)
 
-    fts_scores = _fts_scores(db, query)
-    db.close()
+    if not rows:
+        return []
+    reason = compatibility_reason(metadata, config)
+    query_vector = None
+    if reason is None:
+        try:
+            candidate = embed(query, config=config)
+            if vector_dimensions(candidate) == metadata["dimensions"]:
+                query_vector = candidate
+            else:
+                reason = "query embedding dimensions do not match the index"
+        except (httpx.HTTPError, RuntimeError, ValueError):
+            reason = "query embedding is unavailable or invalid"
+    if reason:
+        console.print(f"[yellow]Using lexical search: {reason}. Run /index --force to rebuild.[/yellow]")
 
     results = []
 
@@ -109,14 +125,16 @@ def search(
         embedding_json,
     ) in rows:
 
-        vector = json.loads(embedding_json)
-
         keyword_score = keyword_similarity(query, content)
-        semantic_score = (
-            0.0
-            if query_vector is None
-            else cosine_similarity(query_vector, vector)
-        )
+        semantic_score = 0.0
+        if query_vector is not None:
+            try:
+                vector = json.loads(embedding_json)
+                if vector_dimensions(vector) != metadata["dimensions"]:
+                    raise ValueError("Stored vector dimensions do not match metadata")
+                semantic_score = cosine_similarity(query_vector, vector)
+            except (TypeError, ValueError):
+                console.print("[yellow]Invalid stored vector; using lexical score. Run /index --force.[/yellow]")
         lexical_score = fts_scores.get(document_id, keyword_score)
         score = (
             0.55 * semantic_score

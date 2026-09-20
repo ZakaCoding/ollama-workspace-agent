@@ -36,8 +36,8 @@ from using a larger model.
 
 ### Phase 3 — Efficient project grounding
 
-- [ ] Keep incremental indexing fast and remove stale records reliably.
-- [ ] Add model and embedding metadata to `.owa/index.db`.
+- [x] Keep incremental indexing fast and remove stale records reliably.
+- [x] Add model and embedding metadata to `.owa/index.db`.
 - [ ] Improve hybrid retrieval for symbols, filenames, and exact phrases.
 - [ ] Add context compression for large evidence sets.
 
@@ -72,5 +72,16 @@ API clients display the server's settings, and unavailable metadata is shown
 as unknown. Model request latency, failures, and reported token use are now
 measured in memory and exposed through status without telemetry. Missing usage
 is identified explicitly; retries and interrupted streams are counted as
-separate attempts. The next grounding task is embedding-model metadata in
-the index so incompatible vectors can be detected reliably.
+separate attempts. Indexes now record embedding provenance and dimensions,
+rebuild when configuration changes, and fall back to lexical search when
+vectors are incompatible. Updates preserve the prior database on failure,
+remove stale chunks, and reuse existing full-text records. Forced rebuilds and
+compatibility diagnostics are available in the CLI and API. The next grounding
+task is improved hybrid retrieval for symbols, filenames, and exact phrases.
+
+Direct small-model testing also exposed and fixed request-instruction loss,
+streaming tasks bypassing the tool loop, history contamination, and tool-call
+format mismatches. The live evaluation script now checks greetings, file reads,
+cited retrieval, and a real edit/test cycle in disposable projects. Both the
+installed Qwen 7.6B and Ornith 9B models passed these four smoke tests; larger
+coding tasks still require broader evaluation.

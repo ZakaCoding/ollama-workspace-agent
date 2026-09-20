@@ -176,7 +176,17 @@ def verify_tool_result(
             message="Tool returned an empty result.",
         )
 
-    if "error" in result.lower():
+    failure_prefixes = (
+        "Tool blocked:", "Tool execution error:", "Unknown tool:",
+        "Command blocked:", "Command rejected", "Command timed out", "Command is empty",
+        "File does not exist:", "Directory does not exist:", "Not a file:", "Not a directory:",
+        "File is not a UTF-8", "patch_file failed:",
+    )
+    failed = result.startswith(failure_prefixes)
+    if tool_name == "run_command":
+        exit_code = re.search(r"(?:^|\n)EXIT_CODE=(-?\d+)\s*$", result)
+        failed = failed or exit_code is None or int(exit_code.group(1)) != 0
+    if failed:
         return VerificationResult(
             passed=False,
             message=result,

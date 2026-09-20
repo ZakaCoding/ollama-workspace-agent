@@ -120,15 +120,30 @@ You can also place a `.env` in your project root to override the global config f
 
 ## CLI Commands
 
+For a live small-model agent check, run
+`python scripts/eval-agent.py --model qwen2.5-coder:7b --output .owa/eval.json`.
+It uses your configured Ollama connection and disposable projects. See
+[Agent evaluation](wiki/Agent-Evaluation.md) for checks and limitations.
+
 | Command   | Description                        |
 |-----------|------------------------------------|
 | `/setup`  | Configure Ollama connection        |
 | `/model`  | Switch the active chat model       |
-| `/index`  | Rebuild the project index          |
+| `/index`  | Update changed files in the project index |
+| `/index --force` | Rebuild all indexed embeddings |
 | `/status` | Show index, budgets, and model capabilities |
 | `/clear`  | Clear conversation history         |
 | `/help`   | Show available commands            |
 | `/quit`   | Exit                               |
+
+The index records its embedding model, endpoint fingerprint, and vector
+dimensions in `.owa/index.db`. Changing the embedding model or endpoint causes
+the next `/index` to rebuild all vectors. Until then, incompatible or legacy
+indexes use lexical search. `/status` reports embedding compatibility.
+Use `/index --force` after replacing a model under the same name or to repair
+invalid vectors. Failed updates preserve the previous index; successful updates
+remove deleted, excluded, and obsolete chunks. API clients can request a full
+rebuild with `POST /index?force=true`.
 
 Startup and `/status` show the active model, OwA context budget, evidence
 character cap, and output token limit. Model capabilities and maximum context
