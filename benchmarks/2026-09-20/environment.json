@@ -1,0 +1,76 @@
+{
+  "date": "2026-09-20",
+  "implementation_commit": "a339b78",
+  "qwen_baseline_commit": "44bdb82",
+  "ornith_discovery_commit": "9113bd2",
+  "python": "3.12.3",
+  "temperature": 0,
+  "context_budget_tokens": 8192,
+  "max_output_tokens": 1024,
+  "max_iterations": 8,
+  "max_tool_calls": 20,
+  "case_timeout_seconds": 240,
+  "models": [
+    {
+      "name": "nomic-embed-text:latest",
+      "digest": "0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f",
+      "details": {
+        "parent_model": "",
+        "format": "gguf",
+        "family": "nomic-bert",
+        "families": [
+          "nomic-bert"
+        ],
+        "parameter_size": "137M",
+        "quantization_level": "F16",
+        "context_length": 2048,
+        "embedding_length": 768
+      },
+      "capabilities": [
+        "embedding"
+      ]
+    },
+    {
+      "name": "ornith:9b",
+      "digest": "a75697c145891910e312c95e4a9fc1ccb8653e5ef543b23b0403a4665b82fd91",
+      "details": {
+        "parent_model": "",
+        "format": "gguf",
+        "family": "qwen35",
+        "families": [
+          "qwen35"
+        ],
+        "parameter_size": "9.0B",
+        "quantization_level": "Q4_K_M",
+        "context_length": 262144,
+        "embedding_length": 4096
+      },
+      "capabilities": [
+        "completion",
+        "tools",
+        "thinking"
+      ]
+    },
+    {
+      "name": "qwen2.5-coder:7b",
+      "digest": "dae161e27b0e90dd1856c8bb3209201fd6736d8eb66298e75ed87571486f4364",
+      "details": {
+        "parent_model": "",
+        "format": "gguf",
+        "family": "qwen2",
+        "families": [
+          "qwen2"
+        ],
+        "parameter_size": "7.6B",
+        "quantization_level": "Q4_K_M",
+        "context_length": 32768,
+        "embedding_length": 3584
+      },
+      "capabilities": [
+        "completion",
+        "tools",
+        "insert"
+      ]
+    }
+  ]
+}

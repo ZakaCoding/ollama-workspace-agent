@@ -1,5 +1,9 @@
 # Live agent evaluation
 
+See the [2026-09-20 benchmark report](../benchmarks/2026-09-20/README.md) for
+recorded failures, fixes, raw traces, and the incomplete final rerun caused by
+server connectivity problems.
+
 Unit tests check orchestration with controlled model responses. To check an
 actual installed Ollama model, run from the repository root:
 

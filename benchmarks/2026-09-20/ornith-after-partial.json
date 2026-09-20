@@ -1,0 +1,709 @@
+[
+  {
+    "case": "greeting",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 8.26,
+    "answer": "Hello! How can I help you today?",
+    "tools": [],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [],
+    "metrics": {
+      "requests": 1,
+      "failed_requests": 0,
+      "total_duration_ms": 8257.95,
+      "prompt_tokens": 41,
+      "completion_tokens": 272,
+      "requests_with_usage": 1,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": true,
+        "succeeded": true,
+        "duration_ms": 8257.95,
+        "prompt_tokens": 41,
+        "completion_tokens": 272
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "read",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 5.59,
+    "answer": "The `add` function currently returns **`a - b`** (subtraction), not addition. It's a bug \u2014 it subtracts `b` from `a` instead of adding them.",
+    "tools": [
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "calculator.py"
+        },
+        "result": "def add(a, b):\n    return a - b\n"
+      }
+    ],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_9rs55byy",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "read_file",
+              "arguments": "{\"path\":\"calculator.py\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "The `add` function currently returns **`a - b`** (subtraction), not addition. It's a bug \u2014 it subtracts `b` from `a` instead of adding them."
+      }
+    ],
+    "metrics": {
+      "requests": 2,
+      "failed_requests": 0,
+      "total_duration_ms": 5564.22,
+      "prompt_tokens": 2815,
+      "completion_tokens": 141,
+      "requests_with_usage": 2,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 2511.23,
+        "prompt_tokens": 1435,
+        "completion_tokens": 80
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "retrieval",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 2.29,
+    "answer": "The `add` function is defined in `calculator.py`.\n\n[calculator.py#chunk=0]",
+    "tools": [],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [],
+    "metrics": {
+      "requests": 1,
+      "failed_requests": 0,
+      "total_duration_ms": 2186.08,
+      "prompt_tokens": 608,
+      "completion_tokens": 65,
+      "requests_with_usage": 1,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": true,
+        "succeeded": true,
+        "duration_ms": 2186.08,
+        "prompt_tokens": 608,
+        "completion_tokens": 65
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "edit",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 10.54,
+    "answer": "Fixed. Changed `return a - b` to `return a + b` in `calculator.py`. Tests pass.",
+    "tools": [
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "calculator.py"
+        },
+        "result": "def add(a, b):\n    return a - b\n"
+      },
+      {
+        "name": "patch_file",
+        "arguments": {
+          "path": "calculator.py",
+          "old_str": "    return a - b",
+          "new_str": "    return a + b"
+        },
+        "result": "Patched calculator.py: replaced 1 occurrence."
+      },
+      {
+        "name": "run_command",
+        "arguments": {
+          "command": "python -m unittest -q"
+        },
+        "result": "STDERR:\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n\nEXIT_CODE=0"
+      }
+    ],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_86pewmb9",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "read_file",
+              "arguments": "{\"path\":\"calculator.py\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_a3wu0ygf",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "patch_file",
+              "arguments": "{\"path\":\"calculator.py\",\"old_str\":\"    return a - b\",\"new_str\":\"    return a + b\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_3agnjl65",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "run_command",
+              "arguments": "{\"command\":\"python -m unittest -q\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "Fixed. Changed `return a - b` to `return a + b` in `calculator.py`. Tests pass."
+      }
+    ],
+    "metrics": {
+      "requests": 4,
+      "failed_requests": 0,
+      "total_duration_ms": 10447.51,
+      "prompt_tokens": 7582,
+      "completion_tokens": 283,
+      "requests_with_usage": 4,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 2522.43,
+        "prompt_tokens": 2009,
+        "completion_tokens": 81
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "learn",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 12.35,
+    "answer": "Project overview from selected excerpts in 3 files.\n\n- This is a calculator demo project with a simple `add` function implemented in `calculator.py` [README.md#chunk=0].\n- The `add` function is defined in `calculator.py` and currently returns `a - b` rather than `a + b` [calculator.py#chunk=0].\n- Tests for the `add` function are in `test_calculator.py` and expect `add(2, 3) == 5` and `add(-2, 3) == 1` [test_calculator.py#chunk=0].\n- To run the tests, execute `python -m unittest -q` as documented in the README [README.md#chunk=0].\n- I inspected selected excerpts from the repository; this is not a claim to have read every file.",
+    "tools": [],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [],
+    "metrics": {
+      "requests": 1,
+      "failed_requests": 0,
+      "total_duration_ms": 12325.15,
+      "prompt_tokens": 638,
+      "completion_tokens": 420,
+      "requests_with_usage": 1,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": true,
+        "succeeded": true,
+        "duration_ms": 12325.15,
+        "prompt_tokens": 638,
+        "completion_tokens": 420
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "legacy_search",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 7.37,
+    "answer": "The `add` function is defined in **calculator.py**:\n\n```python\ndef add(a, b):\n    return a - b\n```\n\n**What it returns:** It returns the **difference** `a - b` (subtraction), despite being named `add`. This is a classic \"gotcha\" \u2014 the function signature suggests addition, but it actually performs subtraction.",
+    "tools": [
+      {
+        "name": "search_code",
+        "arguments": {
+          "query": "add function",
+          "limit": 10
+        },
+        "result": "Found 1 source chunk(s).\n\nEVIDENCE: [calculator.py#chunk=0]\nFILE: calculator.py\nCHUNK: 0\nCONTENT:\ndef add(a, b):\n    return a - b\n"
+      }
+    ],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_7bjk8g0f",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "search_code",
+              "arguments": "{\"query\":\"add function\",\"limit\":10}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "The `add` function is defined in **calculator.py**:\n\n```python\ndef add(a, b):\n    return a - b\n```\n\n**What it returns:** It returns the **difference** `a - b` (subtraction), despite being named `add`. This is a classic \"gotcha\" \u2014 the function signature suggests addition, but it actually performs subtraction."
+      }
+    ],
+    "metrics": {
+      "requests": 2,
+      "failed_requests": 0,
+      "total_duration_ms": 7347.77,
+      "prompt_tokens": 2863,
+      "completion_tokens": 193,
+      "requests_with_usage": 2,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 3857.63,
+        "prompt_tokens": 1483,
+        "completion_tokens": 125
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "recovery",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 21.79,
+    "answer": "All done. The fix was:\n\n- **Root cause**: `calculator.py` had `return a - b` instead of `return a + b`.\n- **Fix**: Changed the subtraction to addition.\n- **Verification**: `python -m unittest -q` now passes cleanly.",
+    "tools": [
+      {
+        "name": "run_command",
+        "arguments": {
+          "command": "python -m unittest -q"
+        },
+        "result": "STDERR:\n======================================================================\nFAIL: test_add (test_calculator.AddTests.test_add)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/tmp/owa-agent-eval-3a7oigje/test_calculator.py\", line 6, in test_add\n    self.assertEqual(add(2, 3), 5)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^\nAssertionError: -1 != 5\n\n----------------------------------------------------------------------\nRan 1 test in 0.002s\n\nFAILED (failures=1)\n\nEXIT_CODE=1"
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "calculator.py"
+        },
+        "result": "def add(a, b):\n    return a - b\n"
+      },
+      {
+        "name": "patch_file",
+        "arguments": {
+          "path": "calculator.py",
+          "old_str": "    return a - b",
+          "new_str": "    return a + b"
+        },
+        "result": "Patched calculator.py: replaced 1 occurrence."
+      },
+      {
+        "name": "run_command",
+        "arguments": {
+          "command": "python -m unittest -q"
+        },
+        "result": "STDERR:\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n\nEXIT_CODE=0"
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "calculator.py"
+        },
+        "result": "def add(a, b):\n    return a + b\n"
+      }
+    ],
+    "errors": [
+      "STDERR:\n======================================================================\nFAIL: test_add (test_calculator.AddTests.test_add)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/tmp/owa-agent-eval-3a7oigje/test_calculator.py\", line 6, in test_add\n    self.assertEqual(add(2, 3), 5)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^\nAssertionError: -1 != 5\n\n----------------------------------------------------------------------\nRan 1 test in 0.002s\n\nFAILED (failures=1)\n\nEXIT_CODE=1"
+    ],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_e7t3wu93",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "run_command",
+              "arguments": "{\"command\":\"python -m unittest -q\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_v2rpqezx",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "read_file",
+              "arguments": "{\"path\":\"/tmp/owa-agent-eval-3a7oigje/calculator.py\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_appvbaf8",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "patch_file",
+              "arguments": "{\"path\":\"/tmp/owa-agent-eval-3a7oigje/calculator.py\",\"old_str\":\"    return a - b\",\"new_str\":\"    return a + b\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_6dxokuu7",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "run_command",
+              "arguments": "{\"command\":\"python -m unittest -q\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_zqv9ur7b",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "read_file",
+              "arguments": "{\"path\":\"/tmp/owa-agent-eval-3a7oigje/calculator.py\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "All done. The fix was:\n\n- **Root cause**: `calculator.py` had `return a - b` instead of `return a + b`.\n- **Fix**: Changed the subtraction to addition.\n- **Verification**: `python -m unittest -q` now passes cleanly."
+      }
+    ],
+    "metrics": {
+      "requests": 6,
+      "failed_requests": 0,
+      "total_duration_ms": 21564.16,
+      "prompt_tokens": 12349,
+      "completion_tokens": 568,
+      "requests_with_usage": 6,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 5629.59,
+        "prompt_tokens": 2312,
+        "completion_tokens": 185
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "multi_file",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 31.02,
+    "answer": "Both fixes are applied and verified:\n\n- **`calculator.py`**: `add` now returns `a + b` (was `a - b`)\n- **`operations.py`**: `multiply` now returns `a * b` (was `a + b`)\n\nAll 2 tests pass.",
+    "tools": [
+      {
+        "name": "list_dir",
+        "arguments": {
+          "path": "."
+        },
+        "result": "FILE README.md\nFILE calculator.py\nFILE operations.py\nFILE test_calculator.py"
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "calculator.py"
+        },
+        "result": "def add(a, b):\n    return a - b\n"
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "operations.py"
+        },
+        "result": "def multiply(a, b):\n    return a + b\n"
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "test_calculator.py"
+        },
+        "result": "import unittest\nfrom calculator import add\n\nclass AddTests(unittest.TestCase):\n    def test_add(self):\n        self.assertEqual(add(2, 3), 5)\n        self.assertEqual(add(-2, 3), 1)\n\n    def test_multiply(self):\n        from operations import multiply\n        self.assertEqual(multiply(2, 3), 6)\n"
+      },
+      {
+        "name": "patch_file",
+        "arguments": {
+          "path": "calculator.py",
+          "old_str": "    return a - b",
+          "new_str": "    return a + b"
+        },
+        "result": "Patched calculator.py: replaced 1 occurrence."
+      },
+      {
+        "name": "patch_file",
+        "arguments": {
+          "path": "operations.py",
+          "old_str": "    return a + b",
+          "new_str": "    return a * b"
+        },
+        "result": "Patched operations.py: replaced 1 occurrence."
+      },
+      {
+        "name": "run_command",
+        "arguments": {
+          "command": "python -m unittest -q"
+        },
+        "result": "STDERR:\n----------------------------------------------------------------------\nRan 2 tests in 0.000s\n\nOK\n\nEXIT_CODE=0"
+      }
+    ],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "1. Inspect `calculator.py` to identify the bug in the `add` function and apply the fix.\n2. Inspect `operations.py` to identify the bug in the `multiply` function and apply the fix.\n3. Run `python -m unittest -q` to verify both fixes pass without modifying any test files."
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_nvlqp5li",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "list_dir",
+              "arguments": "{\"path\":\".\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_6ji9ul0x",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "read_file",
+              "arguments": "{\"path\":\"calculator.py\"}"
+            }
+          },
+          {
+            "id": "call_2a22cy8j",
+            "index": 1,
+            "type": "function",
+            "function": {
+              "name": "read_file",
+              "arguments": "{\"path\":\"operations.py\"}"
+            }
+          },
+          {
+            "id": "call_m4l7isqx",
+            "index": 2,
+            "type": "function",
+            "function": {
+              "name": "read_file",
+              "arguments": "{\"path\":\"test_calculator.py\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "Found the bugs. In `calculator.py`, `add` subtracts instead of adding. In `operations.py`, `multiply` adds instead of multiplying.",
+        "tool_calls": [
+          {
+            "id": "call_25andi2x",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "patch_file",
+              "arguments": "{\"path\":\"calculator.py\",\"old_str\":\"    return a - b\",\"new_str\":\"    return a + b\"}"
+            }
+          },
+          {
+            "id": "call_xd33lxo8",
+            "index": 1,
+            "type": "function",
+            "function": {
+              "name": "patch_file",
+              "arguments": "{\"path\":\"operations.py\",\"old_str\":\"    return a + b\",\"new_str\":\"    return a * b\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_l49ai762",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "run_command",
+              "arguments": "{\"command\":\"python -m unittest -q\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "Both fixes are applied and verified:\n\n- **`calculator.py`**: `add` now returns `a + b` (was `a - b`)\n- **`operations.py`**: `multiply` now returns `a * b` (was `a + b`)\n\nAll 2 tests pass."
+      }
+    ],
+    "metrics": {
+      "requests": 6,
+      "failed_requests": 0,
+      "total_duration_ms": 30909.03,
+      "prompt_tokens": 10844,
+      "completion_tokens": 808,
+      "requests_with_usage": 6,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 2978.61,
+        "prompt_tokens": 2418,
+        "completion_tokens": 84
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "long_history",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 13.01,
+    "answer": "Project overview from selected excerpts in 3 files.\n\n- This is a calculator demo project with a simple `add` function implemented in `calculator.py` [README.md#chunk=0].\n- The `add` function is defined in `calculator.py` and currently returns `a - b` rather than `a + b` [calculator.py#chunk=0].\n- Tests for the `add` function are in `test_calculator.py` and expect `add(2, 3) == 5` and `add(-2, 3) == 1` [test_calculator.py#chunk=0].\n- To run the tests, execute `python -m unittest -q` as documented in the README [README.md#chunk=0].\n- I inspected selected excerpts from the repository; this is not a claim to have read every file.",
+    "tools": [],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [],
+    "metrics": {
+      "requests": 1,
+      "failed_requests": 0,
+      "total_duration_ms": 12999.9,
+      "prompt_tokens": 638,
+      "completion_tokens": 420,
+      "requests_with_usage": 1,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": true,
+        "succeeded": true,
+        "duration_ms": 12999.9,
+        "prompt_tokens": 638,
+        "completion_tokens": 420
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "direct_list",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 5.45,
+    "answer": "The current directory contains:\n\n- **README.md**\n- **calculator.py**\n- **test_calculator.py**",
+    "tools": [
+      {
+        "name": "list_dir",
+        "arguments": {
+          "path": "."
+        },
+        "result": "FILE README.md\nFILE calculator.py\nFILE test_calculator.py"
+      }
+    ],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_ox1c3e22",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "list_dir",
+              "arguments": "{\"path\":\".\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "The current directory contains:\n\n- **README.md**\n- **calculator.py**\n- **test_calculator.py**"
+      }
+    ],
+    "metrics": {
+      "requests": 2,
+      "failed_requests": 0,
+      "total_duration_ms": 5427.31,
+      "prompt_tokens": 2805,
+      "completion_tokens": 107,
+      "requests_with_usage": 2,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 2112.94,
+        "prompt_tokens": 1430,
+        "completion_tokens": 61
+      }
+    },
+    "run": 1
+  }
+]

@@ -99,3 +99,9 @@ failures are separated from agent failures. Live Qwen testing exposed routing
 gaps in direct inspection, plain commands, informal edits, and combined Git/edit
 requests; these now have focused regression coverage. Larger real-project and
 multi-turn benchmarks remain future work.
+The 2026-09-20 live benchmark reproduced and fixed seven distinct routing,
+ordering, and path-handling failures. All 312 automated tests pass. Ornith passed
+the first ten cases after the final fixes, including both previously failing
+cases, before the server connection dropped again. Full repeated verification
+for both models remains pending; raw results and limitations are recorded in
+`benchmarks/2026-09-20/README.md`.
