@@ -79,3 +79,64 @@ def test_requested_tests_cannot_be_replaced_by_readback(monkeypatch):
     monkeypatch.setattr(agent.llm, "chat", lambda **kwargs: {"choices": [{"message": next(replies)}]})
     assert agent.run("Fix calculator.py and run python -m unittest -q") == "Fixed and tested."
     assert len(calls) == 1
+
+
+def test_initial_command_must_run_before_requested_fix(monkeypatch):
+    from app.agent import core
+
+    agent = Agent()
+    executed = []
+    results = iter(["EXIT_CODE=1", "EXIT_CODE=0"])
+    monkeypatch.setitem(core.FUNCTIONS, "run_command", lambda **kwargs: executed.append("run") or next(results))
+    monkeypatch.setitem(core.FUNCTIONS, "patch_file", lambda **kwargs: executed.append("patch") or "Patched calculator.py")
+    patch = {"name": "patch_file", "arguments": {"path": "calculator.py", "old_str": "a - b", "new_str": "a + b"}}
+    command = {"name": "run_command", "arguments": {"command": "python -m unittest -q"}}
+    replies = iter([patch, command, patch, command, None])
+
+    def chat(messages, tools=None):
+        if not executed:
+            assert "patch_file" not in {tool["function"]["name"] for tool in tools}
+        call = next(replies)
+        message = {"tool_calls": [{"id": "call", "type": "function", "function": call}]} if call else {"content": "Fixed and verified."}
+        return {"choices": [{"message": message}]}
+
+    monkeypatch.setattr(agent.llm, "chat", chat)
+    assert agent.run("Run python -m unittest -q and fix any failures") == "Fixed and verified."
+    assert executed == ["run", "patch", "run"]
+
+
+def test_agent_normalizes_only_in_workspace_absolute_paths(tmp_path, monkeypatch):
+    from app.agent import core
+
+    monkeypatch.setattr(core, "WORKSPACE", tmp_path)
+    agent = Agent()
+    paths = []
+    monkeypatch.setitem(core.FUNCTIONS, "read_file", lambda path: paths.append(path) or "source")
+    replies = iter([
+        {"tool_calls": [{"id": "outside", "type": "function", "function": {
+            "name": "read_file", "arguments": {"path": str(tmp_path.parent / "outside.py")},
+        }}]},
+        {"tool_calls": [{"id": "inside", "type": "function", "function": {
+            "name": "read_file", "arguments": {"path": str(tmp_path / "hello.py")},
+        }}]},
+        {"content": "Read the source."},
+    ])
+    monkeypatch.setattr(agent.llm, "chat", lambda **kwargs: {"choices": [{"message": next(replies)}]})
+    agent.run("Read hello.py")
+    assert paths == ["hello.py"]
+    assert len(agent.state.errors) == 1
+
+
+def test_absolute_path_normalization_rejects_symlink_escape(tmp_path):
+    from app.tools.validation import normalize_workspace_arguments
+
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (workspace / "link").symlink_to(outside, target_is_directory=True)
+    with pytest.raises(ValueError, match="inside the workspace"):
+        normalize_workspace_arguments("write_file", {
+            "path": str(workspace / "link" / "secret.txt"), "content": "changed",
+        }, workspace)
+    assert not (outside / "secret.txt").exists()

@@ -1,6 +1,21 @@
 """Argument validation for the flat string/integer schemas in the registry."""
 
 import json
+from pathlib import Path
+
+
+def normalize_workspace_arguments(name: str, arguments: dict, workspace: Path) -> dict:
+    """Accept equivalent in-workspace absolute paths from model tool calls."""
+    if name not in {"list_dir", "read_file", "write_file", "patch_file", "code_review"}:
+        return arguments
+    path = arguments.get("path")
+    if not isinstance(path, str) or not Path(path).is_absolute():
+        return arguments
+    try:
+        relative = Path(path).resolve().relative_to(workspace.resolve())
+    except ValueError as exc:
+        raise ValueError("path must stay inside the workspace; use a relative path") from exc
+    return {**arguments, "path": str(relative)}
 
 
 def validate_arguments(raw, schema: dict) -> dict:

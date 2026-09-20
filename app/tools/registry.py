@@ -166,7 +166,8 @@ TOOLS = [
                 "Execute a shell command when no dedicated tool is available "
                 "and execution is explicitly requested or necessary for an "
                 "explicitly requested task. Do not use for ordinary code "
-                "questions or filesystem operations."
+                "questions or filesystem operations. Already runs at the workspace "
+                "root: do not prepend cd or an absolute workspace path."
             ),
             "parameters": {
                 "type": "object",

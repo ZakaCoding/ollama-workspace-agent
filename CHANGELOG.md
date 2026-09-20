@@ -6,6 +6,10 @@ All notable changes to this project are documented here.
 
 ### Fixed
 
+- Requests beginning with command execution now withhold editing tools until
+  that command runs. Model-supplied absolute paths inside the workspace are
+  normalized to relative paths, with outside paths and symlink escapes rejected.
+  Command instructions clarify that tools already run in the workspace root.
 - Direct file listing/display and explicit tool requests now reach tools without
   requiring an index. Plain command requests expose the command tool, informal
   `can u` and `I need you to` requests recognize edit intent, and Git inspection

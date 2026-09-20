@@ -25,7 +25,7 @@ from app.agent.response_mode import (
 from app.indexer.search import search
 from app.llm.client import LLMClient
 from app.tools.registry import TOOLS, FUNCTIONS
-from app.tools.validation import validate_arguments
+from app.tools.validation import normalize_workspace_arguments, validate_arguments
 from app.config import max_output_tokens
 
 console = Console(stderr=True)
@@ -180,6 +180,13 @@ def _requires_direct_inspection(task: str) -> bool:
 def _has_execution_intent(task: str) -> bool:
     return "run_command" in _direct_tool_names(task) or bool(re.search(
         _REQUEST_PREFIX + r"(?:run|execute)\b", task.strip().lower(),
+    ))
+
+
+def _starts_with_execution(task: str) -> bool:
+    return bool(re.match(
+        _REQUEST_PREFIX + r"(?:(?:run|execute)\b|(?:use|call|invoke)\s+`?run_command\b)",
+        task.strip().lower(),
     ))
 
 
@@ -398,6 +405,8 @@ WORKSPACE ROOT:
 
 IMPORTANT:
 - All filesystem paths are relative to this workspace.
+- Tools already run at the workspace root. Use path "." to list it.
+- Run commands directly; do not prepend cd or an absolute workspace path.
 - Never assume another workspace such as /testbed, /workspace, or /app.
 - Use the filesystem tools to discover the actual project.
 - If a tests/ directory exists, use it; otherwise create a conventional tests/ directory.
@@ -970,6 +979,12 @@ class Agent:
             }
         )
         self._prepare_change_plan(user_input)
+        if _starts_with_execution(user_input):
+            self.messages.append({"role": "system", "content": (
+                "ORDER REQUIRED: the user asked to run a command first. Execute it "
+                "before editing files. Inspect its actual result, then make any "
+                "requested fix and rerun the command to verify."
+            )})
         workflow_message = _workflow_message(user_input)
         if workflow_message:
             self.messages.append(
@@ -997,6 +1012,9 @@ class Agent:
                 retrieval_task,
                 user_input,
             )
+            if _starts_with_execution(user_input) and not self.state.commands_run:
+                available_tools = [tool for tool in available_tools
+                                   if tool["function"]["name"] not in {"write_file", "patch_file"}]
 
             response = self.llm.chat(
                 messages=self._tool_request_messages(user_input, available_tools),
@@ -1165,6 +1183,7 @@ class Agent:
                 )
                 try:
                     arguments = validate_arguments(arguments, schema)
+                    arguments = normalize_workspace_arguments(name, arguments, WORKSPACE)
                 except ValueError as exc:
                     result = (
                         f"Invalid tool arguments for '{name}': {exc}. "
