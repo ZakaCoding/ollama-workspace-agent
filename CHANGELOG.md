@@ -6,6 +6,13 @@ All notable changes to this project are documented here.
 
 ### Fixed
 
+- Legacy indexes without full-text tables remain searchable without modification;
+  lexical fallback scores retain meaningful evidence thresholds.
+- Text-only tool models receive an explicit continuation and finish protocol.
+  Repeated identical tool failures stop with the actual error, and file reads
+  cannot mark a failed test command as successfully verified.
+- Project discovery prunes dependency directories, virtual environments, ignored
+  directories, and symlinks before indexing or gathering overview evidence.
 - Fixed current-turn repository evidence, planning, and verification instructions
   being discarded before model requests. Prior history is bounded by whole turns;
   greetings use a short isolated prompt, and tests use temporary history files.
@@ -20,6 +27,10 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- Added bounded, cited project overviews from current file excerpts, available
+  without an index or embeddings through requests such as `learn this project`.
+- Expanded live evaluation with project orientation, legacy search, test-failure
+  recovery, multi-file edits, and long-history isolation cases.
 - Added `scripts/eval-agent.py` for opt-in live Ollama agent checks in disposable
   projects: conversation isolation, file reading, cited retrieval, and a bug fix
   verified by actual unit tests.

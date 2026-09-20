@@ -11,6 +11,7 @@ import io
 import json
 import os
 from pathlib import Path
+import sqlite3
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
@@ -19,7 +20,7 @@ from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CASES = ("greeting", "read", "retrieval", "edit")
+CASES = ("greeting", "read", "retrieval", "edit", "learn", "legacy_search", "recovery", "multi_file", "long_history")
 
 
 def run_case(model, case):
@@ -39,7 +40,14 @@ def run_case(model, case):
             "        self.assertEqual(add(2, 3), 5)\n"
             "        self.assertEqual(add(-2, 3), 1)\n"
         )
-        (workspace / "README.md").write_text("Calculator demo. The add function is in calculator.py.\n")
+        (workspace / "README.md").write_text(
+            "Calculator demo. The add function is in calculator.py.\n"
+            "Run tests with `python -m unittest -q`.\n"
+        )
+        if case == "multi_file":
+            (workspace / "operations.py").write_text("def multiply(a, b):\n    return a + b\n")
+            with (workspace / "test_calculator.py").open("a") as test:
+                test.write("\n    def test_multiply(self):\n        from operations import multiply\n        self.assertEqual(multiply(2, 3), 6)\n")
         original_files = {p.name: p.read_text() for p in workspace.iterdir() if p.is_file()}
         from app.agent import core
         from app.indexer.index import index_project
@@ -59,8 +67,9 @@ def run_case(model, case):
         agent.llm.chat = trace_chat
         for name, function in list(core.FUNCTIONS.items()):
             def recorded(_name=name, _function=function, **kwargs):
-                if _name in {"patch_file", "write_file"} and kwargs.get("path") != "calculator.py":
-                    result = "Tool blocked: evaluation only permits modifying calculator.py."
+                allowed_edits = {"calculator.py", "operations.py"} if case == "multi_file" else {"calculator.py"}
+                if _name in {"patch_file", "write_file"} and kwargs.get("path") not in allowed_edits:
+                    result = "Tool blocked: evaluation only permits modifying the fixture source files."
                 elif _name == "run_command":
                     if kwargs.get("command") != "python -m unittest -q":
                         result = "Command rejected by evaluation: only python -m unittest -q is approved."
@@ -78,6 +87,11 @@ def run_case(model, case):
             "read": "Read calculator.py using read_file and tell me what add currently returns.",
             "retrieval": "Where is the add function defined?",
             "edit": "Fix add in calculator.py so it adds two numbers instead of subtracting. Read it first, patch it, then run python -m unittest -q to verify. Do not modify the tests.",
+            "learn": "learn this project",
+            "legacy_search": "Use search_code to find the add function, then describe what it returns.",
+            "recovery": "Run python -m unittest -q and fix any failure in calculator.py, then run python -m unittest -q again. Do not modify the tests.",
+            "multi_file": "Fix add in calculator.py and multiply in operations.py and run python -m unittest -q to verify both fixes. Do not modify the tests.",
+            "long_history": "learn this project",
         }
         if case == "greeting":
             agent.messages += [
@@ -86,6 +100,19 @@ def run_case(model, case):
             ]
         if case == "retrieval":
             index_project(workspace, workspace / ".owa" / "index.db")
+        if case in {"learn", "legacy_search"}:
+            # Reproduce the pre-FTS schema found in the user's real workspace.
+            (workspace / ".owa").mkdir(exist_ok=True)
+            with sqlite3.connect(workspace / ".owa" / "index.db") as db:
+                db.execute("CREATE TABLE documents (id INTEGER PRIMARY KEY, path TEXT, chunk_index INTEGER, content TEXT, embedding BLOB)")
+                db.execute("INSERT INTO documents VALUES (1, 'calculator.py', 0, ?, '[1,0]')",
+                           ((workspace / "calculator.py").read_text(),))
+        if case == "long_history":
+            for _ in range(25):
+                agent.messages += [
+                    {"role": "user", "content": "Describe the old weather app"},
+                    {"role": "assistant", "content": "The weather app uses Redis and Kubernetes. " * 20},
+                ]
         started = perf_counter()
         answer = "".join(agent.stream(tasks[case]))
         elapsed = round(perf_counter() - started, 2)
@@ -93,19 +120,30 @@ def run_case(model, case):
             passed = bool(answer.strip()) and len(answer) < 300 and not calls and any(
                 word in answer.lower() for word in ("hello", "hi", "hey")
             ) and not any(word in answer for word in ("```", "python", "os.listdir"))
-        elif case == "read":
-            passed = any(c["name"] == "read_file" and c["arguments"].get("path") == "calculator.py" for c in calls)
+        elif case in {"read", "legacy_search"}:
+            tool = "read_file" if case == "read" else "search_code"
+            passed = any(c["name"] == tool and "def add" in c["result"] for c in calls)
             passed = passed and any(term in answer.lower() for term in ("subtract", "difference", "a - b"))
         elif case == "retrieval":
             passed = "[calculator.py#chunk=0]" in answer and not calls
+        elif case in {"learn", "long_history"}:
+            passed = "calculator" in answer.lower() and "[README.md#chunk=0]" in answer
+            passed = passed and not calls and not any(word in answer.lower() for word in ("redis", "kubernetes"))
         else:
             check = subprocess.run([sys.executable, "-m", "unittest", "-q"], capture_output=True, text=True, timeout=10)
             passed = check.returncode == 0 and any(c["name"] == "patch_file" for c in calls)
             passed = passed and any(c["name"] == "run_command" and "EXIT_CODE=0" in c["result"] for c in calls)
+            if case == "recovery":
+                command_results = [c["result"] for c in calls if c["name"] == "run_command"]
+                passed = passed and len(command_results) >= 2 and "EXIT_CODE=1" in command_results[0]
+            if case == "multi_file":
+                patched = {c["arguments"]["path"] for c in calls if c["name"] == "patch_file"}
+                passed = passed and patched == {"calculator.py", "operations.py"}
         passed = passed and all(
             (workspace / name).read_text() == content
             for name, content in original_files.items()
-            if case != "edit" or name != "calculator.py"
+            if case not in {"edit", "recovery", "multi_file"}
+            or name not in ({"calculator.py", "operations.py"} if case == "multi_file" else {"calculator.py"})
         )
         passed = passed and agent.state.completed
         return {"case": case, "model": model, "passed": bool(passed), "seconds": elapsed,

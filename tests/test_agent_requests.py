@@ -143,9 +143,11 @@ def test_text_tool_calls_execute_through_normal_loop(monkeypatch, content):
 
     def chat(messages, tools=None):
         if called:
-            tool_call = messages[-2]["tool_calls"][0]
-            assert isinstance(tool_call["function"]["arguments"], str)
-            assert messages[-1]["tool_call_id"] == tool_call["id"]
+            assert tools == []
+            assert all(m["role"] != "tool" and "tool_calls" not in m for m in messages)
+            assert "RESULT from read_file" in messages[-2]["content"]
+            assert "TOOL PROTOCOL" in messages[-1]["content"]
+            assert "read_file" in messages[-1]["content"]
         return next(answers)
 
     monkeypatch.setattr(agent.llm, "chat", chat)
@@ -256,3 +258,50 @@ def test_failed_read_cannot_verify_a_successful_write(monkeypatch):
     assert agent.state.tool_calls == 3
     assert agent.state.verification_done
     assert len(agent.state.errors) == 1
+
+
+def test_read_cannot_turn_a_failed_test_into_successful_verification(monkeypatch):
+    from app.agent import core
+    agent = Agent()
+    results = iter(["EXIT_CODE=1", "EXIT_CODE=0"])
+    monkeypatch.setitem(core.FUNCTIONS, "run_command", lambda **kwargs: next(results))
+    monkeypatch.setitem(core.FUNCTIONS, "read_file", lambda **kwargs: "test source")
+    answers = iter([
+        response(tool="run_command", arguments='{"command":"python -m unittest -q"}'),
+        response(tool="read_file", arguments='{"path":"test.py"}'),
+        response("Tests passed."),
+        response(tool="run_command", arguments='{"command":"python -m unittest -q"}'),
+        response("Tests now pass."),
+    ])
+    monkeypatch.setattr(agent.llm, "chat", lambda **kwargs: next(answers))
+    assert agent.run("Run the tests") == "Tests now pass."
+    assert agent.state.commands_run == ["python -m unittest -q"] * 2
+    assert agent.state.verification_done
+
+
+def test_repeated_tool_failure_stops_with_the_actual_error(monkeypatch):
+    from app.agent import core
+    agent = Agent()
+    monkeypatch.setitem(core.FUNCTIONS, "read_file", lambda **kwargs: "File does not exist: missing.py")
+    monkeypatch.setattr(agent.llm, "chat", lambda **kwargs: response(
+        tool="read_file", arguments='{"path":"missing.py"}',
+    ))
+    result = agent.run("Read missing.py")
+    assert "repeated failure in read_file" in result
+    assert "File does not exist" in result
+    assert agent.state.tool_calls == 3
+    assert not agent.state.completed
+
+
+def test_text_protocol_has_an_explicit_finish_action(monkeypatch):
+    from app.agent import core
+    agent = Agent()
+    monkeypatch.setitem(core.FUNCTIONS, "read_file", lambda **kwargs: "return a - b")
+    answers = iter([
+        response('{"name":"read_file","arguments":{"path":"calculator.py"}}'),
+        response('{"answer":"The function returns a - b."}'),
+    ])
+    monkeypatch.setattr(agent.llm, "chat", lambda **kwargs: next(answers))
+    assert agent.run("Read calculator.py") == "The function returns a - b."
+    assert agent.state.completed
+    assert agent.state.tool_calls == 1

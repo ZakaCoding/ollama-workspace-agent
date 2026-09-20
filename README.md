@@ -120,6 +120,12 @@ You can also place a `.env` in your project root to override the global config f
 
 ## CLI Commands
 
+Ask `learn this project` for a cited overview of selected current files, without
+building an index or requesting embeddings. The overview respects `.owaignore`,
+skips dependency directories and symlinks, and stays within the context budget.
+It reads excerpts from at most six files; it does not train the model or retain
+permanent project knowledge.
+
 For a live small-model agent check, run
 `python scripts/eval-agent.py --model qwen2.5-coder:7b --output .owa/eval.json`.
 It uses your configured Ollama connection and disposable projects. See

@@ -85,3 +85,11 @@ format mismatches. The live evaluation script now checks greetings, file reads,
 cited retrieval, and a real edit/test cycle in disposable projects. Both the
 installed Qwen 7.6B and Ornith 9B models passed these four smoke tests; larger
 coding tasks still require broader evaluation.
+
+Project orientation now reads bounded excerpts from current files without an
+index or embeddings. Discovery prunes dependencies, ignored directories, and
+symlinks. Legacy indexes without FTS remain readable through lexical fallback.
+Text-only tool calls now have a continuation/finish protocol, repeated failures
+stop explicitly, and failed test commands require successful command verification.
+The live evaluation set includes five additional cases for these workflows;
+the previously recorded model results cover only the original four cases.

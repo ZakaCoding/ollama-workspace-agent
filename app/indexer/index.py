@@ -38,6 +38,9 @@ IGNORED_DIRS = {
     ".next",
     ".nuxt",
     ".cache",
+    ".agents",
+    ".codex",
+    ".pytest_cache",
     "vendor",
     "target",
     "bin",
@@ -87,10 +90,12 @@ def _load_owaignore(workspace: Path) -> set[str]:
 
 
 def should_index(path: Path, workspace: Path | None = None, ignored_patterns: set[str] | None = None) -> bool:
-    if not path.is_file():
+    if path.is_symlink() or not path.is_file():
         return False
 
-    if any(part in IGNORED_DIRS for part in path.parts):
+    relative = path.relative_to(workspace) if workspace else path
+    if any(part in IGNORED_DIRS or part.startswith(".venv") or part.endswith(".egg-info")
+           for part in relative.parts):
         return False
 
     if ignored_patterns and workspace:
@@ -100,6 +105,30 @@ def should_index(path: Path, workspace: Path | None = None, ignored_patterns: se
                 return False
 
     return path.suffix.lower() in TEXT_EXTENSIONS
+
+
+def iter_project_files(workspace: Path, ignored_patterns: set[str] | None = None):
+    """Walk source directories without descending into dependencies or symlinks."""
+    workspace = workspace.resolve()
+    patterns = _load_owaignore(workspace) if ignored_patterns is None else ignored_patterns
+    for root, directories, names in os.walk(workspace, followlinks=False):
+        parent = Path(root)
+        directories[:] = sorted(
+            name for name in directories
+            if name not in IGNORED_DIRS and not name.startswith(".venv")
+            and not name.endswith(".egg-info")
+            and not (parent / name).is_symlink()
+            and not (parent / name / "pyvenv.cfg").exists()
+            and not any(
+                (parent / name).relative_to(workspace).match(pattern)
+                or pattern in (parent / name).relative_to(workspace).parts
+                for pattern in patterns
+            )
+        )
+        for name in sorted(names):
+            path = parent / name
+            if should_index(path, workspace, patterns):
+                yield path
 
 
 def _ensure_gitignore(workspace: Path):
@@ -223,11 +252,7 @@ def _update_index(workspace: Path, db_path: Path, workers: int, config: tuple[st
     if ignored_patterns:
         console.print(f"[dim].owaignore: excluding {len(ignored_patterns)} pattern(s)[/dim]")
 
-    files = [
-        path
-        for path in workspace.rglob("*")
-        if should_index(path, workspace, ignored_patterns)
-    ]
+    files = list(iter_project_files(workspace, ignored_patterns))
 
     current_rel_paths = {str(f.relative_to(workspace)) for f in files}
 

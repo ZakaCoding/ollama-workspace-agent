@@ -37,6 +37,8 @@ class AgentState:
 
     verification_done: bool = False
 
+    verification_command_failed: bool = False
+
     completed: bool = False
 
     def record_file_change(self, path: str):

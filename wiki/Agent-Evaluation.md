@@ -22,8 +22,13 @@ fails. Retrieval timing excludes initial fixture indexing.
 | Read a source file | Actual `read_file` execution and correct description |
 | Locate a function | Citation to the correct indexed source file |
 | Fix a subtraction bug | Actual patch, actual passing test command, independent passing test run |
+| Learn a project | Cited current README overview without tools or embeddings |
+| Search a legacy index | Actual search of a pre-FTS index and correct source description |
+| Recover from failing tests | Failed test command followed by a fix and passing tests |
+| Fix two source files | Both source files patched and independently passing tests |
+| Learn after long unrelated history | Cited calculator overview without stale weather-app claims |
 
-Fixture files must remain unchanged except for the intended calculator edit.
+Fixture files must remain unchanged except for the intended source edits.
 Only the fixture's exact `python -m unittest -q` command is automatically
 approved; all other generated commands are rejected. Ordinary OwA command
 confirmation behavior remains unchanged.
@@ -35,7 +40,8 @@ prose, scripts, and invented test output are never executed. The normal tool
 allowlist, argument validation, and workspace checks still apply.
 
 On 2026-09-20, the installed `qwen2.5-coder:7b` (7.6B, Q4_K_M) and
-`ornith:9b` (9B, Q4_K_M) both passed all four cases after the orchestration fixes.
+`ornith:9b` (9B, Q4_K_M) both passed the original four cases after the orchestration fixes.
+That result does not cover the five subsequently added cases.
 The verified edit took about 5 seconds and 13 seconds respectively in those runs.
 Latency includes model requests and depends on model loading and server load;
 these timings are observations, not performance guarantees.

@@ -30,10 +30,10 @@ def search_code(
     for result in results:
 
         output.append(
+            f"EVIDENCE: [{result['path']}#chunk={result['chunk_index']}]\n"
             f"FILE: {result['path']}\n"
             f"CHUNK: {result['chunk_index']}\n"
-            f"SIMILARITY: {result['score']:.4f}\n"
             f"CONTENT:\n{result['content']}"
         )
 
-    return "\n\n" + ("\n" + "-" * 70 + "\n\n").join(output)
+    return f"Found {len(results)} source chunk(s).\n\n" + ("\n" + "-" * 70 + "\n\n").join(output)

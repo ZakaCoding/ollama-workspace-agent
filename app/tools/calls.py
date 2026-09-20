@@ -4,6 +4,20 @@ import json
 import re
 
 
+def parse_text_answer(content: str | None) -> str | None:
+    """Recognize the explicit finish action in the text-only protocol."""
+    if not isinstance(content, str):
+        return None
+    try:
+        value = json.loads(content)
+    except ValueError:
+        return None
+    if (isinstance(value, dict) and set(value) == {"answer"}
+            and isinstance(value["answer"], str) and value["answer"].strip()):
+        return value["answer"]
+    return None
+
+
 def parse_text_tool_call(content: str | None, sequence: int) -> dict | None:
     if not isinstance(content, str):
         return None

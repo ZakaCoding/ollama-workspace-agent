@@ -51,6 +51,12 @@ def _fts_query(query: str) -> str:
 
 
 def _fts_scores(db: sqlite3.Connection, query: str) -> dict[int, float]:
+    # Older OwA indexes predate FTS. Search must remain read-only and usable
+    # until the user rebuilds; per-chunk keyword matching is available below.
+    if not db.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'documents_fts'"
+    ).fetchone():
+        return {}
     match_query = _fts_query(query)
     if not match_query:
         return {}
@@ -127,12 +133,14 @@ def search(
 
         keyword_score = keyword_similarity(query, content)
         semantic_score = 0.0
+        semantic_available = False
         if query_vector is not None:
             try:
                 vector = json.loads(embedding_json)
                 if vector_dimensions(vector) != metadata["dimensions"]:
                     raise ValueError("Stored vector dimensions do not match metadata")
                 semantic_score = cosine_similarity(query_vector, vector)
+                semantic_available = True
             except (TypeError, ValueError):
                 console.print("[yellow]Invalid stored vector; using lexical score. Run /index --force.[/yellow]")
         lexical_score = fts_scores.get(document_id, keyword_score)
@@ -141,6 +149,10 @@ def search(
             + 0.30 * lexical_score
             + 0.15 * keyword_score
         )
+        if not semantic_available:
+            # Keep evidence thresholds meaningful when semantic search is
+            # unavailable; an absent signal is not a negative match.
+            score /= 0.45
 
         results.append(
             {
