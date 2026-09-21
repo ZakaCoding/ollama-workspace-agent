@@ -1,8 +1,6 @@
 import re
 
-
-def _terms(text: str) -> set[str]:
-    return set(re.findall(r"[a-z0-9_]+", text.lower()))
+from app.indexer.relevance import coverage, exact_signals, terms
 
 
 _SYMBOL_RE = re.compile(r"(?:def |class |async def )([\w]+)", re.MULTILINE)
@@ -18,41 +16,29 @@ def _symbol_terms(content: str) -> set[str]:
 
 def rerank(query: str, results: list[dict], limit: int) -> list[dict]:
     """Rerank a small candidate set locally without another model call."""
-    query_terms = _terms(query)
-    query_text = " ".join(query.lower().split())
-    # Extract symbols from query (e.g. function names typed by user)
-    query_symbols = _symbol_terms(query) | query_terms
-
+    if limit <= 0:
+        return []
+    query_terms = terms(query)
     for result in results:
         content = result.get("content", "")
         path = result.get("path", "")
-        content_terms = _terms(content)
-        path_terms = _terms(path.replace("/", " ").replace(".", " "))
+        signals = exact_signals(query, path, content)
         content_symbols = _symbol_terms(content)
-
-        exact_terms = (
-            len(query_terms & content_terms) / len(query_terms)
-            if query_terms
-            else 0.0
-        )
-        phrase_match = float(query_text in content.lower()) if query_text else 0.0
-        # Filename match: query terms appear in the file path
-        path_match = float(bool(query_terms & path_terms))
-        # Symbol match: query mentions a function/class name present in content
-        symbol_match = (
-            len(query_symbols & content_symbols) / len(query_symbols)
-            if query_symbols
-            else 0.0
-        )
+        declaration_match = float(bool(query_terms & content_symbols))
+        exact_terms = coverage(query, content)
+        phrase_match = signals["phrase_score"]
+        path_match = signals["path_score"]
+        symbol_match = max(signals["symbol_score"], declaration_match)
+        result.update(signals)
         # Neighboring chunk bonus: chunk_index 0 or 1 is often more relevant
         proximity_bonus = 0.05 if result.get("chunk_index", 99) <= 1 else 0.0
 
         result["rerank_score"] = (
-            0.40 * result.get("score", 0.0)
-            + 0.20 * exact_terms
+            0.30 * result.get("score", 0.0)
+            + 0.10 * exact_terms
             + 0.15 * symbol_match
-            + 0.10 * phrase_match
-            + 0.10 * path_match
+            + 0.20 * phrase_match
+            + 0.20 * path_match
             + proximity_bonus
         )
 

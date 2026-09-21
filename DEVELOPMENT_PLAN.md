@@ -38,7 +38,7 @@ from using a larger model.
 
 - [x] Keep incremental indexing fast and remove stale records reliably.
 - [x] Add model and embedding metadata to `.owa/index.db`.
-- [ ] Improve hybrid retrieval for symbols, filenames, and exact phrases.
+- [x] Improve hybrid retrieval for symbols, filenames, and exact phrases.
 - [ ] Add context compression for large evidence sets.
 
 ### Phase 4 — Developer workflow
@@ -76,8 +76,8 @@ separate attempts. Indexes now record embedding provenance and dimensions,
 rebuild when configuration changes, and fall back to lexical search when
 vectors are incompatible. Updates preserve the prior database on failure,
 remove stale chunks, and reuse existing full-text records. Forced rebuilds and
-compatibility diagnostics are available in the CLI and API. The next grounding
-task is improved hybrid retrieval for symbols, filenames, and exact phrases.
+compatibility diagnostics are available in the CLI and API. Hybrid retrieval now includes identifier parts and explicit filename, symbol,
+and phrase signals. The next grounding task is context compression.
 
 Direct small-model testing also exposed and fixed request-instruction loss,
 streaming tasks bypassing the tool loop, history contamination, and tool-call
@@ -111,5 +111,12 @@ implementation changes: Qwen passed 36/36 and Ornith passed 36/36. All 312
 automated tests still pass. Ornith's repeated security-review case passed but
 took 170.47 seconds, showing latency variation despite successful completion.
 Raw traces, environment metadata, and limits are in
-`benchmarks/2026-09-21/README.md`. The next planned implementation task remains
-hybrid retrieval for symbols, filenames, and exact phrases.
+`benchmarks/2026-09-21/README.md`. The subsequent grounding slice improves hybrid retrieval for symbols, filenames,
+and exact phrases. Shared lexical signals preserve snake_case and camelCase
+identifiers while matching their component words, recognize complete filename
+and path references, and match quoted phrases across whitespace. Exact signals
+contribute to evidence scores as well as reranking, including lexical fallback
+for legacy indexes. All 331 automated tests pass, including adversarial ranking
+fixtures with stronger semantic distractors. These retrieval changes have not
+yet been evaluated in a new live model benchmark. Next is context compression
+for large evidence sets.

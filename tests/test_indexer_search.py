@@ -1,5 +1,11 @@
 import sqlite3
 
+import pytest
+
+from app.agent.context import ContextBuilder
+from app.indexer.relevance import exact_signals
+from app.indexer.search import keyword_similarity
+
 from app.indexer.database import initialize
 from app.indexer.search import search
 from app.indexer.store import save_chunk
@@ -57,3 +63,59 @@ def test_local_reranker_prefers_exact_phrase_over_semantic_score():
     )
 
     assert results[0]["path"] == "app/router.py"
+
+
+@pytest.mark.parametrize("legacy", [False, True])
+@pytest.mark.parametrize(
+    "query,target_path,target_content,other_path,other_content",
+    [
+        ("Where is app/router.py?", "app/router.py", "dispatch incoming calls",
+         "app/other.py", "app py router utilities"),
+        ('Find "connection refused" in the error handling', "app/errors.py",
+         "raise Error('connection   refused')", "app/network.py",
+         "connection error handling refused in the connection"),
+        ("Where is routeRequest implemented?", "app/router.js",
+         "function routeRequest() {}", "app/other.js", "function routeRequestExtra() {}"),
+        ("Where is route_request implemented?", "app/router.py",
+         "def route_request(): pass", "app/other.py", "def route_request_extra(): pass"),
+    ],
+)
+def test_targeted_retrieval_with_and_without_fts(
+    tmp_path, monkeypatch, legacy, query, target_path, target_content, other_path, other_content,
+):
+    db_path = tmp_path / "index.db"
+    initialize(db_path)
+    with sqlite3.connect(db_path) as db:
+        if not legacy:
+            write_metadata(db, get_config(), 2)
+        save_chunk(db, other_path, 0, other_content, [1.0, 0.0])
+        save_chunk(db, target_path, 4, target_content, [0.8, 0.6])
+        if legacy:
+            db.execute("DROP TABLE documents_fts")
+    monkeypatch.setattr("app.indexer.search.embed", lambda *args, **kwargs: [1.0, 0.0])
+    results = search(db_path, query, limit=2)
+    assert results[0]["path"] == target_path
+    assert target_path in ContextBuilder().build(results[:1])
+
+
+@pytest.mark.parametrize("query", ["route request", "route_request", "routeRequest"])
+def test_identifier_parts_are_searchable(query):
+    assert keyword_similarity(query, "routeRequest route_request") == 1.0
+
+
+@pytest.mark.parametrize("query,path", [
+    ("app/router.py", "tests/router.py"),
+    ("router.py", "app/not_router.py"),
+    ("app/router.py", "app/other.py"),
+])
+def test_path_signal_requires_complete_reference(query, path):
+    assert exact_signals(query, path, "")["path_score"] == 0
+
+
+def test_exact_phrases_use_word_boundaries():
+    assert exact_signals('find "connect"', "a.py", "disconnected")["phrase_score"] == 0
+
+
+@pytest.mark.parametrize("query,limit", [("", 5), ("???", 5), ("route", 0), ("route", -1)])
+def test_empty_search_does_not_open_database(tmp_path, query, limit):
+    assert search(tmp_path / "missing.db", query, limit) == []

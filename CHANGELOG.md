@@ -6,6 +6,10 @@ All notable changes to this project are documented here.
 
 ### Fixed
 
+- Hybrid retrieval matches snake_case and camelCase identifier parts, complete
+  filename/path references, and quoted phrases across whitespace. Exact matches
+  contribute to evidence scores in both semantic and lexical fallback modes.
+
 - Requests beginning with command execution now withhold editing tools until
   that command runs. Model-supplied absolute paths inside the workspace are
   normalized to relative paths, with outside paths and symlink escapes rejected.

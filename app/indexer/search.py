@@ -1,6 +1,5 @@
 import json
 import math
-import re
 import sqlite3
 from pathlib import Path
 from contextlib import closing
@@ -11,6 +10,7 @@ from rich.console import Console
 from app.indexer.embeddings import embed, get_config
 from app.indexer.metadata import compatibility_reason, read_metadata, vector_dimensions
 from app.indexer.reranker import rerank
+from app.indexer.relevance import coverage, exact_signals, terms
 
 console = Console(stderr=True)
 
@@ -36,18 +36,11 @@ def cosine_similarity(
 
 def keyword_similarity(query: str, content: str) -> float:
 
-    query_terms = set(re.findall(r"[a-z0-9_]+", query.lower()))
-    content_terms = set(re.findall(r"[a-z0-9_]+", content.lower()))
-
-    if not query_terms:
-        return 0.0
-
-    return len(query_terms & content_terms) / len(query_terms)
+    return coverage(query, content)
 
 
 def _fts_query(query: str) -> str:
-    terms = re.findall(r"[a-z0-9_]+", query.lower())
-    return " OR ".join(f'"{term}"' for term in terms)
+    return " OR ".join(f'"{term}"' for term in sorted(terms(query)))
 
 
 def _fts_scores(db: sqlite3.Connection, query: str) -> dict[int, float]:
@@ -87,6 +80,9 @@ def search(
     query: str,
     limit: int = 5,
 ) -> list[dict]:
+
+    if limit <= 0 or not terms(query):
+        return []
 
     config = get_config()
     with closing(sqlite3.connect(Path(db_path).resolve().as_uri() + "?mode=ro", uri=True)) as db:
@@ -143,7 +139,8 @@ def search(
                 semantic_available = True
             except (TypeError, ValueError):
                 console.print("[yellow]Invalid stored vector; using lexical score. Run /index --force.[/yellow]")
-        lexical_score = fts_scores.get(document_id, keyword_score)
+        signals = exact_signals(query, path, content)
+        lexical_score = max(fts_scores.get(document_id, 0.0), keyword_score, *signals.values())
         score = (
             0.55 * semantic_score
             + 0.30 * lexical_score
@@ -164,6 +161,7 @@ def search(
                 "semantic_score": semantic_score,
                 "lexical_score": lexical_score,
                 "keyword_score": keyword_score,
+                **signals,
             }
         )
 
