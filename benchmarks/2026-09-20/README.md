@@ -1,5 +1,8 @@
 # OwA agent benchmark — 2026-09-20
 
+Follow-up: the [2026-09-21 report](../2026-09-21/README.md) records the full
+two-round reruns. The original partial results below are preserved.
+
 Live testing reproduced seven distinct failures and drove two implementation
 commits: `9113bd2` (tool routing) and `a339b78` (command ordering and workspace
 paths). All **312 automated tests pass**. The final live matrix is **incomplete**

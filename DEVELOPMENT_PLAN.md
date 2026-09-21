@@ -103,5 +103,13 @@ The 2026-09-20 live benchmark reproduced and fixed seven distinct routing,
 ordering, and path-handling failures. All 312 automated tests pass. Ornith passed
 the first ten cases after the final fixes, including both previously failing
 cases, before the server connection dropped again. Full repeated verification
-for both models remains pending; raw results and limitations are recorded in
-`benchmarks/2026-09-20/README.md`.
+for both models was pending at that point; raw results and limitations are
+recorded in `benchmarks/2026-09-20/README.md`.
+
+The 2026-09-21 follow-up completed both full two-round matrices without further
+implementation changes: Qwen passed 36/36 and Ornith passed 36/36. All 312
+automated tests still pass. Ornith's repeated security-review case passed but
+took 170.47 seconds, showing latency variation despite successful completion.
+Raw traces, environment metadata, and limits are in
+`benchmarks/2026-09-21/README.md`. The next planned implementation task remains
+hybrid retrieval for symbols, filenames, and exact phrases.
