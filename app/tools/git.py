@@ -1,3 +1,4 @@
+from app.workspace import current_workspace
 import subprocess
 
 from app.tools.filesystem import WORKSPACE
@@ -6,7 +7,7 @@ from app.tools.filesystem import WORKSPACE
 def git_status() -> str:
     result = subprocess.run(
         ["git", "status", "--short", "--branch"],
-        cwd=WORKSPACE,
+        cwd=current_workspace(WORKSPACE),
         capture_output=True,
         text=True,
         timeout=30,
@@ -24,7 +25,7 @@ def git_status() -> str:
 def git_diff() -> str:
     result = subprocess.run(
         ["git", "diff"],
-        cwd=WORKSPACE,
+        cwd=current_workspace(WORKSPACE),
         capture_output=True,
         text=True,
         timeout=30,
@@ -41,7 +42,7 @@ def git_log() -> str:
             "--oneline",
             "-20",
         ],
-        cwd=WORKSPACE,
+        cwd=current_workspace(WORKSPACE),
         capture_output=True,
         text=True,
         timeout=30,

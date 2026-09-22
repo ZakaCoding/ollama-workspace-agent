@@ -39,21 +39,21 @@ from using a larger model.
 - [x] Keep incremental indexing fast and remove stale records reliably.
 - [x] Add model and embedding metadata to `.owa/index.db`.
 - [x] Improve hybrid retrieval for symbols, filenames, and exact phrases.
-- [ ] Add context compression for large evidence sets.
+- [x] Add context compression for large evidence sets.
 
 ### Phase 4 — Developer workflow
 
-- [ ] Make API and CLI behavior share the same service lifecycle.
-- [ ] Add reliable streamed tool progress for slow local models.
-- [ ] Improve `/model`, `/status`, `/index`, and configuration diagnostics.
-- [ ] Add reproducible CI coverage for supported Python versions.
+- [x] Make API and CLI behavior share the same service lifecycle.
+- [x] Add reliable streamed tool progress for slow local models.
+- [x] Improve `/model`, `/status`, `/index`, and configuration diagnostics.
+- [x] Add reproducible CI coverage for supported Python versions.
 
 ### Phase 5 — Evaluation and release quality
 
 - [x] Maintain a fixed small-model evaluation set for coding tasks.
-- [ ] Track groundedness, tool success, patch correctness, and latency.
-- [ ] Document resource profiles for common local machines.
-- [ ] Promote stable milestones through the changelog and release process.
+- [x] Track groundedness, tool success, patch correctness, and latency.
+- [x] Document resource profiles for common local machines.
+- [x] Promote stable milestones through the changelog and release process.
 
 ## Current update
 
@@ -77,7 +77,7 @@ rebuild when configuration changes, and fall back to lexical search when
 vectors are incompatible. Updates preserve the prior database on failure,
 remove stale chunks, and reuse existing full-text records. Forced rebuilds and
 compatibility diagnostics are available in the CLI and API. Hybrid retrieval now includes identifier parts and explicit filename, symbol,
-and phrase signals. The next grounding task is context compression.
+and phrase signals. Context compression is now implemented (see the update below).
 
 Direct small-model testing also exposed and fixed request-instruction loss,
 streaming tasks bypassing the tool loop, history contamination, and tool-call
@@ -117,6 +117,31 @@ identifiers while matching their component words, recognize complete filename
 and path references, and match quoted phrases across whitespace. Exact signals
 contribute to evidence scores as well as reranking, including lexical fallback
 for legacy indexes. All 331 automated tests pass, including adversarial ranking
-fixtures with stronger semantic distractors. These retrieval changes have not
-yet been evaluated in a new live model benchmark. Next is context compression
-for large evidence sets.
+fixtures with stronger semantic distractors. Live evaluation followed in the
+workflow and release slices described below.
+
+Context compression now uses deterministic query-focused source windows with
+nearby lines and explicit omission markers. It preserves chunk citations,
+skips duplicate source chunks, and shares the character cap across selected
+results, including headers and separators. Only emitted evidence citations are
+allowed in answers. Focused tests cover late matches, budget sharing, duplicate
+suppression, oversized metadata, long lines, and citation filtering. The workflow
+benchmark below now includes live retrieval and compression cases.
+
+The 0.7.0 milestone implements all remaining plan slices: the CLI and API share
+lazy startup, explicit indexing, cleanup, workspace/history binding, operation
+locking, and model selection. Structured HTTP events carry tool progress,
+heartbeats, final verified content, errors, and accurate completion status.
+Diagnostics explain invalid budgets, missing metadata, and unreadable indexes.
+A pinned dependency environment supports the Python 3.11–3.14 CI matrix, and
+release checks require a matching package version and dated changelog before
+publication. Resource presets and release instructions are in `docs/`.
+
+The expanded twenty-case evaluator records fixture groundedness checks, verified
+tool outcomes, independent patch tests, event traces, and latency. The final
+Python 3.12 and 3.14 suites each pass 354 tests. A real local HTTP check confirms
+progress arrives while the model is still waiting, preserves Unicode, and ends
+with a completion event. Live results and limitations are recorded in
+`benchmarks/2026-09-21-workflow/README.md`. This is a locally validated milestone;
+no release tag or package publication has been performed. Larger real-project
+and multi-turn benchmarks remain follow-up work beyond this plan.

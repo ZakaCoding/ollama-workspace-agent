@@ -1,3 +1,4 @@
+from app.workspace import current_workspace
 from pathlib import Path
 import subprocess
 
@@ -7,9 +8,9 @@ WORKSPACE = Path.cwd().resolve()
 
 def _safe_path(path: str) -> Path:
     """Resolve a path and ensure it stays inside the workspace."""
-    target = (WORKSPACE / path).resolve()
+    target = (current_workspace(WORKSPACE) / path).resolve()
 
-    if target != WORKSPACE and WORKSPACE not in target.parents:
+    if target != current_workspace(WORKSPACE) and current_workspace(WORKSPACE) not in target.parents:
         raise PermissionError(
             f"Access denied: {target} is outside workspace {WORKSPACE}"
         )
@@ -82,7 +83,7 @@ def run_command(command: str) -> str:
         result = subprocess.run(
             command,
             shell=True,
-            cwd=WORKSPACE,
+            cwd=current_workspace(WORKSPACE),
             capture_output=True,
             text=True,
             timeout=120,

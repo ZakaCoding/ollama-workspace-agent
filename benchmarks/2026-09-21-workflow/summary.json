@@ -1,0 +1,148 @@
+{
+  "ornith": {
+    "groundedness": {
+      "passed": 5,
+      "evaluated": 6
+    },
+    "patch_correctness": {
+      "passed": 5,
+      "evaluated": 5
+    },
+    "successful_tools": 36,
+    "max_seconds": 70.29,
+    "runs": 23,
+    "passed": 22,
+    "failed_cases": [
+      "retrieval"
+    ],
+    "infrastructure_failures": 1,
+    "median_seconds": 11.51,
+    "total_agent_seconds": 350.59,
+    "tool_calls": 37,
+    "model_requests": 60
+  },
+  "automated": {
+    "python_3_12": {
+      "passed": 354
+    },
+    "python_3_14": {
+      "passed": 354,
+      "dependency_deprecation_warnings": 343
+    }
+  },
+  "http_progress": {
+    "python_3_12": "passed",
+    "python_3_14": "passed",
+    "model_stub_blocked_until_tool_start_received": true,
+    "unicode_preserved": true
+  },
+  "packaging": {
+    "version": "0.7.0",
+    "wheel": "built and installed",
+    "sdist": "built; required scripts and fixtures present",
+    "tag_published": false,
+    "source_distribution_tests": {
+      "python": "3.14",
+      "passed": 354
+    }
+  },
+  "resume_preflight": {
+    "passed": false,
+    "kind": "ConnectionError",
+    "cases_run": 0
+  },
+  "ornith_resume_interrupted": {
+    "passed": 6,
+    "attempted": 7,
+    "failure_case": "long_history",
+    "model_requests_failed": 2,
+    "server_error_details_available": false
+  },
+  "ornith_all_attempts": {
+    "groundedness": {
+      "passed": 10,
+      "evaluated": 12
+    },
+    "patch_correctness": {
+      "passed": 10,
+      "evaluated": 10
+    },
+    "successful_tools": 71,
+    "max_seconds": 70.29,
+    "runs": 42,
+    "passed": 40,
+    "failed_cases": [
+      "retrieval",
+      "long_history"
+    ],
+    "infrastructure_failures": 2,
+    "median_seconds": 11.22,
+    "total_agent_seconds": 590.16,
+    "tool_calls": 73,
+    "model_requests": 110
+  },
+  "ornith_planned_cases_completed": 40,
+  "ornith_planned_cases": 40,
+  "qwen_initial": {
+    "groundedness": {
+      "passed": 10,
+      "evaluated": 10
+    },
+    "patch_correctness": {
+      "passed": 10,
+      "evaluated": 10
+    },
+    "successful_tools": 60,
+    "max_seconds": 9.46,
+    "runs": 40,
+    "passed": 40,
+    "failed_cases": [],
+    "infrastructure_failures": 0,
+    "median_seconds": 3.0,
+    "total_agent_seconds": 133.68,
+    "tool_calls": 62,
+    "model_requests": 112
+  },
+  "qwen_final": {
+    "groundedness": {
+      "passed": 10,
+      "evaluated": 10
+    },
+    "patch_correctness": {
+      "passed": 10,
+      "evaluated": 10
+    },
+    "successful_tools": 61,
+    "max_seconds": 9.36,
+    "runs": 40,
+    "passed": 40,
+    "failed_cases": [],
+    "infrastructure_failures": 0,
+    "median_seconds": 3.05,
+    "total_agent_seconds": 142.76,
+    "tool_calls": 64,
+    "model_requests": 112
+  },
+  "ornith_completed_case_counts": {
+    "greeting": 2,
+    "read": 2,
+    "retrieval": 2,
+    "edit": 2,
+    "learn": 2,
+    "legacy_search": 2,
+    "recovery": 2,
+    "multi_file": 2,
+    "long_history": 2,
+    "direct_list": 2,
+    "direct_read": 2,
+    "command": 2,
+    "polite_edit": 2,
+    "git_edit": 2,
+    "create": 2,
+    "review": 2,
+    "read_only": 2,
+    "git_read": 2,
+    "compression": 2,
+    "unsupported": 2
+  }
+}

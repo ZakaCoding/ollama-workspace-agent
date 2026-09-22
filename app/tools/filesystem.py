@@ -1,3 +1,4 @@
+from app.workspace import current_workspace
 from pathlib import Path
 
 
@@ -13,10 +14,10 @@ def resolve_path(path: str) -> Path:
             f"Absolute paths are not allowed: {path}"
         )
 
-    target = (WORKSPACE / raw).resolve()
+    target = (current_workspace(WORKSPACE) / raw).resolve()
 
     # Prevent ../workspace escape.
-    if target != WORKSPACE and WORKSPACE not in target.parents:
+    if target != current_workspace(WORKSPACE) and current_workspace(WORKSPACE) not in target.parents:
         raise PermissionError(
             f"Path escapes workspace: {path}"
         )

@@ -1,12 +1,16 @@
+import json
 import os
+from contextlib import asynccontextmanager
 import secrets
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
+from starlette.concurrency import iterate_in_threadpool
+from importlib.metadata import version
 from pydantic import BaseModel, Field
 
-from app.service import AgentService
+from app.service import AgentService, ServiceBusyError
 
 
 load_dotenv()
@@ -14,6 +18,10 @@ load_dotenv()
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1)
+
+
+class ModelRequest(BaseModel):
+    model: str = Field(min_length=1, max_length=200)
 
 
 class ChatResponse(BaseModel):
@@ -41,6 +49,7 @@ class SessionMetrics(BaseModel):
 
 
 class RuntimeStatus(BaseModel):
+    warnings: list[str] | None = None
     model: str
     context_budget_tokens: int
     evidence_max_chars: int
@@ -58,6 +67,7 @@ class EmbeddingStatus(BaseModel):
 
 
 class StatusResponse(BaseModel):
+    index_error: str | None = None
     ready: bool
     chunks: int
     runtime: RuntimeStatus | None = None
@@ -102,10 +112,25 @@ def create_app(
                 headers={"WWW-Authenticate": "ApiKey"},
             )
 
+    @asynccontextmanager
+    async def lifespan(app):
+        if hasattr(agent_service, "start"):
+            agent_service.start()
+        try:
+            yield
+        finally:
+            if hasattr(agent_service, "close"):
+                agent_service.close()
+
     app = FastAPI(
+        lifespan=lifespan,
         title="Local Coding Agent API",
-        version="0.1.0",
+        version=version("ollama-workspace-agent"),
     )
+
+    @app.exception_handler(ServiceBusyError)
+    async def busy_error(request, exc):
+        return JSONResponse(status_code=409, content={"detail": str(exc)})
 
     @app.get("/health")
     def health() -> dict[str, str]:
@@ -123,14 +148,52 @@ def create_app(
         _: None = Depends(require_api_key),
     ) -> ChatResponse:
         try:
+            if isinstance(agent_service, AgentService):
+                return ChatResponse(**agent_service.chat_response(request.message))
             content = agent_service.chat(request.message)
+        except ServiceBusyError:
+            raise
         except Exception as exc:
             raise HTTPException(
                 status_code=502,
                 detail=f"Chat service unavailable: {exc}",
             ) from exc
 
-        return ChatResponse(content=content)
+        return ChatResponse(content=content, completed=getattr(agent_service, "completed", True))
+
+    @app.get("/models")
+    def models(_: None = Depends(require_api_key)):
+        try:
+            return agent_service.models()
+        except ServiceBusyError:
+            raise
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    @app.post("/model")
+    def model(request: ModelRequest, _: None = Depends(require_api_key)):
+        try:
+            return agent_service.set_model(request.model)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except ServiceBusyError:
+            raise
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    @app.post("/chat/events")
+    def chat_events(request: ChatRequest, _: None = Depends(require_api_key)):
+        async def encoded():
+            events = agent_service.chat_events(request.message)
+            try:
+                async for event in iterate_in_threadpool(events):
+                    yield json.dumps(event, ensure_ascii=False) + "\n"
+            except Exception as exc:
+                yield json.dumps({"type": "error", "message": str(exc)}) + "\n"
+            finally:
+                events.close()
+        return StreamingResponse(encoded(), media_type="application/x-ndjson",
+                                 headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
     @app.post("/chat/stream")
     def chat_stream(
@@ -139,6 +202,8 @@ def create_app(
     ) -> StreamingResponse:
         try:
             stream = agent_service.chat_stream(request.message)
+        except ServiceBusyError:
+            raise
         except Exception as exc:
             raise HTTPException(
                 status_code=502,
@@ -167,6 +232,8 @@ def create_app(
                 agent_service.index(force=True)
             else:
                 agent_service.index()
+        except ServiceBusyError:
+            raise
         except Exception as exc:
             raise HTTPException(
                 status_code=500,

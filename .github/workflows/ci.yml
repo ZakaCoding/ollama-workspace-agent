@@ -9,26 +9,38 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python }}
 
       - name: Install dependencies
         run: |
-          pip install -e ".[dev]"
+          python -m pip install -r requirements-ci.txt
+          python -m pip install --no-build-isolation --no-deps -e ".[dev]"
+          python -m pip check
 
       - name: Compile check
         run: |
-          python -m py_compile main.py app/agent/*.py app/indexer/*.py app/llm/*.py app/tools/*.py
+          python -m compileall -q app main.py
 
       - name: Run tests
-        run: pytest tests/ -v
+        run: python -m pytest tests/ -q
         env:
           LLM_BASE_URL: http://localhost:11434/v1
           LLM_MODEL: test-model
           EMBEDDING_BASE_URL: http://localhost:11434
           EMBEDDING_MODEL: nomic-embed-text
+
+      - name: Verify incremental HTTP progress
+        run: python scripts/check-stream.py
+
+      - name: Build distribution
+        run: python -m build --no-isolation

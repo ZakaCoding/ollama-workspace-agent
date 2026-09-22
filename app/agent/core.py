@@ -26,7 +26,8 @@ from app.indexer.search import search
 from app.llm.client import LLMClient
 from app.tools.registry import TOOLS, FUNCTIONS
 from app.tools.validation import normalize_workspace_arguments, validate_arguments
-from app.config import max_output_tokens
+from app.config import max_output_tokens, configuration_warnings
+from app.workspace import current_workspace, history_path
 
 console = Console(stderr=True)
 NO_RESPONSE_MESSAGE = "I couldn't produce a response. Please try again."
@@ -581,19 +582,24 @@ class Agent:
         self.llm = LLMClient()
         self.context_builder = ContextBuilder()
         self.state = None
-        self.messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        self.messages = [{"role": "system", "content": SYSTEM_PROMPT.replace(str(WORKSPACE), str(current_workspace(WORKSPACE)))}]
         self._load_history()
 
+    def _progress(self, event):
+        callback = getattr(self, "progress", None)
+        if callback:
+            callback(event)
+
     def _load_history(self):
-        if HISTORY_PATH.exists():
+        if history_path(HISTORY_PATH).exists():
             try:
-                saved = json.loads(HISTORY_PATH.read_text())
+                saved = json.loads(history_path(HISTORY_PATH).read_text())
                 non_system = [m for m in saved if m["role"] != "system"]
                 sanitized = _sanitize_history(non_system)
                 # If more than half the history was drifted, discard it all.
                 if len(non_system) > 0 and len(sanitized) < len(non_system) // 2:
                     console.print("[dim]history contained drift — cleared automatically[/dim]")
-                    HISTORY_PATH.unlink(missing_ok=True)
+                    history_path(HISTORY_PATH).unlink(missing_ok=True)
                     return
                 self.messages += sanitized
             except Exception:
@@ -602,6 +608,7 @@ class Agent:
     def runtime_status(self) -> dict:
         return {
             "model": self.llm.model,
+            "warnings": configuration_warnings(),
             "context_budget_tokens": self.context_builder.model_context_tokens,
             "evidence_max_chars": self.context_builder.max_chars,
             "max_output_tokens": max_output_tokens(),
@@ -611,17 +618,17 @@ class Agent:
 
     def _save_history(self):
         try:
-            HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
+            history_path(HISTORY_PATH).parent.mkdir(parents=True, exist_ok=True)
             non_system = [m for m in self.messages if m["role"] != "system"]
-            HISTORY_PATH.write_text(json.dumps(non_system))
+            history_path(HISTORY_PATH).write_text(json.dumps(non_system))
         except Exception:
             pass
 
     def clear(self):
         self.state = None
-        self.messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        self.messages = [{"role": "system", "content": SYSTEM_PROMPT.replace(str(WORKSPACE), str(current_workspace(WORKSPACE)))}]
         try:
-            HISTORY_PATH.unlink(missing_ok=True)
+            history_path(HISTORY_PATH).unlink(missing_ok=True)
         except Exception:
             pass
 
@@ -756,10 +763,10 @@ class Agent:
     def _build_search_context(self, task: str) -> str:
         if is_project_learning_request(task) and task_is_read_only(task):
             self._evidence_context, self._allowed_citations = build_project_context(
-                WORKSPACE, self.context_builder,
+                current_workspace(WORKSPACE), self.context_builder,
             )
             return self._evidence_context
-        index_path = WORKSPACE / ".owa" / "index.db"
+        index_path = current_workspace(WORKSPACE) / ".owa" / "index.db"
 
         if not index_path.exists():
             self._allowed_citations = set()
@@ -767,11 +774,8 @@ class Agent:
             return ""
 
         results = search(index_path, task, limit=10)
-        self._allowed_citations = {
-            f"{result.get('path', 'unknown')}#chunk={result.get('chunk_index', '?')}"
-            for result in results
-        }
-        self._evidence_context = self.context_builder.build(results)
+        self._evidence_context = self.context_builder.build(results, query=task)
+        self._allowed_citations = set(self.context_builder.citations)
         return self._evidence_context
 
     def _verify_answer(self, content: str, retrieval_task: bool) -> str:
@@ -785,11 +789,11 @@ class Agent:
             content = self._retry_with_strict_prompt(content)
 
         # Priority 2: validate that mentioned file paths actually exist.
-        path_check = validate_mentioned_paths(content, WORKSPACE)
+        path_check = validate_mentioned_paths(content, current_workspace(WORKSPACE))
         if not path_check.passed:
             content = self._retry_with_strict_prompt(content)
             # After retry, re-validate paths.
-            path_check2 = validate_mentioned_paths(content, WORKSPACE)
+            path_check2 = validate_mentioned_paths(content, current_workspace(WORKSPACE))
             if not path_check2.passed:
                 return _REFUSE_MESSAGE
 
@@ -1016,6 +1020,7 @@ class Agent:
                 available_tools = [tool for tool in available_tools
                                    if tool["function"]["name"] not in {"write_file", "patch_file"}]
 
+            self._progress({"type": "status", "message": "Waiting for model"})
             response = self.llm.chat(
                 messages=self._tool_request_messages(user_input, available_tools),
                 tools=[] if self._text_tool_mode else available_tools,
@@ -1183,7 +1188,7 @@ class Agent:
                 )
                 try:
                     arguments = validate_arguments(arguments, schema)
-                    arguments = normalize_workspace_arguments(name, arguments, WORKSPACE)
+                    arguments = normalize_workspace_arguments(name, arguments, current_workspace(WORKSPACE))
                 except ValueError as exc:
                     result = (
                         f"Invalid tool arguments for '{name}': {exc}. "
@@ -1200,7 +1205,9 @@ class Agent:
                     self.state.record_error(result)
                     continue
 
-                console.print(f"[dim]  ⚙ {name}({json.dumps(arguments, ensure_ascii=False)})[/dim]")
+                self._progress({"type": "tool_start", "tool": name})
+                if not getattr(self, "progress", None):
+                    console.print(f"[dim]  ⚙ {name}({json.dumps(arguments, ensure_ascii=False)})[/dim]")
 
                 tool = FUNCTIONS.get(name)
 
@@ -1225,6 +1232,7 @@ class Agent:
                         )
 
                 verification = verify_tool_result(name, result)
+                self._progress({"type": "tool_end", "tool": name, "succeeded": verification.passed})
                 if not verification.passed:
                     self.state.record_error(verification.message)
                     signature = (name, json.dumps(arguments, sort_keys=True))
@@ -1258,7 +1266,8 @@ class Agent:
                     }
                 )
 
-                console.print("[dim]    ✓ done[/dim]" if verification.passed else "[yellow]    ⚠ failed[/yellow]")
+                if not getattr(self, "progress", None):
+                    console.print("[dim]    ✓ done[/dim]" if verification.passed else "[yellow]    ⚠ failed[/yellow]")
 
             if repeated_failure:
                 self.messages.append({"role": "assistant", "content": repeated_failure})

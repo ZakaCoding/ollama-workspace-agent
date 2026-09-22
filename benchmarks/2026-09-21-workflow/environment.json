@@ -1,0 +1,112 @@
+{
+  "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+  "platform": "Linux-6.8.0-1064-azure-x86_64-with-glibc2.39",
+  "base_commit": "929b81ffd2f1fe2dc4cabfa7d51e858b5131ac16",
+  "working_tree_modified": true,
+  "models": [
+    {
+      "name": "nomic-embed-text:latest",
+      "digest": "0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f",
+      "size": 274302450,
+      "details": {
+        "parent_model": "",
+        "format": "gguf",
+        "family": "nomic-bert",
+        "families": [
+          "nomic-bert"
+        ],
+        "parameter_size": "137M",
+        "quantization_level": "F16",
+        "context_length": 2048,
+        "embedding_length": 768
+      }
+    },
+    {
+      "name": "ornith:9b",
+      "digest": "a75697c145891910e312c95e4a9fc1ccb8653e5ef543b23b0403a4665b82fd91",
+      "size": 5629110568,
+      "details": {
+        "parent_model": "",
+        "format": "gguf",
+        "family": "qwen35",
+        "families": [
+          "qwen35"
+        ],
+        "parameter_size": "9.0B",
+        "quantization_level": "Q4_K_M",
+        "context_length": 262144,
+        "embedding_length": 4096
+      }
+    },
+    {
+      "name": "qwen2.5-coder:7b",
+      "digest": "dae161e27b0e90dd1856c8bb3209201fd6736d8eb66298e75ed87571486f4364",
+      "size": 4683087561,
+      "details": {
+        "parent_model": "",
+        "format": "gguf",
+        "family": "qwen2",
+        "families": [
+          "qwen2"
+        ],
+        "parameter_size": "7.6B",
+        "quantization_level": "Q4_K_M",
+        "context_length": 32768,
+        "embedding_length": 3584
+      }
+    }
+  ],
+  "budgets": {
+    "context_tokens": 8192,
+    "output_tokens": 1024,
+    "temperature": 0,
+    "iterations": 8,
+    "tool_calls": 20
+  },
+  "transport": "Tailscale SOCKS5",
+  "source_sha256": {
+    "app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "app/agent/__init__.py": "e27b0e1269585f9ec9be892910e9ba602e8eecfe24b42fdda32e408546f3cb04",
+    "app/agent/context.py": "35a3cd75e696ebad2097909cebdd4a70b9a280d098d53ad3b211d21309b2d4ed",
+    "app/agent/core.py": "1000e52ec36dc4290b112ee45ec94f2ab7176f64a47149ab883b5dc9aa046fa5",
+    "app/agent/project.py": "246f4b76d9685c31fe175e6daf87c7fe334b4a1c116c913aacc9b597e05d938b",
+    "app/agent/response_mode.py": "2fc5afeb2266245885a89580a939e2e4266dde5f8ac911d51aacdd6523afab6a",
+    "app/agent/state.py": "1f69867b60251dd053bd0c553d102d54600d707d8e0bc322a3fdfaf9a204cd5b",
+    "app/agent/verifier.py": "f50e99ab8685ffda7337c0033c683196f5f32979fd4abf26c38a720d0184581b",
+    "app/api.py": "03c1ed7a866a896df1439913d385d5c524b377c7405562d53a46836f3b79250d",
+    "app/api_client.py": "ee19300ed2b9cff0c10c2345a414c4d2da5455e52902f74ec9f1a0c5c44eb7c2",
+    "app/calculator.py": "527e35e23bef177902095c145554935f5bf39c3646b8ef3c9c9a404d697047c6",
+    "app/cli.py": "b23384fccd39fedd92ef5b3952d34208612cc7c04c81a6dcdf53bd8638be8c54",
+    "app/config.py": "5b24a79ba4660132e95967a37faa9c61505902229556a046110b0423efcc8cab",
+    "app/indexer/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "app/indexer/chunker.py": "881ff0c3a57047c1e54e96f8517e333bfad79f714d1d2e037f989b504dc36c0e",
+    "app/indexer/database.py": "49863c8150b3224903ac088caeab0453cdb69b4e015c06dbddfde6cc2b2f27e8",
+    "app/indexer/embeddings.py": "6ae41c34e0b8211aa0079ae7a343164f1f5fd68271a3a1c9cd3f3e876364dada",
+    "app/indexer/index.py": "4c8406f7d4bd0f23bf9df9feddc1b48ab528e491d29af009d8a56006ee721093",
+    "app/indexer/metadata.py": "e5c3dfe80b76298532606c079ca82a545f937af0c5880553c37444b9aeb17545",
+    "app/indexer/relevance.py": "4b47c721a56dccc91630405b2dc84622cab618f0a32c77932814f52bb2cd166c",
+    "app/indexer/reranker.py": "72f953f1c048406d87a5c20836d5df66832e6153a7fad3a256c198b8e9959f5c",
+    "app/indexer/scanner.py": "c6240400eca4e7a6e1002a8ee55c2958ee04f99120c69043dfea2a84c2ee8a86",
+    "app/indexer/search.py": "a8a83167ea33c4e6882320a4ec4f621ba32ce87ac02ab196e7e1be8f69c3d687",
+    "app/indexer/store.py": "85c0e0024a397ac8e98c1cbc23d77073984ac5c2e78c6184bca2a070d840bef4",
+    "app/llm/client.py": "8897a86f8721b184d2aebcaf563501f5c9cf0210b62fa6e20a83e2f00251c576",
+    "app/llm/metrics.py": "7fd49347c8be9a99be0bdf4da61b6d2b28871a84c2512c4b9f3ebc19ac61774f",
+    "app/memory/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "app/service.py": "537a470570fda247c044f944f30b5291a6b67d3bc814c752fadfeb97e6fb30b2",
+    "app/tools/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "app/tools/basic.py": "ddb52142373093e65f606be565393049c3312075d275e8935de702d2dadb9d09",
+    "app/tools/calls.py": "d18e8c65566b80d37a3c4ad5cda8269a25922308b000faebb70497315c68a869",
+    "app/tools/code_review.py": "dd41f35618b09b17129e66dbaf9b65c754bd561bf1cf484edd651533d724c502",
+    "app/tools/filesystem.py": "afa415ebe7b69c3057363dfe947ff8d2bdb0ad3cefdabdd409511c5daad0dbd9",
+    "app/tools/git.py": "c12c81e8e8104831f1c0f22f87ea3d72e031c9a7dc67d8c75d5675a43b621c2a",
+    "app/tools/registry.py": "a29073cbab64620e309352aab32cfa86f8100ebeb1384c3429ba04faadcd71eb",
+    "app/tools/search.py": "8cfe596b7f2770fbd9404fa5510cb692f31f3f3b16844c8ad700c28e92b98adc",
+    "app/tools/shell.py": "4b82cf0018d173fd272acb29f7d576ef6a8cf55aa2a004d4e8e73035587dcba3",
+    "app/tools/validation.py": "6e6858b1114a32cfc5cb288293b527ad20c756ac675d7a68f4eb00ec4d976fb6",
+    "app/workspace.py": "9361d9f2b23d911553c82119ef7134b4d4d96c48ea9323448d7f74545174540a",
+    "scripts/eval-agent.py": "f8474fc008ebc00e9d4db0bb87288b5f6700fea3425e895e3dbe4fff94d5c902",
+    "pyproject.toml": "de918a3059049ba6dc749c968f3b47b5f4c6a605ff32e45d5a0d8d2c0d7c0a24",
+    "requirements-ci.txt": "2a45d32d9e5e754bfd8a1f7a02f83df18dce23aaae0f5de4280f2d46af41d7bd"
+  },
+  "note": "Hashes describe final runtime and diagnostic evaluator used for the final Qwen matrix and the last resumed Ornith segment; initial matrices preceded final review changes."
+}

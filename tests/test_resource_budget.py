@@ -38,3 +38,15 @@ def test_llm_requests_include_output_budget(monkeypatch):
     client.chat([{"role": "user", "content": "hello"}])
 
     assert client.session.kwargs["json"]["max_tokens"] == 512
+
+
+def test_configuration_warnings_explain_invalid_settings_without_secrets(monkeypatch):
+    from app.config import configuration_warnings
+    monkeypatch.setenv('OWA_CONTEXT_TOKENS', 'bad')
+    monkeypatch.setenv('OWA_MAX_OUTPUT_TOKENS', '999999')
+    monkeypatch.setenv('LLM_BASE_URL', 'secret-value')
+    warnings = configuration_warnings()
+    assert len(warnings) == 3
+    assert 'default' in warnings[0]
+    assert 'nearest bound' in warnings[1]
+    assert 'secret-value' not in ' '.join(warnings)

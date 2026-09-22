@@ -2,7 +2,6 @@ import argparse
 import os
 from pathlib import Path
 
-import httpx
 from dotenv import load_dotenv, set_key
 from rich.console import Console
 from rich.markdown import Markdown
@@ -50,6 +49,8 @@ def print_status(status: dict):
     index = (f"index ready · {status['chunks']} chunks"
              if status["ready"] else "index not found")
     console.print(index, style="muted", markup=False)
+    if status.get("index_error"):
+        console.print(status["index_error"], style="error", markup=False)
     embedding = status.get("embedding")
     if embedding:
         model = embedding.get("model") or "unknown"
@@ -64,6 +65,8 @@ def print_status(status: dict):
     if not runtime:
         console.print("Runtime diagnostics unavailable.", style="muted")
         return
+    for warning in runtime.get("warnings", []):
+        console.print(warning, style="yellow", markup=False)
     capabilities = runtime.get("capabilities")
     capability_text = "unknown" if capabilities is None else ", ".join(capabilities) or "none reported"
     model_context = runtime.get("model_context_tokens")
@@ -97,38 +100,18 @@ def print_status(status: dict):
         )
 
 
-def run_model():
-    load_dotenv(ENV_PATH, override=True)
-    load_dotenv(Path.cwd() / ".env", override=True)
-    base_url = os.getenv("LLM_BASE_URL", "").replace("/v1", "").rstrip("/")
-    current = os.getenv("LLM_MODEL", "")
-    models = []
-
-    if base_url:
-        try:
-            resp = httpx.get(f"{base_url}/api/tags", timeout=5)
-            models = [m["name"] for m in resp.json().get("models", [])]
-        except Exception:
-            pass
-
-    if models:
-        console.print("\n[cmd]Available models:[/cmd]")
-        for i, m in enumerate(models, 1):
-            marker = " [muted](current)[/muted]" if m == current else ""
-            console.print(f"  [muted]{i}.[/muted] {m}{marker}")
-        console.print()
-
-    model = Prompt.ask("[prompt]Chat model[/prompt]", default=current)
-    if not model or model == current:
-        console.print("[muted]No change.[/muted]")
-        return
-
-    ensure_config_dir()
-    if not ENV_PATH.exists():
-        ENV_PATH.write_text("")
-    set_key(ENV_PATH, "LLM_MODEL", model)
-    os.environ["LLM_MODEL"] = model
-    console.print(f"[muted]Model set to {model}. Restart owa for changes to take effect.[/muted]\n")
+def run_model(service):
+    try:
+        status = service.models()
+        console.print("Available models:", style="cmd")
+        for model in status["models"]:
+            console.print(model, markup=False)
+        model = Prompt.ask("[prompt]Chat model[/prompt]", default=status["current"])
+        if model and model != status["current"]:
+            service.set_model(model)
+            console.print(f"Model set to {model}; conversation cleared for this session.", markup=False)
+    except Exception as exc:
+        console.print(f"Model selection failed: {exc}", style="error", markup=False)
 
 
 def run_setup():
@@ -219,91 +202,97 @@ def main(argv=None):
         else AgentService()
     )
 
-    status = None
+    service.start()
     try:
-        status = service.status()
-        print_status(status)
-    except Exception as exc:
-        console.print(f"[error]status error:[/error] {exc}")
-
-    if not args.api_url and status is not None:
-        if not status["ready"]:
-            console.print("[muted]No index found — indexing workspace…[/muted]")
-            try:
-                with Status("[muted]indexing…[/muted]", console=console, spinner="dots"):
-                    service.index()
-                console.print("[muted]Index ready.[/muted]\n")
-            except Exception as exc:
-                console.print(f"[error]auto-index failed:[/error] {exc}\n")
-
-    while True:
+        status = None
         try:
-            user_input = Prompt.ask("\n[prompt]›[/prompt]").strip()
-        except (KeyboardInterrupt, EOFError):
-            console.print("\n[muted]Bye.[/muted]")
-            break
-
-        if not user_input:
-            continue
-
-        command = user_input.lower()
-
-        if command == "/model":
-            run_model()
-            continue
-
-        if command == "/setup":
-            run_setup()
-            continue
-
-        if command == "/help":
-            console.print(HELP_TEXT)
-            continue
-
-        if command == "/status":
-            try:
-                print_status(service.status())
-            except Exception as exc:
-                console.print(f"[error]status error:[/error] {exc}")
-            continue
-
-        if command == "/clear":
-            try:
-                service.clear()
-                console.print("[muted]conversation cleared[/muted]")
-            except Exception as exc:
-                console.print(f"[error]clear error:[/error] {exc}")
-            continue
-
-        if command in {"/index", "/index --force"}:
-            try:
-                with Status("[muted]indexing…[/muted]", console=console, spinner="dots"):
-                    result = service.index(force=True) if command.endswith(" --force") else service.index()
-                msg = result.get("status", "complete") if isinstance(result, dict) else "complete"
-                console.print(f"[muted]index {msg}[/muted]")
-            except Exception as exc:
-                console.print(f"[error]index error:[/error] {exc}")
-            continue
-
-        if command in {"exit", "quit", "/exit", "/quit"}:
-            console.print("[muted]Bye.[/muted]")
-            break
-
-        try:
-            console.print()
-            console.print("[assistant]assistant[/assistant]")
-            chunks = []
-            message = _inject_file_context(user_input)
-            with Status("[muted]thinking…[/muted]", console=console, spinner="dots"):
-                for chunk in service.chat_stream(message):
-                    chunks.append(chunk)
-            response = "".join(chunks)
-            if response.strip():
-                console.print(Markdown(response))
-            else:
-                console.print("[muted](no response)[/muted]")
+            status = service.status()
+            print_status(status)
         except Exception as exc:
-            console.print(f"\n[error]agent error:[/error] {exc}\n")
+            console.print(f"[error]status error:[/error] {exc}")
+
+        while True:
+            try:
+                user_input = Prompt.ask("\n[prompt]›[/prompt]").strip()
+            except (KeyboardInterrupt, EOFError):
+                console.print("\n[muted]Bye.[/muted]")
+                break
+
+            if not user_input:
+                continue
+
+            command = user_input.lower()
+
+            if command == "/model":
+                run_model(service)
+                continue
+
+            if command == "/setup":
+                run_setup()
+                continue
+
+            if command == "/help":
+                console.print(HELP_TEXT)
+                continue
+
+            if command == "/status":
+                try:
+                    print_status(service.status())
+                except Exception as exc:
+                    console.print(f"[error]status error:[/error] {exc}")
+                continue
+
+            if command == "/clear":
+                try:
+                    service.clear()
+                    console.print("[muted]conversation cleared[/muted]")
+                except Exception as exc:
+                    console.print(f"[error]clear error:[/error] {exc}")
+                continue
+
+            if command in {"/index", "/index --force"}:
+                try:
+                    with Status("[muted]indexing…[/muted]", console=console, spinner="dots"):
+                        result = service.index(force=True) if command.endswith(" --force") else service.index()
+                    msg = result.get("status", "complete") if isinstance(result, dict) else "complete"
+                    console.print(f"[muted]index {msg}[/muted]")
+                except Exception as exc:
+                    console.print(f"[error]index error:[/error] {exc}")
+                continue
+
+            if command in {"exit", "quit", "/exit", "/quit"}:
+                console.print("[muted]Bye.[/muted]")
+                break
+
+            try:
+                console.print()
+                console.print("[assistant]assistant[/assistant]")
+                chunks = []
+                message = _inject_file_context(user_input)
+                with Status("[muted]thinking…[/muted]", console=console, spinner="dots") as progress:
+                    for event in service.chat_events(message):
+                        if event["type"] == "content":
+                            chunks.append(event["content"])
+                        elif event["type"] == "tool_start":
+                            progress.update(f"Running {event['tool']}…")
+                        elif event["type"] == "tool_end":
+                            outcome = "done" if event["succeeded"] else "failed"
+                            console.print(f"{event['tool']}: {outcome}", style="muted", markup=False)
+                        elif event["type"] == "status":
+                            progress.update(event["message"])
+                        elif event["type"] == "done" and not event["completed"]:
+                            console.print("Task did not complete.", style="error")
+                        elif event["type"] == "error":
+                            raise RuntimeError(event["message"])
+                response = "".join(chunks)
+                if response.strip():
+                    console.print(Markdown(response))
+                else:
+                    console.print("[muted](no response)[/muted]")
+            except Exception as exc:
+                console.print(f"\n[error]agent error:[/error] {exc}\n")
+    finally:
+        service.close()
 
 
 if __name__ == "__main__":

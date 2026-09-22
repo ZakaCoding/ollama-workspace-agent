@@ -1,5 +1,6 @@
 # Approximate token count: 1 token ≈ 4 chars for English/code text.
 from app.config import context_window_tokens
+from app.indexer.relevance import coverage, exact_signals
 
 
 _CHARS_PER_TOKEN = 4
@@ -40,58 +41,86 @@ class ContextBuilder:
         self.score_threshold = score_threshold
         self.max_chunks_per_file = max_chunks_per_file
         self.max_chunk_chars = max_chunk_chars
+        self.citations: set[str] = set()
 
-    def build(self, results: list[dict]) -> str:
-        if not results:
+    @staticmethod
+    def _excerpt(content: str, query: str, limit: int) -> str:
+        """Select a contiguous source window; never generate evidence text."""
+        if len(content) <= limit:
+            return content
+        marker = "[excerpt omitted]"
+        available = limit - 2 * (len(marker) + 1)
+        if available <= 0:
             return ""
+        # Rank lines, retaining nearby source for definitions and qualifiers.
+        best_offset = 0
+        best_score = 0.0
+        offset = 0
+        for line in content.splitlines(keepends=True):
+            signals = exact_signals(query, "", line)
+            score = coverage(query, line) + signals["symbol_score"] + signals["phrase_score"]
+            if score > best_score:
+                best_score, best_offset = score, offset
+            offset += len(line)
+        start = max(0, best_offset - available // 4)
+        start = min(start, max(0, len(content) - available))
+        end = min(len(content), start + available)
+        # Prefer whole lines, but retain bounded excerpts of very long lines.
+        boundary = content.find("\n", start, best_offset)
+        if start and boundary >= 0:
+            start = boundary + 1
+        boundary = content.rfind("\n", max(start, best_offset), end)
+        if boundary > max(start, best_offset):
+            end = boundary
+        return (
+            (marker + "\n" if start else "")
+            + content[start:end]
+            + ("\n" + marker if end < len(content) else "")
+        )
 
-        sections = []
-        used_chars = 0
+    def build(self, results: list[dict], query: str = "") -> str:
+        self.citations = set()
+        heading = "REPOSITORY CONTEXT\n==================\n\n"
+        separator = "\n---\n\n"
+        candidates = []
         chunks_per_file: dict[str, int] = {}
-
+        seen = set()
         for result in results:
-            if used_chars >= self.max_chars:
+            if len(candidates) >= self.max_results:
                 break
-
-            if len(sections) >= self.max_results:
-                break
-
             score = result.get("score", 0)
-            if score < self.score_threshold:
-                continue
-
             path = result.get("path", "unknown")
-            if chunks_per_file.get(path, 0) >= self.max_chunks_per_file:
-                continue
-
-            chunk_index = result.get("chunk_index", "?")
             content = result.get("content", "")
-
-            if len(content) > self.max_chunk_chars:
-                content = content[: self.max_chunk_chars]
-
-            section = (
+            key = (path, content)
+            if (score < self.score_threshold or not content.strip() or key in seen
+                    or chunks_per_file.get(path, 0) >= self.max_chunks_per_file):
+                continue
+            chunk_index = result.get("chunk_index", "?")
+            header = (
                 f"EVIDENCE: [{path}#chunk={chunk_index}]\n"
-                f"FILE: {path}\n"
-                f"CHUNK: {chunk_index}\n"
+                f"FILE: {path}\nCHUNK: {chunk_index}\n"
                 f"RELEVANCE: {score:.4f}\n"
-                f"CITE THIS EVIDENCE AS: [{path}#chunk={chunk_index}]\n"
-                f"CONTENT:\n{content}\n"
+                f"CITE THIS EVIDENCE AS: [{path}#chunk={chunk_index}]\nCONTENT:\n"
             )
-
-            remaining = self.max_chars - used_chars
-            if len(section) > remaining:
-                section = section[:remaining]
-
-            sections.append(section)
-            used_chars += len(section)
+            # Skip metadata that cannot fit with a useful source excerpt.
+            if len(header) + 80 > self.max_chars - len(heading):
+                continue
+            candidates.append((header, content, f"{path}#chunk={chunk_index}"))
+            seen.add(key)
             chunks_per_file[path] = chunks_per_file.get(path, 0) + 1
 
-        if not sections:
-            return ""
-
-        return (
-            "REPOSITORY CONTEXT\n"
-            "==================\n\n"
-            + "\n---\n\n".join(sections)
-        )
+        sections = []
+        remaining = self.max_chars - len(heading)
+        for index, (header, content, citation) in enumerate(candidates):
+            slots = len(candidates) - index
+            share = remaining // slots
+            overhead = len(header) + 1 + (len(separator) if sections else 0)
+            limit = min(self.max_chunk_chars, share - overhead)
+            excerpt = self._excerpt(content, query, limit) if limit > 0 else ""
+            if not excerpt:
+                continue
+            section = header + excerpt + "\n"
+            remaining -= len(section) + (len(separator) if sections else 0)
+            sections.append(section)
+            self.citations.add(citation)
+        return heading + separator.join(sections) if sections else ""

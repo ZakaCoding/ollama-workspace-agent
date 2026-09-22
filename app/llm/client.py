@@ -20,10 +20,19 @@ class LLMClient:
         ).rstrip("/")
         self.session = requests.Session()
         self.metrics = LLMMetrics()
+        self.selected_model = None
 
     @property
     def model(self):
-        return os.getenv("LLM_MODEL", "ornith:9b")
+        return self.selected_model or os.getenv("LLM_MODEL", "ornith:9b")
+
+    def close(self):
+        self.session.close()
+
+    def list_models(self):
+        response = self.session.get(f"{self.base_url}/models", timeout=5)
+        response.raise_for_status()
+        return sorted({entry["id"] for entry in response.json()["data"]})
 
     def model_metadata(self) -> dict:
         """Read optional Ollama metadata without loading or generating with a model."""

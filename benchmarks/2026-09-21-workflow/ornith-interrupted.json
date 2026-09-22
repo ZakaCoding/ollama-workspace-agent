@@ -1,0 +1,3490 @@
+[
+  {
+    "case": "greeting",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 29.1,
+    "groundedness_passed": null,
+    "patch_correct": null,
+    "successful_tools": 0,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "Hello! How can I help you today?"
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "Hello! How can I help you today?",
+    "tools": [],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [],
+    "metrics": {
+      "requests": 1,
+      "failed_requests": 0,
+      "total_duration_ms": 29088.51,
+      "prompt_tokens": 41,
+      "completion_tokens": 272,
+      "requests_with_usage": 1,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": true,
+        "succeeded": true,
+        "duration_ms": 29088.51,
+        "prompt_tokens": 41,
+        "completion_tokens": 272
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "read",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 5.24,
+    "groundedness_passed": null,
+    "patch_correct": null,
+    "successful_tools": 1,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "read_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "read_file",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "The `add` function currently returns **`a - b`** (subtraction), not addition."
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "The `add` function currently returns **`a - b`** (subtraction), not addition.",
+    "tools": [
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "calculator.py"
+        },
+        "result": "def add(a, b):\n    return a - b\n"
+      }
+    ],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_j2di9109",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "read_file",
+              "arguments": "{\"path\":\"calculator.py\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "The `add` function currently returns **`a - b`** (subtraction), not addition."
+      }
+    ],
+    "metrics": {
+      "requests": 2,
+      "failed_requests": 0,
+      "total_duration_ms": 5230.2,
+      "prompt_tokens": 2811,
+      "completion_tokens": 128,
+      "requests_with_usage": 2,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 2202.98,
+        "prompt_tokens": 1433,
+        "completion_tokens": 71
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "retrieval",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 4.09,
+    "groundedness_passed": true,
+    "patch_correct": null,
+    "successful_tools": 0,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "The `add` function is defined in `calculator.py`.\n\n[calculator.py#chunk=0]"
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "The `add` function is defined in `calculator.py`.\n\n[calculator.py#chunk=0]",
+    "tools": [],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [],
+    "metrics": {
+      "requests": 1,
+      "failed_requests": 0,
+      "total_duration_ms": 3850.14,
+      "prompt_tokens": 608,
+      "completion_tokens": 99,
+      "requests_with_usage": 1,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": true,
+        "succeeded": true,
+        "duration_ms": 3850.14,
+        "prompt_tokens": 608,
+        "completion_tokens": 99
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "edit",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 11.1,
+    "groundedness_passed": null,
+    "patch_correct": true,
+    "successful_tools": 3,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "read_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "read_file",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "patch_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "patch_file",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "run_command"
+      },
+      {
+        "type": "tool_end",
+        "tool": "run_command",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "Fixed. The `add` function now returns `a + b` instead of `a - b`, and all tests pass."
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "Fixed. The `add` function now returns `a + b` instead of `a - b`, and all tests pass.",
+    "tools": [
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "calculator.py"
+        },
+        "result": "def add(a, b):\n    return a - b\n"
+      },
+      {
+        "name": "patch_file",
+        "arguments": {
+          "path": "calculator.py",
+          "old_str": "    return a - b",
+          "new_str": "    return a + b"
+        },
+        "result": "Patched calculator.py: replaced 1 occurrence."
+      },
+      {
+        "name": "run_command",
+        "arguments": {
+          "command": "python -m unittest -q"
+        },
+        "result": "STDERR:\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n\nEXIT_CODE=0"
+      }
+    ],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_juv3hs2w",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "read_file",
+              "arguments": "{\"path\":\"calculator.py\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_0wfhioj1",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "patch_file",
+              "arguments": "{\"path\":\"calculator.py\",\"old_str\":\"    return a - b\",\"new_str\":\"    return a + b\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_on0qby0j",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "run_command",
+              "arguments": "{\"command\":\"python -m unittest -q\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "Fixed. The `add` function now returns `a + b` instead of `a - b`, and all tests pass."
+      }
+    ],
+    "metrics": {
+      "requests": 4,
+      "failed_requests": 0,
+      "total_duration_ms": 10970.9,
+      "prompt_tokens": 7586,
+      "completion_tokens": 294,
+      "requests_with_usage": 4,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 2886.23,
+        "prompt_tokens": 2010,
+        "completion_tokens": 86
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "learn",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 12.78,
+    "groundedness_passed": true,
+    "patch_correct": null,
+    "successful_tools": 0,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "Project overview from selected excerpts in 3 files.\n\n- This is a calculator demo project with a simple `add` function implemented in `calculator.py` [README.md#chunk=0].\n- The `add` function is defined in `calculator.py` and currently returns `a - b` rather than `a + b` [calculator.py#chunk=0].\n- Tests for the `add` function are in `test_calculator.py` and expect `add(2, 3) == 5` and `add(-2, 3) == 1` [test_calculator.py#chunk=0].\n- To run the tests, execute `python -m unittest -q` as documented in the README [README.md#chunk=0].\n- I inspected selected excerpts from the repository; this is not a claim to have read every file."
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "Project overview from selected excerpts in 3 files.\n\n- This is a calculator demo project with a simple `add` function implemented in `calculator.py` [README.md#chunk=0].\n- The `add` function is defined in `calculator.py` and currently returns `a - b` rather than `a + b` [calculator.py#chunk=0].\n- Tests for the `add` function are in `test_calculator.py` and expect `add(2, 3) == 5` and `add(-2, 3) == 1` [test_calculator.py#chunk=0].\n- To run the tests, execute `python -m unittest -q` as documented in the README [README.md#chunk=0].\n- I inspected selected excerpts from the repository; this is not a claim to have read every file.",
+    "tools": [],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [],
+    "metrics": {
+      "requests": 1,
+      "failed_requests": 0,
+      "total_duration_ms": 12772.09,
+      "prompt_tokens": 638,
+      "completion_tokens": 420,
+      "requests_with_usage": 1,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": true,
+        "succeeded": true,
+        "duration_ms": 12772.09,
+        "prompt_tokens": 638,
+        "completion_tokens": 420
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "legacy_search",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 7.02,
+    "groundedness_passed": null,
+    "patch_correct": null,
+    "successful_tools": 1,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "search_code"
+      },
+      {
+        "type": "tool_end",
+        "tool": "search_code",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "The `add` function is defined in **`calculator.py`**:\n\n```python\ndef add(a, b):\n    return a - b\n```\n\n**What it returns:** It returns the **difference** `a - b` \u2014 i.e., it subtracts `b` from `a`, despite being named `add`."
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "The `add` function is defined in **`calculator.py`**:\n\n```python\ndef add(a, b):\n    return a - b\n```\n\n**What it returns:** It returns the **difference** `a - b` \u2014 i.e., it subtracts `b` from `a`, despite being named `add`.",
+    "tools": [
+      {
+        "name": "search_code",
+        "arguments": {
+          "query": "add function",
+          "limit": 10
+        },
+        "result": "Found 1 source chunk(s).\n\nEVIDENCE: [calculator.py#chunk=0]\nFILE: calculator.py\nCHUNK: 0\nCONTENT:\ndef add(a, b):\n    return a - b\n"
+      }
+    ],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_aaz8yild",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "search_code",
+              "arguments": "{\"query\":\"add function\",\"limit\":10}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "The `add` function is defined in **`calculator.py`**:\n\n```python\ndef add(a, b):\n    return a - b\n```\n\n**What it returns:** It returns the **difference** `a - b` \u2014 i.e., it subtracts `b` from `a`, despite being named `add`."
+      }
+    ],
+    "metrics": {
+      "requests": 2,
+      "failed_requests": 0,
+      "total_duration_ms": 6996.35,
+      "prompt_tokens": 2861,
+      "completion_tokens": 187,
+      "requests_with_usage": 2,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 3544.01,
+        "prompt_tokens": 1482,
+        "completion_tokens": 116
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "recovery",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 15.49,
+    "groundedness_passed": null,
+    "patch_correct": true,
+    "successful_tools": 3,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "run_command"
+      },
+      {
+        "type": "tool_end",
+        "tool": "run_command",
+        "succeeded": false
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "read_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "read_file",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "patch_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "patch_file",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "run_command"
+      },
+      {
+        "type": "tool_end",
+        "tool": "run_command",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "All tests pass. The fix was changing `return a - b` to `return a + b` in `calculator.py`."
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "All tests pass. The fix was changing `return a - b` to `return a + b` in `calculator.py`.",
+    "tools": [
+      {
+        "name": "run_command",
+        "arguments": {
+          "command": "python -m unittest -q"
+        },
+        "result": "STDERR:\n======================================================================\nFAIL: test_add (test_calculator.AddTests.test_add)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/tmp/owa-agent-eval-1osecf6b/test_calculator.py\", line 6, in test_add\n    self.assertEqual(add(2, 3), 5)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^\nAssertionError: -1 != 5\n\n----------------------------------------------------------------------\nRan 1 test in 0.001s\n\nFAILED (failures=1)\n\nEXIT_CODE=1"
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "calculator.py"
+        },
+        "result": "def add(a, b):\n    return a - b\n"
+      },
+      {
+        "name": "patch_file",
+        "arguments": {
+          "path": "calculator.py",
+          "old_str": "def add(a, b):\n    return a - b",
+          "new_str": "def add(a, b):\n    return a + b"
+        },
+        "result": "Patched calculator.py: replaced 1 occurrence."
+      },
+      {
+        "name": "run_command",
+        "arguments": {
+          "command": "python -m unittest -q"
+        },
+        "result": "STDERR:\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n\nEXIT_CODE=0"
+      }
+    ],
+    "errors": [
+      "STDERR:\n======================================================================\nFAIL: test_add (test_calculator.AddTests.test_add)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/tmp/owa-agent-eval-1osecf6b/test_calculator.py\", line 6, in test_add\n    self.assertEqual(add(2, 3), 5)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^\nAssertionError: -1 != 5\n\n----------------------------------------------------------------------\nRan 1 test in 0.001s\n\nFAILED (failures=1)\n\nEXIT_CODE=1"
+    ],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_pqxzf7q0",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "run_command",
+              "arguments": "{\"command\":\"python -m unittest -q\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_1uwygxlk",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "read_file",
+              "arguments": "{\"path\":\"/tmp/owa-agent-eval-1osecf6b/calculator.py\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_071zvfkg",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "patch_file",
+              "arguments": "{\"path\":\"/tmp/owa-agent-eval-1osecf6b/calculator.py\",\"old_str\":\"def add(a, b):\\n    return a - b\",\"new_str\":\"def add(a, b):\\n    return a + b\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_06wpi6m4",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "run_command",
+              "arguments": "{\"command\":\"python -m unittest -q\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "All tests pass. The fix was changing `return a - b` to `return a + b` in `calculator.py`."
+      }
+    ],
+    "metrics": {
+      "requests": 5,
+      "failed_requests": 0,
+      "total_duration_ms": 15176.61,
+      "prompt_tokens": 10051,
+      "completion_tokens": 382,
+      "requests_with_usage": 5,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 1558.95,
+        "prompt_tokens": 2253,
+        "completion_tokens": 47
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "multi_file",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 29.06,
+    "groundedness_passed": null,
+    "patch_correct": true,
+    "successful_tools": 7,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "list_dir"
+      },
+      {
+        "type": "tool_end",
+        "tool": "list_dir",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "read_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "read_file",
+        "succeeded": true
+      },
+      {
+        "type": "tool_start",
+        "tool": "read_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "read_file",
+        "succeeded": true
+      },
+      {
+        "type": "tool_start",
+        "tool": "read_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "read_file",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "patch_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "patch_file",
+        "succeeded": true
+      },
+      {
+        "type": "tool_start",
+        "tool": "patch_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "patch_file",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "run_command"
+      },
+      {
+        "type": "tool_end",
+        "tool": "run_command",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "Both fixes are applied and verified:\n\n- **`calculator.py`**: `add` now returns `a + b` (was `a - b`)\n- **`operations.py`**: `multiply` now returns `a * b` (was `a + b`)\n\nAll 2 tests pass."
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "Both fixes are applied and verified:\n\n- **`calculator.py`**: `add` now returns `a + b` (was `a - b`)\n- **`operations.py`**: `multiply` now returns `a * b` (was `a + b`)\n\nAll 2 tests pass.",
+    "tools": [
+      {
+        "name": "list_dir",
+        "arguments": {
+          "path": "."
+        },
+        "result": "FILE README.md\nFILE calculator.py\nFILE operations.py\nFILE test_calculator.py"
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "calculator.py"
+        },
+        "result": "def add(a, b):\n    return a - b\n"
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "operations.py"
+        },
+        "result": "def multiply(a, b):\n    return a + b\n"
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "test_calculator.py"
+        },
+        "result": "import unittest\nfrom calculator import add\n\nclass AddTests(unittest.TestCase):\n    def test_add(self):\n        self.assertEqual(add(2, 3), 5)\n        self.assertEqual(add(-2, 3), 1)\n\n    def test_multiply(self):\n        from operations import multiply\n        self.assertEqual(multiply(2, 3), 6)\n"
+      },
+      {
+        "name": "patch_file",
+        "arguments": {
+          "path": "calculator.py",
+          "old_str": "    return a - b",
+          "new_str": "    return a + b"
+        },
+        "result": "Patched calculator.py: replaced 1 occurrence."
+      },
+      {
+        "name": "patch_file",
+        "arguments": {
+          "path": "operations.py",
+          "old_str": "    return a + b",
+          "new_str": "    return a * b"
+        },
+        "result": "Patched operations.py: replaced 1 occurrence."
+      },
+      {
+        "name": "run_command",
+        "arguments": {
+          "command": "python -m unittest -q"
+        },
+        "result": "STDERR:\n----------------------------------------------------------------------\nRan 2 tests in 0.000s\n\nOK\n\nEXIT_CODE=0"
+      }
+    ],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "1. Inspect `calculator.py` to identify the bug in the `add` function and apply the fix.\n2. Inspect `operations.py` to identify the bug in the `multiply` function and apply the fix.\n3. Run `python -m unittest -q` to verify both fixes pass without modifying any test files."
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_ybvhkwjk",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "list_dir",
+              "arguments": "{\"path\":\".\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_tk8ae9gi",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "read_file",
+              "arguments": "{\"path\":\"calculator.py\"}"
+            }
+          },
+          {
+            "id": "call_imrsa77q",
+            "index": 1,
+            "type": "function",
+            "function": {
+              "name": "read_file",
+              "arguments": "{\"path\":\"operations.py\"}"
+            }
+          },
+          {
+            "id": "call_he31wyf4",
+            "index": 2,
+            "type": "function",
+            "function": {
+              "name": "read_file",
+              "arguments": "{\"path\":\"test_calculator.py\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_jsf0xs43",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "patch_file",
+              "arguments": "{\"path\":\"calculator.py\",\"old_str\":\"    return a - b\",\"new_str\":\"    return a + b\"}"
+            }
+          },
+          {
+            "id": "call_hakr9ux5",
+            "index": 1,
+            "type": "function",
+            "function": {
+              "name": "patch_file",
+              "arguments": "{\"path\":\"operations.py\",\"old_str\":\"    return a + b\",\"new_str\":\"    return a * b\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_kk2frxtu",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "run_command",
+              "arguments": "{\"command\":\"python -m unittest -q\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "Both fixes are applied and verified:\n\n- **`calculator.py`**: `add` now returns `a + b` (was `a - b`)\n- **`operations.py`**: `multiply` now returns `a * b` (was `a + b`)\n\nAll 2 tests pass."
+      }
+    ],
+    "metrics": {
+      "requests": 6,
+      "failed_requests": 0,
+      "total_duration_ms": 28961.31,
+      "prompt_tokens": 10770,
+      "completion_tokens": 904,
+      "requests_with_usage": 6,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 4122.23,
+        "prompt_tokens": 2384,
+        "completion_tokens": 137
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "long_history",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 12.35,
+    "groundedness_passed": true,
+    "patch_correct": null,
+    "successful_tools": 0,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "Project overview from selected excerpts in 3 files.\n\n- This is a calculator demo project with a simple `add` function implemented in `calculator.py` [README.md#chunk=0].\n- The `add` function is defined in `calculator.py` and currently returns `a - b` rather than `a + b` [calculator.py#chunk=0].\n- Tests for the `add` function are in `test_calculator.py` and expect `add(2, 3) == 5` and `add(-2, 3) == 1` [test_calculator.py#chunk=0].\n- To run the tests, execute `python -m unittest -q` as documented in the README [README.md#chunk=0].\n- I inspected selected excerpts from the repository; this is not a claim to have read every file."
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "Project overview from selected excerpts in 3 files.\n\n- This is a calculator demo project with a simple `add` function implemented in `calculator.py` [README.md#chunk=0].\n- The `add` function is defined in `calculator.py` and currently returns `a - b` rather than `a + b` [calculator.py#chunk=0].\n- Tests for the `add` function are in `test_calculator.py` and expect `add(2, 3) == 5` and `add(-2, 3) == 1` [test_calculator.py#chunk=0].\n- To run the tests, execute `python -m unittest -q` as documented in the README [README.md#chunk=0].\n- I inspected selected excerpts from the repository; this is not a claim to have read every file.",
+    "tools": [],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [],
+    "metrics": {
+      "requests": 1,
+      "failed_requests": 0,
+      "total_duration_ms": 12338.77,
+      "prompt_tokens": 638,
+      "completion_tokens": 420,
+      "requests_with_usage": 1,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": true,
+        "succeeded": true,
+        "duration_ms": 12338.77,
+        "prompt_tokens": 638,
+        "completion_tokens": 420
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "direct_list",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 4.69,
+    "groundedness_passed": null,
+    "patch_correct": null,
+    "successful_tools": 1,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "list_dir"
+      },
+      {
+        "type": "tool_end",
+        "tool": "list_dir",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "The current directory contains:\n\n- **README.md**\n- **calculator.py**\n- **test_calculator.py**"
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "The current directory contains:\n\n- **README.md**\n- **calculator.py**\n- **test_calculator.py**",
+    "tools": [
+      {
+        "name": "list_dir",
+        "arguments": {
+          "path": "."
+        },
+        "result": "FILE README.md\nFILE calculator.py\nFILE test_calculator.py"
+      }
+    ],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_5dh9xt45",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "list_dir",
+              "arguments": "{\"path\":\".\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "The current directory contains:\n\n- **README.md**\n- **calculator.py**\n- **test_calculator.py**"
+      }
+    ],
+    "metrics": {
+      "requests": 2,
+      "failed_requests": 0,
+      "total_duration_ms": 4668.0,
+      "prompt_tokens": 2809,
+      "completion_tokens": 107,
+      "requests_with_usage": 2,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 1922.3,
+        "prompt_tokens": 1432,
+        "completion_tokens": 61
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "direct_read",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 8.73,
+    "groundedness_passed": null,
+    "patch_correct": null,
+    "successful_tools": 1,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "read_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "read_file",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "The file `calculator.py` contains a single function:\n\n```python\ndef add(a, b):\n    return a - b\n```\n\n**What `add` returns:**\n\nIt returns **`a - b`** \u2014 the difference between `a` and `b`.\n\nDespite its name, this function performs **subtraction**, not addition. So:\n\n- `add(5, 3)` \u2192 returns `2`\n- `add(10, 4)` \u2192 returns `6`\n- `add(0, 0)` \u2192 returns `0`\n\nThe function is named `add` but actually subtracts its second argument from its first."
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "The file `calculator.py` contains a single function:\n\n```python\ndef add(a, b):\n    return a - b\n```\n\n**What `add` returns:**\n\nIt returns **`a - b`** \u2014 the difference between `a` and `b`.\n\nDespite its name, this function performs **subtraction**, not addition. So:\n\n- `add(5, 3)` \u2192 returns `2`\n- `add(10, 4)` \u2192 returns `6`\n- `add(0, 0)` \u2192 returns `0`\n\nThe function is named `add` but actually subtracts its second argument from its first.",
+    "tools": [
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "calculator.py"
+        },
+        "result": "def add(a, b):\n    return a - b\n"
+      }
+    ],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_07gs95gs",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "read_file",
+              "arguments": "{\"path\":\"calculator.py\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "The file `calculator.py` contains a single function:\n\n```python\ndef add(a, b):\n    return a - b\n```\n\n**What `add` returns:**\n\nIt returns **`a - b`** \u2014 the difference between `a` and `b`.\n\nDespite its name, this function performs **subtraction**, not addition. So:\n\n- `add(5, 3)` \u2192 returns `2`\n- `add(10, 4)` \u2192 returns `6`\n- `add(0, 0)` \u2192 returns `0`\n\nThe function is named `add` but actually subtracts its second argument from its first."
+      }
+    ],
+    "metrics": {
+      "requests": 2,
+      "failed_requests": 0,
+      "total_duration_ms": 8715.7,
+      "prompt_tokens": 2811,
+      "completion_tokens": 248,
+      "requests_with_usage": 2,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 5540.27,
+        "prompt_tokens": 1433,
+        "completion_tokens": 187
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "command",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 5.04,
+    "groundedness_passed": null,
+    "patch_correct": null,
+    "successful_tools": 1,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "run_command"
+      },
+      {
+        "type": "tool_end",
+        "tool": "run_command",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "The output of `python -c \"print(6 * 7)\"` is **42**."
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "The output of `python -c \"print(6 * 7)\"` is **42**.",
+    "tools": [
+      {
+        "name": "run_command",
+        "arguments": {
+          "command": "python -c \"print(6 * 7)\""
+        },
+        "result": "STDOUT:\n42\n\nEXIT_CODE=0"
+      }
+    ],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_cktyp4n8",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "run_command",
+              "arguments": "{\"command\":\"python -c \\\"print(6 * 7)\\\"\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "The output of `python -c \"print(6 * 7)\"` is **42**."
+      }
+    ],
+    "metrics": {
+      "requests": 2,
+      "failed_requests": 0,
+      "total_duration_ms": 4998.56,
+      "prompt_tokens": 2750,
+      "completion_tokens": 116,
+      "requests_with_usage": 2,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 1790.07,
+        "prompt_tokens": 1407,
+        "completion_tokens": 55
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "polite_edit",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 13.2,
+    "groundedness_passed": null,
+    "patch_correct": true,
+    "successful_tools": 5,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "read_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "read_file",
+        "succeeded": true
+      },
+      {
+        "type": "tool_start",
+        "tool": "list_dir"
+      },
+      {
+        "type": "tool_end",
+        "tool": "list_dir",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "read_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "read_file",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "patch_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "patch_file",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "run_command"
+      },
+      {
+        "type": "tool_end",
+        "tool": "run_command",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "Fixed. Changed `return a - b` to `return a + b` in `calculator.py`, and the tests pass."
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "Fixed. Changed `return a - b` to `return a + b` in `calculator.py`, and the tests pass.",
+    "tools": [
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "calculator.py"
+        },
+        "result": "def add(a, b):\n    return a - b\n"
+      },
+      {
+        "name": "list_dir",
+        "arguments": {
+          "path": "."
+        },
+        "result": "FILE README.md\nFILE calculator.py\nFILE test_calculator.py"
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "test_calculator.py"
+        },
+        "result": "import unittest\nfrom calculator import add\n\nclass AddTests(unittest.TestCase):\n    def test_add(self):\n        self.assertEqual(add(2, 3), 5)\n        self.assertEqual(add(-2, 3), 1)\n"
+      },
+      {
+        "name": "patch_file",
+        "arguments": {
+          "path": "calculator.py",
+          "old_str": "    return a - b",
+          "new_str": "    return a + b"
+        },
+        "result": "Patched calculator.py: replaced 1 occurrence."
+      },
+      {
+        "name": "run_command",
+        "arguments": {
+          "command": "python -m unittest -q"
+        },
+        "result": "STDERR:\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n\nEXIT_CODE=0"
+      }
+    ],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_tvhxq6ob",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "read_file",
+              "arguments": "{\"path\":\"calculator.py\"}"
+            }
+          },
+          {
+            "id": "call_8m50hbvw",
+            "index": 1,
+            "type": "function",
+            "function": {
+              "name": "list_dir",
+              "arguments": "{\"path\":\".\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_l9zjrx11",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "read_file",
+              "arguments": "{\"path\":\"test_calculator.py\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_6jomzbdl",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "patch_file",
+              "arguments": "{\"path\":\"calculator.py\",\"old_str\":\"    return a - b\",\"new_str\":\"    return a + b\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_ikzov4m8",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "run_command",
+              "arguments": "{\"command\":\"python -m unittest -q\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "Fixed. Changed `return a - b` to `return a + b` in `calculator.py`, and the tests pass."
+      }
+    ],
+    "metrics": {
+      "requests": 5,
+      "failed_requests": 0,
+      "total_duration_ms": 13028.39,
+      "prompt_tokens": 9813,
+      "completion_tokens": 358,
+      "requests_with_usage": 5,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 1469.48,
+        "prompt_tokens": 2132,
+        "completion_tokens": 44
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "git_edit",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 14.07,
+    "groundedness_passed": null,
+    "patch_correct": true,
+    "successful_tools": 4,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "git_status"
+      },
+      {
+        "type": "tool_end",
+        "tool": "git_status",
+        "succeeded": true
+      },
+      {
+        "type": "tool_start",
+        "tool": "read_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "read_file",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "patch_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "patch_file",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "run_command"
+      },
+      {
+        "type": "tool_end",
+        "tool": "run_command",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "All done:\n\n- **Git status**: 3 untracked files (`README.md`, `calculator.py`, `test_calculator.py`)\n- **Fixed `calculator.py`**: changed `return a - b` \u2192 `return a + b`\n- **Tests**: `python -m unittest -q` \u2192 **OK** (1 test passed)"
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "All done:\n\n- **Git status**: 3 untracked files (`README.md`, `calculator.py`, `test_calculator.py`)\n- **Fixed `calculator.py`**: changed `return a - b` \u2192 `return a + b`\n- **Tests**: `python -m unittest -q` \u2192 **OK** (1 test passed)",
+    "tools": [
+      {
+        "name": "git_status",
+        "arguments": {},
+        "result": "## No commits yet on main\n?? README.md\n?? calculator.py\n?? test_calculator.py"
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "calculator.py"
+        },
+        "result": "def add(a, b):\n    return a - b\n"
+      },
+      {
+        "name": "patch_file",
+        "arguments": {
+          "path": "calculator.py",
+          "old_str": "    return a - b",
+          "new_str": "    return a + b"
+        },
+        "result": "Patched calculator.py: replaced 1 occurrence."
+      },
+      {
+        "name": "run_command",
+        "arguments": {
+          "command": "python -m unittest -q"
+        },
+        "result": "STDERR:\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n\nEXIT_CODE=0"
+      }
+    ],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_odxt7ywf",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "git_status",
+              "arguments": "{}"
+            }
+          },
+          {
+            "id": "call_9ctdfzie",
+            "index": 1,
+            "type": "function",
+            "function": {
+              "name": "read_file",
+              "arguments": "{\"path\":\"calculator.py\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_zmdgj5e4",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "patch_file",
+              "arguments": "{\"path\":\"calculator.py\",\"old_str\":\"    return a - b\",\"new_str\":\"    return a + b\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_7i8sf927",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "run_command",
+              "arguments": "{\"command\":\"python -m unittest -q\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "All done:\n\n- **Git status**: 3 untracked files (`README.md`, `calculator.py`, `test_calculator.py`)\n- **Fixed `calculator.py`**: changed `return a - b` \u2192 `return a + b`\n- **Tests**: `python -m unittest -q` \u2192 **OK** (1 test passed)"
+      }
+    ],
+    "metrics": {
+      "requests": 4,
+      "failed_requests": 0,
+      "total_duration_ms": 13971.49,
+      "prompt_tokens": 7758,
+      "completion_tokens": 399,
+      "requests_with_usage": 4,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 4350.9,
+        "prompt_tokens": 2063,
+        "completion_tokens": 144
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "create",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 7.11,
+    "groundedness_passed": null,
+    "patch_correct": null,
+    "successful_tools": 2,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "write_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "write_file",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "read_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "read_file",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "Done. `notes.txt` contains exactly `Calculator notes`, confirmed by reading it back."
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "Done. `notes.txt` contains exactly `Calculator notes`, confirmed by reading it back.",
+    "tools": [
+      {
+        "name": "write_file",
+        "arguments": {
+          "path": "notes.txt",
+          "content": "Calculator notes"
+        },
+        "result": "Successfully wrote 16 characters to notes.txt"
+      },
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "notes.txt"
+        },
+        "result": "Calculator notes"
+      }
+    ],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_1wjc2djg",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "write_file",
+              "arguments": "{\"path\":\"notes.txt\",\"content\":\"Calculator notes\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_7fqzc8v1",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "read_file",
+              "arguments": "{\"path\":\"notes.txt\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "Done. `notes.txt` contains exactly `Calculator notes`, confirmed by reading it back."
+      }
+    ],
+    "metrics": {
+      "requests": 3,
+      "failed_requests": 0,
+      "total_duration_ms": 7096.31,
+      "prompt_tokens": 5412,
+      "completion_tokens": 165,
+      "requests_with_usage": 3,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 1345.06,
+        "prompt_tokens": 1856,
+        "completion_tokens": 40
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "review",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 30.07,
+    "groundedness_passed": null,
+    "patch_correct": null,
+    "successful_tools": 2,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "read_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "read_file",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "code_review"
+      },
+      {
+        "type": "tool_end",
+        "tool": "code_review",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "## Code Review of `unsafe.py`\n\nThe file contains a single function `evaluate(user_input)` that calls `eval(user_input)`.\n\n### Finding\n\n| Line | Severity | Category | Message |\n|------|----------|----------|---------|\n| 2 | **High** | Dynamic Execution | `eval()` executes dynamically supplied code. |\n\n### Why this is dangerous\n\n- `eval()` runs arbitrary Python expressions from the caller's input.\n- An attacker who controls `user_input` can execute **any** Python code \u2014 file reads, network calls, shell commands, etc.\n- There is no validation, sanitization, or allowlist of permitted expressions.\n\n### Recommended fix\n\nReplace `eval()` with a safe, purpose-built parser (e.g., a math expression evaluator or a restricted AST-based interpreter) that only allows the operations you actually need."
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "## Code Review of `unsafe.py`\n\nThe file contains a single function `evaluate(user_input)` that calls `eval(user_input)`.\n\n### Finding\n\n| Line | Severity | Category | Message |\n|------|----------|----------|---------|\n| 2 | **High** | Dynamic Execution | `eval()` executes dynamically supplied code. |\n\n### Why this is dangerous\n\n- `eval()` runs arbitrary Python expressions from the caller's input.\n- An attacker who controls `user_input` can execute **any** Python code \u2014 file reads, network calls, shell commands, etc.\n- There is no validation, sanitization, or allowlist of permitted expressions.\n\n### Recommended fix\n\nReplace `eval()` with a safe, purpose-built parser (e.g., a math expression evaluator or a restricted AST-based interpreter) that only allows the operations you actually need.",
+    "tools": [
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "unsafe.py"
+        },
+        "result": "def evaluate(user_input):\n    return eval(user_input)\n"
+      },
+      {
+        "name": "code_review",
+        "arguments": {
+          "path": "unsafe.py"
+        },
+        "result": "{\"path\": \"unsafe.py\", \"issues\": [{\"line\": 2, \"severity\": \"high\", \"category\": \"dynamic-execution\", \"message\": \"eval() executes dynamically supplied code.\", \"evidence\": \"return eval(user_input)\"}], \"issue_count\": 1, \"vulnerable\": true}"
+      }
+    ],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_ps1f88d8",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "list_dir",
+              "arguments": "{\"path\":\".\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_ahyz937u",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "run_command",
+              "arguments": "{\"command\":\"find /tmp/owa-agent-eval-_sh8ob17 -name \\\"unsafe.py\\\" -type f\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_gxtx6j23",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "run_command",
+              "arguments": "{\"command\":\"ls /tmp/owa-agent-eval-_sh8ob17\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_of4qhc86",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "run_command",
+              "arguments": "{\"command\":\"ls -la /tmp/owa-agent-eval-_sh8ob17\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_91z4ar06",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "run_command",
+              "arguments": "{\"command\":\"pwd\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_8p8w2bva",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "read_file",
+              "arguments": "{\"path\":\"unsafe.py\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_hh4uoo0f",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "code_review",
+              "arguments": "{\"path\":\"unsafe.py\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "## Code Review of `unsafe.py`\n\nThe file contains a single function `evaluate(user_input)` that calls `eval(user_input)`.\n\n### Finding\n\n| Line | Severity | Category | Message |\n|------|----------|----------|---------|\n| 2 | **High** | Dynamic Execution | `eval()` executes dynamically supplied code. |\n\n### Why this is dangerous\n\n- `eval()` runs arbitrary Python expressions from the caller's input.\n- An attacker who controls `user_input` can execute **any** Python code \u2014 file reads, network calls, shell commands, etc.\n- There is no validation, sanitization, or allowlist of permitted expressions.\n\n### Recommended fix\n\nReplace `eval()` with a safe, purpose-built parser (e.g., a math expression evaluator or a restricted AST-based interpreter) that only allows the operations you actually need."
+      }
+    ],
+    "metrics": {
+      "requests": 8,
+      "failed_requests": 0,
+      "total_duration_ms": 30043.77,
+      "prompt_tokens": 12032,
+      "completion_tokens": 947,
+      "requests_with_usage": 8,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 6061.17,
+        "prompt_tokens": 1781,
+        "completion_tokens": 200
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "read_only",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 10.83,
+    "groundedness_passed": null,
+    "patch_correct": null,
+    "successful_tools": 1,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "read_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "read_file",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "## Bug Explanation\n\nThe bug is in the **`add`** function:\n\n```python\ndef add(a, b):\n    return a - b\n```\n\n**The function is named `add`, but it performs subtraction (`a - b`) instead of addition (`a + b`).**\n\nThis is a classic naming/logic mismatch:\n- The function signature promises to **add** two numbers.\n- The implementation actually **subtracts** the second number from the first.\n\n**Example of the broken behavior:**\n- `add(3, 5)` returns `3 - 5 = -2` (expected: `8`)\n- `add(10, 4)` returns `10 - 4 = 6` (expected: `14`)\n\nThe fix would be to change `a - b` to `a + b`, but you asked only for an explanation, so I've stopped here."
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "## Bug Explanation\n\nThe bug is in the **`add`** function:\n\n```python\ndef add(a, b):\n    return a - b\n```\n\n**The function is named `add`, but it performs subtraction (`a - b`) instead of addition (`a + b`).**\n\nThis is a classic naming/logic mismatch:\n- The function signature promises to **add** two numbers.\n- The implementation actually **subtracts** the second number from the first.\n\n**Example of the broken behavior:**\n- `add(3, 5)` returns `3 - 5 = -2` (expected: `8`)\n- `add(10, 4)` returns `10 - 4 = 6` (expected: `14`)\n\nThe fix would be to change `a - b` to `a + b`, but you asked only for an explanation, so I've stopped here.",
+    "tools": [
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "calculator.py"
+        },
+        "result": "def add(a, b):\n    return a - b\n"
+      }
+    ],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_2o0eibaj",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "read_file",
+              "arguments": "{\"path\":\"calculator.py\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "## Bug Explanation\n\nThe bug is in the **`add`** function:\n\n```python\ndef add(a, b):\n    return a - b\n```\n\n**The function is named `add`, but it performs subtraction (`a - b`) instead of addition (`a + b`).**\n\nThis is a classic naming/logic mismatch:\n- The function signature promises to **add** two numbers.\n- The implementation actually **subtracts** the second number from the first.\n\n**Example of the broken behavior:**\n- `add(3, 5)` returns `3 - 5 = -2` (expected: `8`)\n- `add(10, 4)` returns `10 - 4 = 6` (expected: `14`)\n\nThe fix would be to change `a - b` to `a + b`, but you asked only for an explanation, so I've stopped here."
+      }
+    ],
+    "metrics": {
+      "requests": 2,
+      "failed_requests": 0,
+      "total_duration_ms": 10813.51,
+      "prompt_tokens": 2817,
+      "completion_tokens": 318,
+      "requests_with_usage": 2,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 7552.13,
+        "prompt_tokens": 1436,
+        "completion_tokens": 258
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "git_read",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 11.69,
+    "groundedness_passed": null,
+    "patch_correct": null,
+    "successful_tools": 3,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "git_status"
+      },
+      {
+        "type": "tool_end",
+        "tool": "git_status",
+        "succeeded": true
+      },
+      {
+        "type": "tool_start",
+        "tool": "git_diff"
+      },
+      {
+        "type": "tool_end",
+        "tool": "git_diff",
+        "succeeded": true
+      },
+      {
+        "type": "tool_start",
+        "tool": "git_log"
+      },
+      {
+        "type": "tool_end",
+        "tool": "git_log",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "## Git Status\n\n- **Branch**: `main`\n- **Modified files**: `README.md` (unstaged)\n\n## Pending Change (Unstaged)\n\nThe file `README.md` has one line added:\n\n```\n+Pending documentation update.\n```\n\nFull diff:\n```diff\n--- a/README.md\n+++ b/README.md\n@@ -1,2 +1,3 @@\n Calculator demo. The add function is in calculator.py.\n Run tests with `python -m unittest -q`.\n+Pending documentation update.\n```\n\n## Latest Commit\n\n- **Hash**: `a61fb87`\n- **Message**: `Add calculator fixture`"
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "## Git Status\n\n- **Branch**: `main`\n- **Modified files**: `README.md` (unstaged)\n\n## Pending Change (Unstaged)\n\nThe file `README.md` has one line added:\n\n```\n+Pending documentation update.\n```\n\nFull diff:\n```diff\n--- a/README.md\n+++ b/README.md\n@@ -1,2 +1,3 @@\n Calculator demo. The add function is in calculator.py.\n Run tests with `python -m unittest -q`.\n+Pending documentation update.\n```\n\n## Latest Commit\n\n- **Hash**: `a61fb87`\n- **Message**: `Add calculator fixture`",
+    "tools": [
+      {
+        "name": "git_status",
+        "arguments": {},
+        "result": "## main\n M README.md"
+      },
+      {
+        "name": "git_diff",
+        "arguments": {},
+        "result": "diff --git a/README.md b/README.md\nindex 4dcbf11..ed5bf53 100644\n--- a/README.md\n+++ b/README.md\n@@ -1,2 +1,3 @@\n Calculator demo. The add function is in calculator.py.\n Run tests with `python -m unittest -q`.\n+Pending documentation update."
+      },
+      {
+        "name": "git_log",
+        "arguments": {},
+        "result": "a61fb87 Add calculator fixture"
+      }
+    ],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_pv1s0cfa",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "git_status",
+              "arguments": "{}"
+            }
+          },
+          {
+            "id": "call_zj2frmhl",
+            "index": 1,
+            "type": "function",
+            "function": {
+              "name": "git_diff",
+              "arguments": "{}"
+            }
+          },
+          {
+            "id": "call_qlssc871",
+            "index": 2,
+            "type": "function",
+            "function": {
+              "name": "git_log",
+              "arguments": "{}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "## Git Status\n\n- **Branch**: `main`\n- **Modified files**: `README.md` (unstaged)\n\n## Pending Change (Unstaged)\n\nThe file `README.md` has one line added:\n\n```\n+Pending documentation update.\n```\n\nFull diff:\n```diff\n--- a/README.md\n+++ b/README.md\n@@ -1,2 +1,3 @@\n Calculator demo. The add function is in calculator.py.\n Run tests with `python -m unittest -q`.\n+Pending documentation update.\n```\n\n## Latest Commit\n\n- **Hash**: `a61fb87`\n- **Message**: `Add calculator fixture`"
+      }
+    ],
+    "metrics": {
+      "requests": 2,
+      "failed_requests": 0,
+      "total_duration_ms": 11664.64,
+      "prompt_tokens": 2643,
+      "completion_tokens": 348,
+      "requests_with_usage": 2,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 8144.83,
+        "prompt_tokens": 1408,
+        "completion_tokens": 273
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "compression",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 19.3,
+    "groundedness_passed": true,
+    "patch_correct": null,
+    "successful_tools": 0,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "`retry_request` is defined in `worker.py` ([worker.py#chunk=0]).\nThe function signature is `def retry_request():`.\nIt returns the string `'retry accepted'`."
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "`retry_request` is defined in `worker.py` ([worker.py#chunk=0]).\nThe function signature is `def retry_request():`.\nIt returns the string `'retry accepted'`.",
+    "tools": [],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [],
+    "metrics": {
+      "requests": 1,
+      "failed_requests": 0,
+      "total_duration_ms": 19264.67,
+      "prompt_tokens": 686,
+      "completion_tokens": 634,
+      "requests_with_usage": 1,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": true,
+        "succeeded": true,
+        "duration_ms": 19264.67,
+        "prompt_tokens": 686,
+        "completion_tokens": 634
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "unsupported",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 9.47,
+    "groundedness_passed": true,
+    "patch_correct": null,
+    "successful_tools": 0,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "OwA could not locate this in the repository."
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "OwA could not locate this in the repository.",
+    "tools": [],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [],
+    "metrics": {
+      "requests": 1,
+      "failed_requests": 0,
+      "total_duration_ms": 9446.18,
+      "prompt_tokens": 313,
+      "completion_tokens": 302,
+      "requests_with_usage": 1,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": true,
+        "succeeded": true,
+        "duration_ms": 9446.18,
+        "prompt_tokens": 313,
+        "completion_tokens": 302
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "greeting",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 11.51,
+    "groundedness_passed": null,
+    "patch_correct": null,
+    "successful_tools": 0,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "Hello! How can I help you today?"
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "Hello! How can I help you today?",
+    "tools": [],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [],
+    "metrics": {
+      "requests": 1,
+      "failed_requests": 0,
+      "total_duration_ms": 11501.25,
+      "prompt_tokens": 41,
+      "completion_tokens": 272,
+      "requests_with_usage": 1,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": true,
+        "succeeded": true,
+        "duration_ms": 11501.25,
+        "prompt_tokens": 41,
+        "completion_tokens": 272
+      }
+    },
+    "run": 2
+  },
+  {
+    "case": "read",
+    "model": "ornith:9b",
+    "passed": true,
+    "seconds": 8.36,
+    "groundedness_passed": null,
+    "patch_correct": null,
+    "successful_tools": 1,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "read_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "read_file",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "The `add` function currently returns **`a - b`** (subtraction), not addition. It's a bug \u2014 it should be returning `a + b`."
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "The `add` function currently returns **`a - b`** (subtraction), not addition. It's a bug \u2014 it should be returning `a + b`.",
+    "tools": [
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "calculator.py"
+        },
+        "result": "def add(a, b):\n    return a - b\n"
+      }
+    ],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_4l6gij6f",
+            "index": 0,
+            "type": "function",
+            "function": {
+              "name": "read_file",
+              "arguments": "{\"path\":\"calculator.py\"}"
+            }
+          }
+        ]
+      },
+      {
+        "content": "The `add` function currently returns **`a - b`** (subtraction), not addition. It's a bug \u2014 it should be returning `a + b`."
+      }
+    ],
+    "metrics": {
+      "requests": 2,
+      "failed_requests": 0,
+      "total_duration_ms": 8342.11,
+      "prompt_tokens": 2815,
+      "completion_tokens": 151,
+      "requests_with_usage": 2,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 2878.88,
+        "prompt_tokens": 1435,
+        "completion_tokens": 90
+      }
+    },
+    "run": 2
+  },
+  {
+    "case": "retrieval",
+    "model": "ornith:9b",
+    "passed": false,
+    "seconds": 70.29,
+    "groundedness_passed": false,
+    "patch_correct": null,
+    "successful_tools": 0,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "I couldn't produce a response. Please try again."
+      },
+      {
+        "type": "done",
+        "completed": false
+      }
+    ],
+    "answer": "I couldn't produce a response. Please try again.",
+    "tools": [],
+    "errors": [],
+    "files_preserved": true,
+    "completed": false,
+    "failure_kind": "infrastructure",
+    "replies": [],
+    "metrics": {
+      "requests": 2,
+      "failed_requests": 2,
+      "total_duration_ms": 65079.84,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "requests_with_usage": 0,
+      "last_request": {
+        "model": "ornith:9b",
+        "streaming": false,
+        "succeeded": false,
+        "duration_ms": 5002.05,
+        "prompt_tokens": null,
+        "completion_tokens": null
+      }
+    },
+    "run": 2
+  }
+]

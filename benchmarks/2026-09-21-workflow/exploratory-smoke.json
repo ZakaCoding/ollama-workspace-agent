@@ -1,0 +1,242 @@
+[
+  {
+    "case": "compression",
+    "model": "qwen2.5-coder:7b",
+    "passed": true,
+    "seconds": 2.02,
+    "groundedness_passed": true,
+    "patch_correct": null,
+    "successful_tools": 0,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "The function `retry_request` is defined in the file `worker.py` at chunk 0. [worker.py#chunk=0]"
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "The function `retry_request` is defined in the file `worker.py` at chunk 0. [worker.py#chunk=0]",
+    "tools": [],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "The function `retry_request` is defined in the file `worker.py` at chunk 0. [worker.py#chunk=0]"
+      }
+    ],
+    "metrics": {
+      "requests": 2,
+      "failed_requests": 0,
+      "total_duration_ms": 1948.09,
+      "prompt_tokens": 1373,
+      "completion_tokens": 45,
+      "requests_with_usage": 2,
+      "last_request": {
+        "model": "qwen2.5-coder:7b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 789.91,
+        "prompt_tokens": 723,
+        "completion_tokens": 29
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "unsupported",
+    "model": "qwen2.5-coder:7b",
+    "passed": false,
+    "seconds": 0.53,
+    "groundedness_passed": false,
+    "patch_correct": null,
+    "successful_tools": 0,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "content",
+        "content": "OwA could not locate this in the repository."
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "OwA could not locate this in the repository.",
+    "tools": [],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": "agent",
+    "replies": [],
+    "metrics": {
+      "requests": 1,
+      "failed_requests": 0,
+      "total_duration_ms": 500.51,
+      "prompt_tokens": 284,
+      "completion_tokens": 12,
+      "requests_with_usage": 1,
+      "last_request": {
+        "model": "qwen2.5-coder:7b",
+        "streaming": true,
+        "succeeded": true,
+        "duration_ms": 500.51,
+        "prompt_tokens": 284,
+        "completion_tokens": 12
+      }
+    },
+    "run": 1
+  },
+  {
+    "case": "edit",
+    "model": "qwen2.5-coder:7b",
+    "passed": true,
+    "seconds": 4.89,
+    "groundedness_passed": null,
+    "patch_correct": true,
+    "successful_tools": 3,
+    "events": [
+      {
+        "type": "status",
+        "message": "Thinking"
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "read_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "read_file",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "tool_start",
+        "tool": "patch_file"
+      },
+      {
+        "type": "tool_end",
+        "tool": "patch_file",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "tool_start",
+        "tool": "run_command"
+      },
+      {
+        "type": "tool_end",
+        "tool": "run_command",
+        "succeeded": true
+      },
+      {
+        "type": "status",
+        "message": "Waiting for model"
+      },
+      {
+        "type": "heartbeat"
+      },
+      {
+        "type": "content",
+        "content": "The add function in calculator.py has been successfully modified to add two numbers instead of subtracting. The tests have passed, so the fix is verified."
+      },
+      {
+        "type": "done",
+        "completed": true
+      }
+    ],
+    "answer": "The add function in calculator.py has been successfully modified to add two numbers instead of subtracting. The tests have passed, so the fix is verified.",
+    "tools": [
+      {
+        "name": "read_file",
+        "arguments": {
+          "path": "calculator.py"
+        },
+        "result": "def add(a, b):\n    return a - b\n"
+      },
+      {
+        "name": "patch_file",
+        "arguments": {
+          "path": "calculator.py",
+          "old_str": "return a - b",
+          "new_str": "return a + b"
+        },
+        "result": "Patched calculator.py: replaced 1 occurrence."
+      },
+      {
+        "name": "run_command",
+        "arguments": {
+          "command": "python -m unittest -q"
+        },
+        "result": "STDERR:\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n\nEXIT_CODE=0"
+      }
+    ],
+    "errors": [],
+    "files_preserved": true,
+    "completed": true,
+    "failure_kind": null,
+    "replies": [
+      {
+        "content": "{\"name\": \"read_file\", \"arguments\": {\"path\": \"calculator.py\"}}"
+      },
+      {
+        "content": "{\"name\": \"patch_file\", \"arguments\": {\"path\": \"calculator.py\", \"old_str\": \"return a - b\", \"new_str\": \"return a + b\"}}"
+      },
+      {
+        "content": "{\"name\": \"run_command\", \"arguments\": {\"command\": \"python -m unittest -q\"}}"
+      },
+      {
+        "content": "{\"answer\": \"The add function in calculator.py has been successfully modified to add two numbers instead of subtracting. The tests have passed, so the fix is verified.\"}"
+      }
+    ],
+    "metrics": {
+      "requests": 4,
+      "failed_requests": 0,
+      "total_duration_ms": 4717.7,
+      "prompt_tokens": 6873,
+      "completion_tokens": 114,
+      "requests_with_usage": 4,
+      "last_request": {
+        "model": "qwen2.5-coder:7b",
+        "streaming": false,
+        "succeeded": true,
+        "duration_ms": 1108.81,
+        "prompt_tokens": 1884,
+        "completion_tokens": 36
+      }
+    },
+    "run": 1
+  }
+]

@@ -1,4 +1,5 @@
 from pathlib import Path
+from app.workspace import current_workspace
 
 from app.indexer.search import search
 
@@ -8,7 +9,7 @@ def search_code(
     limit: int = 5,
 ) -> str:
 
-    db_path = Path(".owa/index.db")
+    db_path = current_workspace() / ".owa" / "index.db"
 
     if not db_path.exists():
         return (

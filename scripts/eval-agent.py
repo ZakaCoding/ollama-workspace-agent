@@ -25,6 +25,7 @@ CASES = (
     "greeting", "read", "retrieval", "edit", "learn", "legacy_search",
     "recovery", "multi_file", "long_history", "direct_list", "direct_read",
     "command", "polite_edit", "git_edit", "create", "review", "read_only", "git_read",
+    "compression", "unsupported",
 )
 EDIT_CASES = {"edit", "recovery", "multi_file", "polite_edit", "git_edit"}
 PROBE_COMMAND = 'python -c "print(6 * 7)"'
@@ -41,7 +42,14 @@ def snapshot(workspace):
 
 def summarize(results):
     timings = [row["seconds"] for row in results if "seconds" in row]
+    def rate(key):
+        values = [row[key] for row in results if row.get(key) is not None]
+        return {"passed": sum(values), "evaluated": len(values)}
     return {
+        "groundedness": rate("groundedness_passed"),
+        "patch_correctness": rate("patch_correct"),
+        "successful_tools": sum(row.get("successful_tools", 0) for row in results),
+        "max_seconds": max(timings) if timings else None,
         "runs": len(results),
         "passed": sum(bool(row["passed"]) for row in results),
         "failed_cases": [row["case"] for row in results if not row["passed"]],
@@ -110,11 +118,35 @@ def run_case(model, case):
         core.AgentState = partial(core.AgentState, max_iterations=8, max_tool_calls=20)
         agent = core.Agent()
         calls = []
+        progress_events = []
+        model_errors = []
         replies = []
         original_chat = agent.llm.chat
+        original_stream = agent.llm.chat_stream
+
+        def record_model_error(exc):
+            response = getattr(exc, "response", None)
+            model_errors.append({
+                "type": type(exc).__name__,
+                "status_code": getattr(response, "status_code", None),
+                "detail": getattr(response, "text", "")[:500],
+            })
+
+        def trace_stream(*args, **kwargs):
+            try:
+                yield from original_stream(*args, **kwargs)
+            except Exception as exc:
+                record_model_error(exc)
+                raise
+
+        agent.llm.chat_stream = trace_stream
 
         def trace_chat(*args, **kwargs):
-            result = original_chat(*args, **kwargs)
+            try:
+                result = original_chat(*args, **kwargs)
+            except Exception as exc:
+                record_model_error(exc)
+                raise
             message = result["choices"][0]["message"]
             replies.append({key: message[key] for key in ("content", "tool_calls") if key in message})
             return result
@@ -141,6 +173,8 @@ def run_case(model, case):
             core.FUNCTIONS[name] = recorded
 
         tasks = {
+            "compression": "Where is retry_request defined?",
+            "unsupported": "Where is authenticate_user defined?",
             "greeting": "hello",
             "read": "Read calculator.py using read_file and tell me what add currently returns.",
             "retrieval": "Where is the add function defined?",
@@ -167,6 +201,15 @@ def run_case(model, case):
             ]
         if case == "retrieval":
             index_project(workspace, workspace / ".owa" / "index.db")
+        if case in {"compression", "unsupported"}:
+            (workspace / ".owa").mkdir(exist_ok=True)
+            source = ("# background details unrelated to networking\n" * 160
+                      + "def retry_request():\n    return 'retry accepted'\n")
+            (workspace / "worker.py").write_text(source)
+            with sqlite3.connect(workspace / ".owa" / "index.db") as db:
+                db.execute("CREATE TABLE documents (id INTEGER PRIMARY KEY, path TEXT, chunk_index INTEGER, content TEXT, embedding BLOB)")
+                db.execute("INSERT INTO documents VALUES (1, 'worker.py', 0, ?, '[1,0]')", (source,))
+            agent.context_builder.max_chars = 2000
         if case in {"learn", "legacy_search"}:
             # Reproduce the pre-FTS schema found in the user's real workspace.
             (workspace / ".owa").mkdir(exist_ok=True)
@@ -183,9 +226,19 @@ def run_case(model, case):
         # Capture after fixture setup: indexing may create .gitignore itself.
         original_files = snapshot(workspace)
         started = perf_counter()
-        answer = "".join(agent.stream(tasks[case]))
+        from app.service import AgentService
+        with AgentService(workspace, agent) as service:
+            progress_events = list(service.chat_events(tasks[case]))
+        answer = "".join(event["content"] for event in progress_events if event["type"] == "content")
         elapsed = round(perf_counter() - started, 2)
-        if case == "greeting":
+        patch_correct = None
+        if case == "compression":
+            passed = "[worker.py#chunk=0]" in answer and "retry_request" in answer and not calls
+            passed = passed and "def retry_request" in agent._evidence_context
+        elif case == "unsupported":
+            passed = not calls and "[worker.py#chunk=0]" not in answer and any(
+                term in answer.lower() for term in ("insufficient", "not contain", "not found", "no relevant", "cannot", "couldn't", "not defined", "could not locate"))
+        elif case == "greeting":
             passed = bool(answer.strip()) and len(answer) < 300 and not calls and any(
                 word in answer.lower() for word in ("hello", "hi", "hey")
             ) and not any(word in answer for word in ("```", "python", "os.listdir"))
@@ -215,7 +268,8 @@ def run_case(model, case):
             passed = passed and "README.md" in answer and "calculator fixture" in answer.lower()
         else:
             check = subprocess.run([sys.executable, "-m", "unittest", "-q"], capture_output=True, text=True, timeout=10)
-            passed = check.returncode == 0 and any(c["name"] == "patch_file" for c in calls)
+            patch_correct = check.returncode == 0
+            passed = patch_correct and any(c["name"] == "patch_file" for c in calls)
             passed = passed and any(c["name"] == "run_command" and "EXIT_CODE=0" in c["result"] for c in calls)
             if case == "recovery":
                 command_results = [c["result"] for c in calls if c["name"] == "run_command"]
@@ -237,15 +291,23 @@ def run_case(model, case):
         if case == "read_only":
             passed = passed and all(c["name"] not in {"write_file", "patch_file", "run_command"} for c in calls)
         passed = passed and agent.state.completed
+        passed = passed and bool(progress_events) and progress_events[-1]["type"] == "done"
+        from app.agent.verifier import verify_tool_result
+        successful_tools = sum(verify_tool_result(call["name"], call["result"]).passed for call in calls)
+        groundedness = bool(passed) if case in {"retrieval", "compression", "unsupported", "learn", "long_history"} else None
         metrics = agent.llm.metrics.snapshot()
         return {"case": case, "model": model, "passed": bool(passed), "seconds": elapsed,
+                "groundedness_passed": groundedness, "patch_correct": patch_correct,
+                "successful_tools": successful_tools, "events": progress_events,
                 "answer": answer, "tools": calls, "errors": agent.state.errors,
                 "files_preserved": files_preserved,
                 "completed": agent.state.completed,
                 "failure_kind": (None if passed else "infrastructure"
                                  if metrics["requests"] and metrics["failed_requests"] == metrics["requests"]
+                                 and not any(error["status_code"] in {400, 413, 422}
+                                             for error in model_errors)
                                  else "agent"),
-                "replies": replies, "metrics": metrics}
+                "replies": replies, "metrics": metrics, "model_errors": model_errors}
 
 
 def main():

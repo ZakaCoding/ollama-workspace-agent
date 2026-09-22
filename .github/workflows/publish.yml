@@ -19,11 +19,23 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install build tools
-        run: pip install build twine
+      - name: Install release test environment
+        run: |
+          python -m pip install -r requirements-ci.txt
+          python -m pip install --no-build-isolation --no-deps -e ".[dev]"
+          python -m pip check
+
+      - name: Verify release
+        run: |
+          python scripts/check-release.py "${GITHUB_REF_NAME}"
+          python -m pytest -q
+          python scripts/check-stream.py
+
+      - name: Install upload tool
+        run: python -m pip install twine==6.1.0
 
       - name: Build package
-        run: python -m build
+        run: python -m build --no-isolation
 
       - name: Publish to PyPI
         env:

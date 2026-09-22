@@ -1,0 +1,44 @@
+# Release validation
+
+The 0.7.0 milestone covers context compression, service lifecycle and progress,
+diagnostics, and reproducible evaluation. A versioned local build is not a
+published release.
+
+Create a clean virtual environment with Python 3.11–3.14, then run:
+
+```bash
+python -m pip install -r requirements-ci.txt
+python -m pip install --no-build-isolation --no-deps -e '.[dev]'
+python -m pip check
+python -m pytest -q
+python scripts/check-stream.py
+python scripts/check-release.py v0.7.0
+python -m build --no-isolation
+```
+
+`requirements-ci.txt` pins the test/build environment, including transitive
+packages; normal installations retain the dependency ranges in `pyproject.toml`.
+Update pins together, verify `pip check`, and run the Python matrix. The CI matrix
+builds a wheel and source distribution after tests on each supported minor.
+
+Before tagging, run the live evaluator against installed models, save the raw
+traces under `benchmarks/`, and record model identifiers, budgets, test counts,
+failures, and limits. Two rounds of the current suite produce 40 runs per model:
+
+```bash
+python scripts/eval-agent.py --model MODEL --repeat 2 --output .owa/eval.json
+```
+
+Groundedness is a set of fixture assertions (correct citation/location or
+refusal), not semantic proof for arbitrary answers. Patch correctness uses
+independent fixture tests. Tool success counts verified tool outcomes; an
+expected initial failing test in a recovery case counts as a failed tool even
+when the overall task succeeds. Timing excludes process startup and fixture
+indexing; maximum and median latency are reported separately. Heartbeats and
+tool event order are preserved in each trace.
+
+After reviewing results, a maintainer can commit the milestone and push its
+matching `vVERSION` tag. The publish workflow checks the version and dated
+changelog, runs tests, builds distributions, uploads to PyPI, and creates a
+GitHub release. Pushing that tag is the publication action; local validation
+never performs it.

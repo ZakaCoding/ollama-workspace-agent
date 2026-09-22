@@ -1,3 +1,4 @@
+from app.workspace import current_workspace
 import re
 import subprocess
 
@@ -95,7 +96,7 @@ def run_command(command: str) -> str:
         result = subprocess.run(
             command,
             shell=True,
-            cwd=WORKSPACE,
+            cwd=current_workspace(WORKSPACE),
             capture_output=True,
             text=True,
             timeout=120,

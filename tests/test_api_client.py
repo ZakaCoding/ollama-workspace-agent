@@ -58,3 +58,30 @@ def test_api_client_supports_status_clear_and_index():
     client.clear()
     assert client.index() == {"status": "ok"}
     assert [call[0] for call in session.calls] == ["get", "post", "post"]
+
+
+def test_event_client_detects_truncation_and_closes_response():
+    from unittest.mock import Mock
+    import pytest
+    response = Mock()
+    response.iter_lines.return_value = ['{"type":"content","content":"partial"}']
+    session = Mock()
+    session.post.return_value = response
+    client = ApiClient('http://localhost:8000', session=session)
+    with pytest.raises(RuntimeError, match='before completion'):
+        list(client.chat_events('hello'))
+    response.close.assert_called_once()
+
+
+def test_event_client_decodes_unicode_and_reports_server_error():
+    from unittest.mock import Mock
+    import pytest
+    response = Mock()
+    response.iter_lines.return_value = ['{"type":"error","message":"model unavailable"}']
+    session = Mock()
+    session.post.return_value = response
+    client = ApiClient('http://localhost:8000', session=session)
+    with pytest.raises(RuntimeError, match='model unavailable'):
+        list(client.chat_events('hello'))
+    assert response.encoding == 'utf-8'
+    response.close.assert_called_once()

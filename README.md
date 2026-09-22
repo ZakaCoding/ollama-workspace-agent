@@ -93,6 +93,14 @@ You can also place a `.env` in your project root to override the global config f
 
 `OWA_CONTEXT_TOKENS` controls the repository evidence budget. `OWA_MAX_OUTPUT_TOKENS` limits each model response. Both settings are bounded by OwA and can be lowered for small models or low-resource machines.
 
+Large retrieved chunks are compressed into query-focused source excerpts without
+an extra model call. Omitted text is marked explicitly, original chunk citations
+are retained, and the character budget includes evidence headers and separators.
+The budget is shared across eligible results; duplicate chunks from the same file
+are skipped. Excerpts may omit relevant details, so inspect the full file when
+more context is needed.
+
+
 - `LLM_BASE_URL` uses Ollama’s OpenAI‑compatible `/v1` API.
 - `EMBEDDING_BASE_URL` uses Ollama’s native `/api/embed` API.
 - If Ollama runs on the same machine, use `127.0.0.1` as the host.
@@ -178,7 +186,7 @@ not the entire user task. Embedding and metadata requests are excluded.
 
 ## Indexing
 
-OwA auto‑indexes your project on first run. Common directories are excluded automatically (`node_modules`, `dist`, `build`, `.github`, `.git`, `.venv`, etc.).
+Run `/index` when you want to build the project index. CLI and API startup do not automatically index or load a model. Common directories are excluded automatically (`node_modules`, `dist`, `build`, `.github`, `.git`, `.venv`, etc.).
 
 To exclude additional files or directories, create a `.owaignore` in your project root:
 
@@ -338,3 +346,31 @@ Contributions are welcome! Feel free to:
 ## License
 
 Licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+
+## Service lifecycle and progress
+
+Direct CLI and HTTP API use the same service startup, workspace binding, model
+selection, and cleanup. Indexing is explicit in both modes. One service handles
+one active operation at a time; a second mutation is rejected while a request is
+running. Separate services bind file tools, commands, search, and history to
+their own workspaces without changing the process directory.
+
+`/model` lists installed models from the active service and switches immediately.
+The selection lasts for that service session and clears its conversation. In API
+mode it changes the server session; `/setup` still configures the local machine
+for its next startup. `GET /models` and `POST /model` with `{"model":"name"}` expose
+this behavior to API clients. These endpoints use the configured API key.
+
+`POST /chat/events` accepts `{"message":"your request"}` and streams newline-delimited
+JSON. Events are `status`, `tool_start`, `tool_end`, `heartbeat`, `content`, `done`,
+or `error`. Heartbeats arrive approximately once a second while waiting. A `done`
+event includes the agent's `completed` flag; an error or a missing final event is
+not successful completion. Final answer text stays buffered until verification.
+The older `/chat/stream` text endpoint remains available. On disconnect, execution
+stops cooperatively at the next progress boundary; an already-running model or
+shell request may finish before cleanup. The service stays busy until it exits.
+Command approval still happens in the process running the service.
+
+See [resource profiles](docs/resource-profiles.md) for budget presets and
+[release validation](docs/releasing.md) for the test and packaging workflow.

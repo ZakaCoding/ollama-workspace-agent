@@ -4,6 +4,25 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-21
+
+### Added
+
+- Shared lazy service startup and cleanup for CLI and API, with per-service
+  workspace and history isolation and protection against concurrent mutations.
+- Structured tool progress, heartbeats, completion and error events through
+  `/chat/events`; CLI displays progress while retaining verified answer output.
+- Live model selection in direct and API modes, installed-model validation,
+  corrupt-index diagnostics, and explanations of invalid resource settings.
+- Pinned CI dependencies and a Python 3.11–3.14 matrix. Release tags must match
+  the package version and dated changelog before tests and package publishing.
+- Twenty live evaluation cases with separate groundedness checks, tool success,
+  independent patch tests, latency, and event traces.
+
+- Query-focused source excerpts for large retrieval results, with omission
+  markers, duplicate suppression, and a shared evidence budget that includes
+  metadata. Answer citations are restricted to evidence included in the prompt.
+
 ### Fixed
 
 - Hybrid retrieval matches snake_case and camelCase identifier parts, complete
