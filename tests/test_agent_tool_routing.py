@@ -6,6 +6,12 @@ from app.agent.core import (
 )
 
 
+@pytest.fixture(autouse=True)
+def isolate_routing_search(monkeypatch):
+    """Routing tests use stubbed tools and must not query the live index server."""
+    monkeypatch.setattr("app.agent.core.search", lambda *args, **kwargs: [])
+
+
 @pytest.mark.parametrize("task, required", [
     ("List files in the current directory using list_dir.", {"list_dir"}),
     ("Show calculator.py using read_file.", {"read_file"}),

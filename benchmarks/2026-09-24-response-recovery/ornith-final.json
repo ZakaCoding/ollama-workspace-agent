@@ -1,0 +1,29 @@
+[
+  {
+    "case": "assistant_status",
+    "model": "ornith:9b",
+    "run": 1,
+    "passed": false,
+    "seconds": 120.16,
+    "completed": false,
+    "failure_kind": "infrastructure",
+    "max_tool_prompt_chars": 0,
+    "history_fixture_sha256": "c2af165cd0063bb3b656a059f14f03cf2c58adb8ae47fc46db613022e84119c3",
+    "groundedness_passed": null,
+    "patch_correct": null,
+    "successful_tools": 0,
+    "errors": [],
+    "model_errors": [
+      {
+        "type": "ReadTimeout",
+        "status_code": null,
+        "detail": ""
+      },
+      {
+        "type": "ReadTimeout",
+        "status_code": null,
+        "detail": ""
+      }
+    ]
+  }
+]

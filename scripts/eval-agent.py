@@ -5,6 +5,7 @@ No model downloads. Only each fixture's exact verification command is auto-appro
 """
 
 import argparse
+import hashlib
 from contextlib import redirect_stdout, redirect_stderr
 from functools import partial
 import io
@@ -25,7 +26,7 @@ CASES = (
     "greeting", "read", "retrieval", "edit", "learn", "legacy_search",
     "recovery", "multi_file", "long_history", "direct_list", "direct_read",
     "command", "polite_edit", "git_edit", "create", "review", "read_only", "git_read",
-    "compression", "unsupported",
+    "compression", "unsupported", "assistant_status", "large_tool_context", "greeting_followup",
 )
 EDIT_CASES = {"edit", "recovery", "multi_file", "polite_edit", "git_edit"}
 PROBE_COMMAND = 'python -c "print(6 * 7)"'
@@ -75,12 +76,13 @@ def preflight(model):
         raise ValueError(f"Requested model is not installed: {model}")
 
 
-def run_case(model, case):
+def run_case(model, case, history_fixture=None):
     sys.path.insert(0, str(ROOT))
     from dotenv import load_dotenv
 
     load_dotenv(ROOT / ".env")
     os.environ["LLM_MODEL"] = model
+    history_bytes = history_fixture.read_bytes() if history_fixture and case == "assistant_status" else None
     with TemporaryDirectory(prefix="owa-agent-eval-") as directory:
         os.chdir(directory)
         workspace = Path(directory)
@@ -120,6 +122,7 @@ def run_case(model, case):
         calls = []
         progress_events = []
         model_errors = []
+        tool_prompt_sizes = []
         replies = []
         original_chat = agent.llm.chat
         original_stream = agent.llm.chat_stream
@@ -142,6 +145,8 @@ def run_case(model, case):
         agent.llm.chat_stream = trace_stream
 
         def trace_chat(*args, **kwargs):
+            messages = kwargs.get("messages", args[0] if args else [])
+            tool_prompt_sizes.append(sum(len(m.get("content") or "") for m in messages if m["role"] == "tool"))
             try:
                 result = original_chat(*args, **kwargs)
             except Exception as exc:
@@ -173,6 +178,9 @@ def run_case(model, case):
             core.FUNCTIONS[name] = recorded
 
         tasks = {
+            "greeting_followup": "hi then",
+            "assistant_status": "did u have problem",
+            "large_tool_context": "Use search_code to find retry_request and tell me its return value. Do not edit files or run commands.",
             "compression": "Where is retry_request defined?",
             "unsupported": "Where is authenticate_user defined?",
             "greeting": "hello",
@@ -201,9 +209,19 @@ def run_case(model, case):
             ]
         if case == "retrieval":
             index_project(workspace, workspace / ".owa" / "index.db")
-        if case in {"compression", "unsupported"}:
+        if case == "assistant_status":
+            agent.messages += json.loads(history_bytes) if history_bytes else [
+                {"role": "user", "content": "Fix calculator.py"},
+                {"role": "assistant", "content": "Let me run the tests.\n\n" * 30},
+            ]
+        if case == "greeting_followup":
+            agent.messages += [
+                {"role": "user", "content": "what did u think about this project"},
+                {"role": "assistant", "content": "The calculator project needs an arithmetic fix."},
+            ]
+        if case in {"compression", "unsupported", "large_tool_context"}:
             (workspace / ".owa").mkdir(exist_ok=True)
-            source = ("# background details unrelated to networking\n" * 160
+            source = ("# background details unrelated to networking\n" * (3000 if case == "large_tool_context" else 160)
                       + "def retry_request():\n    return 'retry accepted'\n")
             (workspace / "worker.py").write_text(source)
             with sqlite3.connect(workspace / ".owa" / "index.db") as db:
@@ -232,7 +250,16 @@ def run_case(model, case):
         answer = "".join(event["content"] for event in progress_events if event["type"] == "content")
         elapsed = round(perf_counter() - started, 2)
         patch_correct = None
-        if case == "compression":
+        if case in {"assistant_status", "greeting_followup"}:
+            passed = bool(answer.strip()) and len(answer) < 700 and not calls
+            passed = passed and not any(term in answer.lower() for term in (
+                "calculator", "```", "let me read", "let me run", "unittest", "os.listdir",
+            ))
+            passed = passed and answer not in {core.NO_RESPONSE_MESSAGE, core.INVALID_RESPONSE_MESSAGE}
+        elif case == "large_tool_context":
+            passed = any(c["name"] == "search_code" for c in calls) and "retry accepted" in answer
+            passed = passed and max(tool_prompt_sizes, default=0) <= agent.context_builder.max_chars
+        elif case == "compression":
             passed = "[worker.py#chunk=0]" in answer and "retry_request" in answer and not calls
             passed = passed and "def retry_request" in agent._evidence_context
         elif case == "unsupported":
@@ -297,6 +324,8 @@ def run_case(model, case):
         groundedness = bool(passed) if case in {"retrieval", "compression", "unsupported", "learn", "long_history"} else None
         metrics = agent.llm.metrics.snapshot()
         return {"case": case, "model": model, "passed": bool(passed), "seconds": elapsed,
+                "max_tool_prompt_chars": max(tool_prompt_sizes, default=0),
+                "history_fixture_sha256": hashlib.sha256(history_bytes).hexdigest() if history_bytes else None,
                 "groundedness_passed": groundedness, "patch_correct": patch_correct,
                 "successful_tools": successful_tools, "events": progress_events,
                 "answer": answer, "tools": calls, "errors": agent.state.errors,
@@ -305,6 +334,7 @@ def run_case(model, case):
                 "failure_kind": (None if passed else "infrastructure"
                                  if metrics["requests"] and metrics["failed_requests"] == metrics["requests"]
                                  and not any(error["status_code"] in {400, 413, 422}
+                                             or error["type"] in {"IncompleteResponseError", "IncompleteStreamError"}
                                              for error in model_errors)
                                  else "agent"),
                 "replies": replies, "metrics": metrics, "model_errors": model_errors}
@@ -317,13 +347,15 @@ def main():
     parser.add_argument("--cases", choices=CASES, nargs="+", help="Run a selected subset")
     parser.add_argument("--repeat", type=int, default=1)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--history-fixture", type=lambda value: Path(value).resolve(),
+                        help="Replay an existing history in assistant_status only; the file is never modified")
     args = parser.parse_args()
     if args.repeat < 1:
         parser.error("--repeat must be positive")
     if args.case:
         captured = io.StringIO()
         with redirect_stdout(captured), redirect_stderr(captured):
-            result = run_case(args.model, args.case)
+            result = run_case(args.model, args.case, args.history_fixture)
         print(json.dumps(result))
         return
     try:
@@ -336,7 +368,8 @@ def main():
     for run, case in ((run, case) for run in range(1, args.repeat + 1) for case in (args.cases or CASES)):
         try:
             child = subprocess.run(
-                [sys.executable, str(Path(__file__).resolve()), "--model", args.model, "--case", case],
+                [sys.executable, str(Path(__file__).resolve()), "--model", args.model, "--case", case]
+                + (["--history-fixture", str(args.history_fixture)] if args.history_fixture else []),
                 capture_output=True, text=True, timeout=240,
             )
             result = json.loads(child.stdout) if child.returncode == 0 else {

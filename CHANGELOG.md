@@ -4,6 +4,20 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- Assistant health questions such as `did u have problem` now receive isolated
+  conversational replies instead of repository tool calls.
+- Search-tool excerpts and accumulated tool responses are bounded. Command
+  output retains its exit status, and verification uses the full original result.
+- Repeated prose/code blocks and unexecuted tool narration are checked on every
+  response route. Failed correction and empty replies are not marked complete.
+- Non-streaming model responses cut short by the output limit are rejected,
+  including partial tool calls. Successful conversational stream retries now
+  pass verification and save their completion state.
+- Live evaluation includes assistant-status history replay and oversized tool
+  search results; supplied history files are read without modification.
+
 ## [0.7.0] - 2026-09-21
 
 ### Added

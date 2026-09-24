@@ -23,11 +23,21 @@ builds a wheel and source distribution after tests on each supported minor.
 
 Before tagging, run the live evaluator against installed models, save the raw
 traces under `benchmarks/`, and record model identifiers, budgets, test counts,
-failures, and limits. Two rounds of the current suite produce 40 runs per model:
+failures, and limits. Two rounds of the current suite produce 46 runs per model:
 
 ```bash
 python scripts/eval-agent.py --model MODEL --repeat 2 --output .owa/eval.json
 ```
+
+To reproduce conversational drift with an existing history without modifying it:
+
+```bash
+python scripts/eval-agent.py --model MODEL --cases assistant_status large_tool_context --repeat 2 --history-fixture .owa/history.json --output .owa/response-regression.json
+```
+
+The history fixture is loaded only for `assistant_status` in a disposable
+workspace. Traces record its hash, not its contents. Keep private histories out
+of committed fixtures.
 
 Groundedness is a set of fixture assertions (correct citation/location or
 refusal), not semantic proof for arbitrary answers. Patch correctness uses

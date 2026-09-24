@@ -1,0 +1,34 @@
+[
+  {
+    "case": "greeting_followup",
+    "model": "qwen2.5-coder:7b",
+    "run": 1,
+    "passed": true,
+    "seconds": 0.59,
+    "completed": true,
+    "failure_kind": null,
+    "max_tool_prompt_chars": 0,
+    "history_fixture_sha256": null,
+    "groundedness_passed": null,
+    "patch_correct": null,
+    "successful_tools": 0,
+    "errors": [],
+    "model_errors": []
+  },
+  {
+    "case": "greeting_followup",
+    "model": "qwen2.5-coder:7b",
+    "run": 2,
+    "passed": true,
+    "seconds": 0.29,
+    "completed": true,
+    "failure_kind": null,
+    "max_tool_prompt_chars": 0,
+    "history_fixture_sha256": null,
+    "groundedness_passed": null,
+    "patch_correct": null,
+    "successful_tools": 0,
+    "errors": [],
+    "model_errors": []
+  }
+]

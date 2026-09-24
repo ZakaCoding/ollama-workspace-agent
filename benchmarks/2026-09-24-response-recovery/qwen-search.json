@@ -1,0 +1,38 @@
+[
+  {
+    "case": "legacy_search",
+    "model": "qwen2.5-coder:7b",
+    "run": 1,
+    "passed": true,
+    "seconds": 3.52,
+    "completed": true,
+    "failure_kind": null,
+    "max_tool_prompt_chars": 0,
+    "history_fixture_sha256": null,
+    "groundedness_passed": null,
+    "patch_correct": null,
+    "successful_tools": 1,
+    "errors": [],
+    "model_errors": []
+  },
+  {
+    "case": "large_tool_context",
+    "model": "qwen2.5-coder:7b",
+    "run": 1,
+    "passed": false,
+    "seconds": 6.78,
+    "completed": false,
+    "failure_kind": "agent",
+    "max_tool_prompt_chars": 0,
+    "history_fixture_sha256": null,
+    "groundedness_passed": null,
+    "patch_correct": null,
+    "successful_tools": 3,
+    "errors": [
+      "File does not exist: path/to/relevant/file.py",
+      "File does not exist: path/to/relevant/file.py",
+      "File does not exist: path/to/relevant/file.py"
+    ],
+    "model_errors": []
+  }
+]

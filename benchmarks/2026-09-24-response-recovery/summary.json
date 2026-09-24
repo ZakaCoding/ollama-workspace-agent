@@ -1,0 +1,32 @@
+{
+  "ornith": {
+    "passed": 10,
+    "attempted": 10,
+    "infrastructure_failures": 0
+  },
+  "qwen": {
+    "passed": 6,
+    "attempted": 10,
+    "infrastructure_failures": 0
+  },
+  "qwen-search": {
+    "passed": 1,
+    "attempted": 2,
+    "infrastructure_failures": 0
+  },
+  "qwen-final": {
+    "passed": 10,
+    "attempted": 10,
+    "infrastructure_failures": 0
+  },
+  "qwen-greeting": {
+    "passed": 2,
+    "attempted": 2,
+    "infrastructure_failures": 0
+  },
+  "ornith-final": {
+    "passed": 0,
+    "attempted": 1,
+    "infrastructure_failures": 1
+  }
+}

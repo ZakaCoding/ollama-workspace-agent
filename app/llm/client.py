@@ -8,7 +8,11 @@ from app.config import max_output_tokens
 from app.llm.metrics import LLMMetrics
 
 
-class IncompleteStreamError(RuntimeError):
+class IncompleteResponseError(RuntimeError):
+    """The model stopped before producing a complete answer or tool call."""
+
+
+class IncompleteStreamError(IncompleteResponseError):
     """Raised when Ollama ends a stream without a complete response."""
 
 
@@ -84,6 +88,10 @@ class LLMClient:
             response.raise_for_status()
             data = response.json()
             usage = data.get("usage") if isinstance(data, dict) else None
+            for choice in data.get("choices", []):
+                reason = choice.get("finish_reason")
+                if reason not in {None, "stop", "tool_calls", "function_call"}:
+                    raise IncompleteResponseError(f"Model response ended with finish reason: {reason}")
             succeeded = True
             return data
         finally:

@@ -100,6 +100,15 @@ The budget is shared across eligible results; duplicate chunks from the same fil
 are skipped. Excerpts may omit relevant details, so inspect the full file when
 more context is needed.
 
+The `search_code` tool uses the same excerpt builder. Other tool results are
+capped individually, and their combined content shares the evidence character
+budget before each model call. Once tools return observations, those replace
+prefetched edit context. Long command output keeps its beginning and end,
+including the exit code; execution verification checks the original output.
+Assistant health questions such as `did u have problem` bypass repository tools
+and old coding history. Repeated blocks and narrated but unexecuted actions
+receive one correction attempt before an explicit incomplete response.
+
 
 - `LLM_BASE_URL` uses Ollama’s OpenAI‑compatible `/v1` API.
 - `EMBEDDING_BASE_URL` uses Ollama’s native `/api/embed` API.

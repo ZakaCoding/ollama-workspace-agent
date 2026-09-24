@@ -8,6 +8,7 @@ def search_code(
     query: str,
     limit: int = 5,
 ) -> str:
+    from app.agent.context import ContextBuilder
 
     db_path = current_workspace() / ".owa" / "index.db"
 
@@ -26,15 +27,8 @@ def search_code(
     if not results:
         return "No relevant code found."
 
-    output = []
-
-    for result in results:
-
-        output.append(
-            f"EVIDENCE: [{result['path']}#chunk={result['chunk_index']}]\n"
-            f"FILE: {result['path']}\n"
-            f"CHUNK: {result['chunk_index']}\n"
-            f"CONTENT:\n{result['content']}"
-        )
-
-    return f"Found {len(results)} source chunk(s).\n\n" + ("\n" + "-" * 70 + "\n\n").join(output)
+    builder = ContextBuilder(max_results=min(limit, 5))
+    # Include citation headers in the per-tool cap so storage need not clip them.
+    builder.max_chars = min(builder.max_chars, builder.max_chunk_chars)
+    context = builder.build(results, query=query, tool_output=True)
+    return context or "No relevant code found."

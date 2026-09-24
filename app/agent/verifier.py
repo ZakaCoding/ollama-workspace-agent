@@ -156,13 +156,30 @@ _FAKE_NARRATION_RE = re.compile(
 
 def detect_fake_narration(content: str) -> VerificationResult:
     """Detect model text that narrates tool activity without a real tool call."""
-    if _FAKE_NARRATION_RE.search(content):
+    # Quoted repository examples are data, not promises to execute tools.
+    prose = re.sub(r"```[\s\S]*?```", "", content)
+    prose = re.sub(r"`[^`\n]*`", "", prose)
+    prose = re.sub(r"(?m)^\s*>[^\n]*", "", prose)
+    if _FAKE_NARRATION_RE.search(prose):
         return VerificationResult(
             passed=False,
             message="Response contains fake tool narration.",
             should_retry=True,
         )
     return VerificationResult(passed=True, message="No fake narration detected.")
+
+
+def has_repeated_blocks(content: str) -> bool:
+    """Catch prose/code loops without treating repeated short code lines as loops."""
+    counts: dict[str, int] = {}
+    for block in re.split(r"\n\s*\n", content):
+        key = " ".join(block.lower().split())
+        if len(key) < 40:
+            continue
+        counts[key] = counts.get(key, 0) + 1
+        if counts[key] >= 3:
+            return True
+    return False
 
 
 def verify_tool_result(
