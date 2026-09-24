@@ -197,7 +197,8 @@ def verify_tool_result(
         "Tool blocked:", "Tool execution error:", "Unknown tool:",
         "Command blocked:", "Command rejected", "Command timed out", "Command is empty",
         "File does not exist:", "Directory does not exist:", "Not a file:", "Not a directory:",
-        "File is not a UTF-8", "patch_file failed:",
+        "File is not a UTF-8", "patch_file failed:", "File change rejected",
+        "MCP tool call rejected", "MCP tool error:",
     )
     failed = result.startswith(failure_prefixes)
     if tool_name == "run_command":

@@ -5,11 +5,12 @@
 [![GitHub](https://img.shields.io/github/stars/ZakaCoding/ollama-workspace-agent?style=social)](https://github.com/ZakaCoding/ollama-workspace-agent)
 
 **A local, privacy‑first coding agent that understands your codebase and edits files on your machine.**  
-Runs entirely on your own hardware via Ollama — no cloud, no telemetry, no external API keys.
+By default, inference runs on your own Ollama server — no telemetry or external API keys are required.
 
 - Chat with your project using a local LLM
 - Semantic search across your codebase
 - Safe, review‑before‑run shell commands
+- Approval prompts for file changes and optional MCP tools
 - Git‑aware workflow (status, diff, log)
 - Optional HTTP API for integration with other tools
 
@@ -60,6 +61,7 @@ Runs entirely on your own hardware via Ollama — no cloud, no telemetry, no ext
 - Ollama running on a reachable machine
 - A chat model installed on Ollama, e.g. `llama3.1:8b`
 - An embedding model installed on Ollama, e.g. `nomic-embed-text`
+- Docker with a local sandbox image to run agent shell commands (or explicitly select host execution)
 
 ---
 
@@ -87,9 +89,52 @@ API_KEY=choose-a-private-api-key
 # Optional small-model resource controls
 OWA_CONTEXT_TOKENS=8192
 OWA_MAX_OUTPUT_TOKENS=1024
+
+# Agent actions: ask (default), deny, or allow
+OWA_WRITE_APPROVAL=ask
+OWA_COMMAND_APPROVAL=ask
+OWA_MCP_APPROVAL=ask
+
+# Docker is the default for shell commands. The image must exist locally.
+OWA_COMMAND_SANDBOX=docker
+OWA_SANDBOX_IMAGE=python:3.12-slim
+
+# Optional separate planning and testing model calls
+OWA_MULTI_AGENT=0
+# OWA_MANAGER_MODEL=ornith:9b
+# OWA_CODER_MODEL=qwen2.5-coder:7b
+# OWA_TESTER_MODEL=ornith:9b
 ```
 
 You can also place a `.env` in your project root to override the global config for that project.
+
+Run `docker pull python:3.12-slim` yourself before using the default shell
+sandbox. The container has no network, drops capabilities, uses a read-only
+root filesystem, and mounts only the workspace for writing. Set
+`OWA_COMMAND_SANDBOX=host` only if you explicitly want commands to run on the
+host after approval. Denied or unavailable prompts reject the action.
+
+For MCP stdio tools, install `ollama-workspace-agent[mcp]` and create
+`~/.config/owa/mcp.json` outside the workspace:
+
+```json
+{"mcpServers": {"example": {"command": "python", "args": ["/path/to/server.py"]}}}
+```
+
+OwA discovers these tools for action requests, prefixes their names with
+`mcp__example__`, and asks before each call. Configuring a server authorizes
+OwA to start that process to discover its tools. MCP servers run with the host
+user's privileges, so configure only servers you trust. This integration
+supports stdio tools; resources, prompts, and HTTP transports are planned.
+
+Completed file changes are recorded locally in `.owa/episodes.db` and shown as
+untrusted historical context for later action requests. The existing code index
+remains in `.owa/index.db`, and chat history remains in `.owa/history.json`.
+Setting `OWA_MULTI_AGENT=1` adds a read-only manager plan before an action and
+a read-only tester review after a changed file has been verified. The coder
+continues to use the main agent loop and native Ollama tool calls.
+
+See [agent development plan](docs/agent-development-plan.md) for follow-up work.
 
 `OWA_CONTEXT_TOKENS` controls the repository evidence budget. `OWA_MAX_OUTPUT_TOKENS` limits each model response. Both settings are bounded by OwA and can be lowered for small models or low-resource machines.
 
@@ -268,7 +313,7 @@ When `API_KEY` is configured, include it in the `X-API-Key` header for every end
 ## Privacy & Safety
 
 - All inference and embeddings run on your own Ollama server.
-- No code or conversation leaves your machine unless you explicitly call a remote API.
+- Code and conversation stay local unless you configure remote Ollama or MCP services.
 - Shell commands require explicit user confirmation before execution.
 - Sensitive paths and common noise directories are excluded from indexing by default.
 - The project index lives in `.owa/` and is automatically added to `.gitignore`.
@@ -281,7 +326,7 @@ OwA is designed for developers who want:
 
 - **Fully local inference**: No cloud dependencies; just Ollama + your models.
 - **Codebase awareness**: Automatic indexing and semantic search over your repo.
-- **Safe editing**: Patch/write files and run commands only after your approval.
+- **Reviewed editing**: Patch/write files and run commands through approval gates.
 - **Simple deployment**: Single Python package, minimal config, works on laptop or server.
 
 Compared to heavier frameworks, OwA aims to be:

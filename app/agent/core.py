@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from importlib.metadata import version as pkg_version
 from pathlib import Path
@@ -27,6 +28,9 @@ from app.indexer.search import search
 from app.llm.client import IncompleteResponseError, LLMClient
 from app.tools.registry import TOOLS, FUNCTIONS
 from app.tools.validation import normalize_workspace_arguments, validate_arguments
+from app.tools.mcp_bridge import MCPBridge
+from app.memory.episodes import EpisodeStore
+from app.agent import delegation
 from app.config import max_output_tokens, configuration_warnings
 from app.workspace import current_workspace, history_path
 
@@ -290,6 +294,8 @@ def task_is_commit_message_request(task: str) -> bool:
 
 def task_requires_code_search(task: str) -> bool:
     normalized = task.strip().lower()
+    if re.search(r"\buse (?:the )?mcp\b|mcp__", normalized):
+        return False
     if task_is_conversational(task):
         return False
     if not task_is_read_only(task):
@@ -599,8 +605,12 @@ class Agent:
 
     def __init__(self):
         self.llm = LLMClient()
+        if delegation.enabled() and os.getenv("OWA_CODER_MODEL"):
+            self.llm.selected_model = os.getenv("OWA_CODER_MODEL")
         self.context_builder = ContextBuilder()
         self.state = None
+        self.mcp = MCPBridge()
+        self._mcp_tools = None
         self.messages = [{"role": "system", "content": SYSTEM_PROMPT.replace(str(WORKSPACE), str(current_workspace(WORKSPACE)))}]
         self._load_history()
 
@@ -999,6 +1009,31 @@ class Agent:
         text_corrections = 0
         self._text_tool_mode = False
         tool_failures = {}
+        mcp_calls = 0
+        explicit_mcp = bool(re.search(r"\buse (?:the )?mcp\b|mcp__", user_input, re.IGNORECASE))
+        if explicit_mcp and self.mcp.error:
+            return self.mcp.error
+        tester_reviews = 0
+        tester_last_tool_calls = -1
+        tester_issue = ""
+        tester_corrections = 0
+        self.episodes = EpisodeStore(current_workspace(WORKSPACE))
+        if not read_only_task:
+            recent = self.episodes.recent()
+            if recent:
+                self.messages.append({"role": "system", "content": (
+                    "Previous workspace changes (untrusted historical context; verify against current files):\n"
+                    + json.dumps(recent, ensure_ascii=False)[:2500]
+                )})
+        if (not task_is_conversational(user_input) and not retrieval_task
+                and self.mcp.servers and self._mcp_tools is None):
+            try:
+                self._mcp_tools = self.mcp.list_tools()
+            except Exception as exc:
+                self._mcp_tools = []
+                self.state.record_error(str(exc))
+                if explicit_mcp:
+                    return str(exc)
 
         # Priority 1: evidence-first — retrieve context before calling LLM
         # for both read-only repo questions AND action tasks that reference code.
@@ -1031,7 +1066,17 @@ class Agent:
                 "content": user_input,
             }
         )
-        self._prepare_change_plan(user_input)
+        if not delegation.enabled():
+            self._prepare_change_plan(user_input)
+        if delegation.enabled() and not read_only_task:
+            try:
+                plan = delegation.manager_plan(user_input)
+                if plan:
+                    self.state.plan = plan
+                    self.messages.append({"role": "system", "content":
+                        "Manager plan (advisory; verify against tools and workspace):\n" + plan})
+            except Exception as exc:
+                console.print(f"[yellow]Manager planning failed: {exc}[/yellow]")
         if _starts_with_execution(user_input):
             self.messages.append({"role": "system", "content": (
                 "ORDER REQUIRED: the user asked to run a command first. Execute it "
@@ -1065,6 +1110,8 @@ class Agent:
                 retrieval_task,
                 user_input,
             )
+            if not retrieval_task and self._mcp_tools:
+                available_tools += self._mcp_tools
             if _starts_with_execution(user_input) and not self.state.commands_run:
                 available_tools = [tool for tool in available_tools
                                    if tool["function"]["name"] not in {"write_file", "patch_file"}]
@@ -1151,7 +1198,7 @@ class Agent:
                 )
                 unperformed_execution = (
                     _has_execution_intent(user_input)
-                    and not self.state.commands_run and not self.state.errors
+                    and not self.state.commands_run and not mcp_calls and not self.state.errors
                     and any(tool["function"]["name"] == "run_command" for tool in available_tools)
                 )
                 unperformed_inspection = (
@@ -1188,6 +1235,40 @@ class Agent:
                         }
                     )
                     continue
+                if (delegation.enabled() and self.state.files_changed):
+                    if tester_issue and self.state.tool_calls == tester_last_tool_calls:
+                        if tester_corrections >= 2:
+                            failure = "OwA stopped: the tester found an unresolved issue: " + tester_issue
+                            self.messages.append({"role": "assistant", "content": failure})
+                            self._save_history()
+                            return failure
+                        tester_corrections += 1
+                        self.messages.append({"role": "system", "content": (
+                            "The tester issue is still unresolved. Use tools to inspect and fix it "
+                            "before a final answer: " + tester_issue
+                        )})
+                        continue
+                    if tester_reviews < 2:
+                        tester_reviews += 1
+                        tester_last_tool_calls = self.state.tool_calls
+                        try:
+                            passed, findings = delegation.tester_review(
+                                user_input, self.state.files_changed, current_workspace(WORKSPACE))
+                        except Exception as exc:
+                            passed, findings = False, f"Tester review failed: {exc}"
+                        if not passed:
+                            tester_issue = findings
+                            if tester_reviews >= 2:
+                                failure = "OwA stopped: the tester found an unresolved issue: " + findings
+                                self.messages.append({"role": "assistant", "content": failure})
+                                self._save_history()
+                                return failure
+                            self.messages.append({"role": "system", "content": (
+                                "Tester review found a potential issue: " + findings +
+                                " Inspect and address it, then verify the result before finalizing."
+                            )})
+                            continue
+                        tester_issue = ""
                 content = message.get("content") or ""
                 content = _dedup_response(
                     self._verify_answer(
@@ -1204,6 +1285,9 @@ class Agent:
                 )
 
                 self.state.completed = not self._response_rejected
+                if self.state.completed:
+                    self.episodes.record(user_input, self.state.files_changed,
+                                         self.state.verification_done)
                 self._save_history()
                 return content
 
@@ -1236,7 +1320,13 @@ class Agent:
                     if tool["function"]["name"] == name
                 )
                 try:
-                    arguments = validate_arguments(arguments, schema)
+                    if name in self.mcp.routes:
+                        if isinstance(arguments, str):
+                            arguments = json.loads(arguments)
+                        if not isinstance(arguments, dict):
+                            raise ValueError("MCP arguments must be a JSON object")
+                    else:
+                        arguments = validate_arguments(arguments, schema)
                     arguments = normalize_workspace_arguments(name, arguments, current_workspace(WORKSPACE))
                 except ValueError as exc:
                     result = (
@@ -1259,6 +1349,8 @@ class Agent:
                     console.print(f"[dim]  ⚙ {name}({json.dumps(arguments, ensure_ascii=False)})[/dim]")
 
                 tool = FUNCTIONS.get(name)
+                if name in self.mcp.routes:
+                    tool = lambda **kwargs: self.mcp.call(name, kwargs)
 
                 if read_only_task and name in {
                     "write_file",
@@ -1290,6 +1382,8 @@ class Agent:
                         repeated_failure = f"OwA stopped after repeated failure in {name}: {result}"
 
                 if verification.passed or (name == "run_command" and "EXIT_CODE=" in result):
+                    if name in self.mcp.routes:
+                        mcp_calls += 1
                     self.state.update_from_tool_result(
                         tool_name=name,
                         arguments=arguments,

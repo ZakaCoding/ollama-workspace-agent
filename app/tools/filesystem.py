@@ -1,5 +1,6 @@
 from app.workspace import current_workspace
 from pathlib import Path
+from app.tools.approval import approve
 
 
 WORKSPACE = Path.cwd().resolve()
@@ -85,12 +86,18 @@ def patch_file(path: str, old_str: str, new_str: str) -> str:
     if count > 1:
         return f"patch_file failed: old_str matches {count} locations — make it more specific."
 
+    if not approve("file patch", f"{path} ({len(old_str)} characters replaced with {len(new_str)})"):
+        return "File change rejected by user."
+
     target.write_text(content.replace(old_str, new_str, 1), encoding="utf-8")
     return f"Patched {path}: replaced 1 occurrence."
 
 
 def write_file(path: str, content: str) -> str:
     target = resolve_path(path)
+
+    if not approve("file write", f"{path} ({len(content)} characters; {'replace' if target.exists() else 'create'})"):
+        return "File change rejected by user."
 
     target.parent.mkdir(
         parents=True,

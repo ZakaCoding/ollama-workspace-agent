@@ -6,7 +6,11 @@ This project is a local coding-agent prototype. Its guardrails reduce accidental
 
 Filesystem tools resolve user-provided paths against the configured workspace. Absolute paths and paths that escape with `..` are rejected.
 
-The shell tool applies a similar boundary check to command paths and asks for confirmation before execution. End-of-file or unavailable input is treated as rejection rather than approval.
+The shell tool applies a path check and an approval gate. By default it runs the
+approved command in Docker with no network, a read-only root, and only the
+workspace mounted for writing. The image must already exist locally. File
+patches and writes also ask for approval. End-of-file or unavailable input is
+treated as rejection.
 
 ## Task isolation
 
@@ -20,7 +24,9 @@ The system prompt tells the model the workspace root, available behavior, tool p
 
 - Shell commands can still have effects inside the workspace.
 - A trusted local model can still make destructive or incorrect edits.
-- The agent does not provide a complete approval policy for every file operation.
+- The approval prompts show paths and sizes, not a full patch preview.
+- MCP servers configured by the operator start on the host to advertise tools;
+  only subsequent tool calls have an approval prompt.
 - Network calls to Ollama are not authenticated by this application.
 - Secrets in files may be exposed to the model when explicitly read or indexed.
 - The semantic index may retain stale source content until rebuilt or cleaned.
