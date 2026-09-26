@@ -1,8 +1,9 @@
 # Release validation
 
-The 0.7.0 milestone covers context compression, service lifecycle and progress,
-diagnostics, and reproducible evaluation. A versioned local build is not a
-published release.
+The 0.7.0 candidate covers context compression, service lifecycle and progress,
+diagnostics, reproducible evaluation, MCP stdio tools, approval gates, a Docker
+command sandbox, optional delegation, and local episodic memory. A versioned
+local build is not a published release.
 
 Create a clean virtual environment with Python 3.11–3.14, then run:
 
@@ -28,6 +29,10 @@ failures, and limits. Two rounds of the current suite produce 46 runs per model:
 ```bash
 python scripts/eval-agent.py --model MODEL --repeat 2 --output .owa/eval.json
 ```
+
+Before tagging, move the relevant `[Unreleased]` changes into the dated 0.7.0
+entry in `CHANGELOG.md`, using the actual release date. Check an isolated
+`pipx install .` and `owa --help`; MCP users also need the `[mcp]` extra.
 
 To reproduce conversational drift with an existing history without modifying it:
 

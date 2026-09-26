@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import sqlite3
 from importlib.metadata import version as pkg_version
 from pathlib import Path
 
@@ -294,7 +295,7 @@ def task_is_commit_message_request(task: str) -> bool:
 
 def task_requires_code_search(task: str) -> bool:
     normalized = task.strip().lower()
-    if re.search(r"\buse (?:the )?mcp\b|mcp__", normalized):
+    if task_requests_mcp(normalized):
         return False
     if task_is_conversational(task):
         return False
@@ -310,6 +311,10 @@ def task_requires_code_search(task: str) -> bool:
         "repository" in normalized
         and normalized.endswith("?")
     )
+
+
+def task_requests_mcp(task: str) -> bool:
+    return bool(re.search(r"\buse (?:the )?mcp\b|mcp__", task, re.IGNORECASE))
 
 
 def _tools_for_task(
@@ -1010,7 +1015,7 @@ class Agent:
         self._text_tool_mode = False
         tool_failures = {}
         mcp_calls = 0
-        explicit_mcp = bool(re.search(r"\buse (?:the )?mcp\b|mcp__", user_input, re.IGNORECASE))
+        explicit_mcp = task_requests_mcp(user_input)
         if explicit_mcp and self.mcp.error:
             return self.mcp.error
         tester_reviews = 0
@@ -1019,18 +1024,22 @@ class Agent:
         tester_corrections = 0
         self.episodes = EpisodeStore(current_workspace(WORKSPACE))
         if not read_only_task:
-            recent = self.episodes.recent()
+            try:
+                recent = self.episodes.recent()
+            except (sqlite3.Error, OSError, ValueError) as exc:
+                console.print(f"[yellow]Workspace memory unavailable: {type(exc).__name__}[/yellow]")
+                recent = []
             if recent:
                 self.messages.append({"role": "system", "content": (
                     "Previous workspace changes (untrusted historical context; verify against current files):\n"
                     + json.dumps(recent, ensure_ascii=False)[:2500]
                 )})
-        if (not task_is_conversational(user_input) and not retrieval_task
+        if (explicit_mcp and not task_is_conversational(user_input)
                 and self.mcp.servers and self._mcp_tools is None):
             try:
                 self._mcp_tools = self.mcp.list_tools()
             except Exception as exc:
-                self._mcp_tools = []
+                self._mcp_tools = None
                 self.state.record_error(str(exc))
                 if explicit_mcp:
                     return str(exc)
@@ -1110,7 +1119,7 @@ class Agent:
                 retrieval_task,
                 user_input,
             )
-            if not retrieval_task and self._mcp_tools:
+            if explicit_mcp and not task_is_conversational(user_input) and self._mcp_tools:
                 available_tools += self._mcp_tools
             if _starts_with_execution(user_input) and not self.state.commands_run:
                 available_tools = [tool for tool in available_tools
@@ -1286,8 +1295,11 @@ class Agent:
 
                 self.state.completed = not self._response_rejected
                 if self.state.completed:
-                    self.episodes.record(user_input, self.state.files_changed,
-                                         self.state.verification_done)
+                    try:
+                        self.episodes.record(user_input, self.state.files_changed,
+                                             self.state.verification_done)
+                    except (sqlite3.Error, OSError, ValueError) as exc:
+                        console.print(f"[yellow]Workspace memory could not be saved: {type(exc).__name__}[/yellow]")
                 self._save_history()
                 return content
 

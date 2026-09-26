@@ -7,10 +7,12 @@
 2. Gate file writes, shell commands, and MCP tool calls. Shell commands use a
    Docker sandbox by default with no network and a bounded process, CPU, and
    memory budget. Host execution requires an explicit setting.
-3. Discover configured MCP stdio tools and route calls through the normal agent
-   tool loop. Server configuration lives outside the workspace.
+3. Discover configured MCP stdio tools only for explicit MCP requests, with
+   approval before server startup and each call. Server configuration lives
+   outside the workspace.
 4. Record completed file-change episodes in a local SQLite database and include
-   a small recent excerpt in later action prompts.
+   a small recent excerpt in later action prompts. Memory errors do not stop
+   coding tasks.
 5. Offer optional manager, coder, and tester roles. The manager and tester use
    separate read-only model calls; the coder retains the existing tool loop.
 

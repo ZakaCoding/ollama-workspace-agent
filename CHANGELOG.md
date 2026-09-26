@@ -4,8 +4,19 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- Optional MCP stdio tools with operator-controlled configuration, approval
+  before server discovery and calls, and explicit-request tool exposure.
+- Approval gates for workspace writes and commands; commands use a bounded
+  Docker sandbox by default. Optional manager and tester model roles and
+  local SQLite episodes record completed file changes.
+
 ### Fixed
 
+- MCP tools remain unavailable to greetings and unrelated tasks after
+  discovery. Damaged or unavailable episode storage no longer aborts a task
+  or hides an otherwise completed answer.
 - Assistant health questions such as `did u have problem` now receive isolated
   conversational replies instead of repository tool calls.
 - Search-tool excerpts and accumulated tool responses are bounded. Command

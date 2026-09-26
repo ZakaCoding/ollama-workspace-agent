@@ -62,11 +62,19 @@ class MCPBridge:
             return []
         import anyio
 
+        self.routes.clear()
+        self.schemas.clear()
+
         async def discover(server, session):
             return (await session.list_tools()).tools
 
         definitions = []
         for server in self.servers:
+            entry = self.servers[server]
+            command = json.dumps([entry["command"], *entry.get("args", [])], ensure_ascii=False)
+            if not approve("MCP server discovery", f"{server}: {command}",
+                           variable="OWA_MCP_APPROVAL"):
+                raise PermissionError(f"MCP server discovery rejected by user: {server}")
             try:
                 async def fetch():
                     with anyio.fail_after(30):

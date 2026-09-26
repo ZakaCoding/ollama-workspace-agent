@@ -114,22 +114,24 @@ root filesystem, and mounts only the workspace for writing. Set
 `OWA_COMMAND_SANDBOX=host` only if you explicitly want commands to run on the
 host after approval. Denied or unavailable prompts reject the action.
 
-For MCP stdio tools, install `ollama-workspace-agent[mcp]` and create
+For MCP stdio tools, run `pipx install 'ollama-workspace-agent[mcp]'` and create
 `~/.config/owa/mcp.json` outside the workspace:
 
 ```json
 {"mcpServers": {"example": {"command": "python", "args": ["/path/to/server.py"]}}}
 ```
 
-OwA discovers these tools for action requests, prefixes their names with
-`mcp__example__`, and asks before each call. Configuring a server authorizes
-OwA to start that process to discover its tools. MCP servers run with the host
-user's privileges, so configure only servers you trust. This integration
+Ask OwA explicitly to use MCP to discover these tools. It prefixes their names
+with `mcp__example__` and asks before starting each server for discovery and
+before each tool call. MCP servers run with the host user's privileges, so
+configure only servers you trust. This integration
 supports stdio tools; resources, prompts, and HTTP transports are planned.
 
 Completed file changes are recorded locally in `.owa/episodes.db` and shown as
 untrusted historical context for later action requests. The existing code index
 remains in `.owa/index.db`, and chat history remains in `.owa/history.json`.
+If the episode database is unavailable, OwA continues the task and reports a
+warning in the process output.
 Setting `OWA_MULTI_AGENT=1` adds a read-only manager plan before an action and
 a read-only tester review after a changed file has been verified. The coder
 continues to use the main agent loop and native Ollama tool calls.

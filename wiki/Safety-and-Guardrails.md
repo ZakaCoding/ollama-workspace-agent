@@ -25,8 +25,8 @@ The system prompt tells the model the workspace root, available behavior, tool p
 - Shell commands can still have effects inside the workspace.
 - A trusted local model can still make destructive or incorrect edits.
 - The approval prompts show paths and sizes, not a full patch preview.
-- MCP servers configured by the operator start on the host to advertise tools;
-  only subsequent tool calls have an approval prompt.
+- MCP servers configured by the operator run on the host after an explicit MCP
+  request and discovery approval; their tool calls require separate approval.
 - Network calls to Ollama are not authenticated by this application.
 - Secrets in files may be exposed to the model when explicitly read or indexed.
 - The semantic index may retain stale source content until rebuilt or cleaned.

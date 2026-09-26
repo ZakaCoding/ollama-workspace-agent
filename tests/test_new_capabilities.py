@@ -1,4 +1,5 @@
 import json
+import sqlite3
 import sys
 from types import SimpleNamespace
 
@@ -61,6 +62,54 @@ def test_episodes_persist_only_changed_file_metadata(tmp_path):
     assert restored[0]["verified"] is True
 
 
+def test_corrupt_episode_database_does_not_stop_command_task(tmp_path, monkeypatch):
+    from app.agent import core
+
+    memory_dir = tmp_path / ".owa"
+    memory_dir.mkdir()
+    (memory_dir / "episodes.db").write_bytes(b"not a sqlite database")
+    monkeypatch.setattr(core, "EpisodeStore", lambda _workspace: EpisodeStore(tmp_path))
+    monkeypatch.setitem(core.FUNCTIONS, "run_command", lambda **kwargs: "EXIT_CODE=0")
+    agent = core.Agent()
+    replies = iter([
+        {"tool_calls": [{"id": "run", "type": "function", "function": {
+            "name": "run_command", "arguments": {"command": "python --version"},
+        }}]},
+        {"content": "The command completed."},
+    ])
+    monkeypatch.setattr(agent.llm, "chat", lambda **kwargs: {"choices": [{"message": next(replies)}]})
+    assert agent.run("Run python --version") == "The command completed."
+    assert agent.state.completed
+
+
+def test_memory_save_failure_preserves_completed_answer(monkeypatch):
+    from app.agent import core
+
+    class BrokenMemory:
+        def recent(self):
+            return []
+
+        def record(self, *args):
+            raise sqlite3.DatabaseError("storage failed")
+
+    monkeypatch.setattr(core, "EpisodeStore", lambda _workspace: BrokenMemory())
+    monkeypatch.setitem(core.FUNCTIONS, "write_file", lambda **kwargs: "Successfully wrote 2 characters to a.txt")
+    monkeypatch.setitem(core.FUNCTIONS, "read_file", lambda **kwargs: "ok")
+    agent = core.Agent()
+    replies = iter([
+        {"tool_calls": [{"id": "write", "type": "function", "function": {
+            "name": "write_file", "arguments": {"path": "a.txt", "content": "ok"},
+        }}]},
+        {"tool_calls": [{"id": "read", "type": "function", "function": {
+            "name": "read_file", "arguments": {"path": "a.txt"},
+        }}]},
+        {"content": "Created a.txt."},
+    ])
+    monkeypatch.setattr(agent.llm, "chat", lambda **kwargs: {"choices": [{"message": next(replies)}]})
+    assert agent.run("Create a.txt") == "Created a.txt."
+    assert agent.state.completed
+
+
 def test_mcp_bridge_lists_and_calls_configured_tools(tmp_path, monkeypatch):
     config = tmp_path / "mcp.json"
     config.write_text(json.dumps({"mcpServers": {
@@ -98,6 +147,18 @@ def test_mcp_call_denial_never_starts_server(tmp_path, monkeypatch):
     bridge.routes["mcp__demo__ping"] = ("demo", "ping")
     monkeypatch.setenv("OWA_MCP_APPROVAL", "deny")
     assert bridge.call("mcp__demo__ping", {}) == "MCP tool call rejected by user."
+
+
+def test_mcp_discovery_denial_never_starts_server(tmp_path, monkeypatch):
+    config = tmp_path / "mcp.json"
+    config.write_text(json.dumps({"mcpServers": {"demo": {"command": "python"}}}))
+    bridge = MCPBridge(config)
+    monkeypatch.setenv("OWA_MCP_APPROVAL", "deny")
+    async def unexpected_session(*args):
+        pytest.fail("MCP server was started")
+    monkeypatch.setattr(bridge, "_session", unexpected_session)
+    with pytest.raises(PermissionError, match="discovery rejected"):
+        bridge.list_tools()
 
 
 def test_tester_role_reviews_changed_file_without_tools(tmp_path, monkeypatch):
@@ -172,6 +233,76 @@ def test_agent_routes_explicit_mcp_inspection(monkeypatch):
     monkeypatch.setattr(agent.llm, "chat", chat)
     assert agent.run("Use MCP to inspect the service.") == "The service replied pong."
     assert "mcp__local__ping" in {tool["function"]["name"] for tool in seen[0]["tools"]}
+
+
+def test_mcp_tools_are_not_exposed_on_later_greetings_or_unrelated_actions(monkeypatch):
+    from app.agent import core
+
+    class Bridge:
+        servers = {"local": {}}
+        error = None
+        routes = {"mcp__local__ping": ("local", "ping")}
+
+        def list_tools(self):
+            return [{"type": "function", "function": {
+                "name": "mcp__local__ping", "description": "Ping",
+                "parameters": {"type": "object", "properties": {}},
+            }}]
+
+        def call(self, name, arguments):
+            return "pong"
+
+    monkeypatch.setattr(core, "MCPBridge", Bridge)
+    monkeypatch.setitem(core.FUNCTIONS, "run_command", lambda **kwargs: "EXIT_CODE=0")
+    agent = core.Agent()
+    replies = iter([
+        {"tool_calls": [{"id": "mcp", "type": "function", "function": {
+            "name": "mcp__local__ping", "arguments": "{}",
+        }}]},
+        {"content": "pong"},
+        {"content": "Hello!"},
+        {"tool_calls": [{"id": "run", "type": "function", "function": {
+            "name": "run_command", "arguments": {"command": "python --version"},
+        }}]},
+        {"content": "The command completed."},
+    ])
+    tool_names = []
+
+    def chat(**kwargs):
+        tool_names.append({tool["function"]["name"] for tool in kwargs["tools"]})
+        return {"choices": [{"message": next(replies)}]}
+
+    monkeypatch.setattr(agent.llm, "chat", chat)
+    assert agent.run("Use MCP to inspect the service") == "pong"
+    assert agent.run("hello") == "Hello!"
+    assert agent.run("Run python --version") == "The command completed."
+    assert "mcp__local__ping" in tool_names[0]
+    assert "mcp__local__ping" not in tool_names[2]
+    assert "mcp__local__ping" not in tool_names[3]
+
+
+def test_unrelated_action_never_starts_configured_mcp_server(monkeypatch):
+    from app.agent import core
+
+    class Bridge:
+        servers = {"local": {}}
+        error = None
+        routes = {}
+
+        def list_tools(self):
+            pytest.fail("MCP discovery started for an unrelated task")
+
+    monkeypatch.setattr(core, "MCPBridge", Bridge)
+    monkeypatch.setitem(core.FUNCTIONS, "run_command", lambda **kwargs: "EXIT_CODE=0")
+    agent = core.Agent()
+    replies = iter([
+        {"tool_calls": [{"id": "run", "type": "function", "function": {
+            "name": "run_command", "arguments": {"command": "python --version"},
+        }}]},
+        {"content": "The command completed."},
+    ])
+    monkeypatch.setattr(agent.llm, "chat", lambda **kwargs: {"choices": [{"message": next(replies)}]})
+    assert agent.run("Run python --version") == "The command completed."
 
 
 def test_optional_manager_and_tester_wrap_coder_loop(monkeypatch):
