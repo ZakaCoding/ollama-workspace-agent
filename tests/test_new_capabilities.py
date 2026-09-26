@@ -111,6 +111,7 @@ def test_memory_save_failure_preserves_completed_answer(monkeypatch):
 
 
 def test_mcp_bridge_lists_and_calls_configured_tools(tmp_path, monkeypatch):
+    pytest.importorskip("jsonschema")
     config = tmp_path / "mcp.json"
     config.write_text(json.dumps({"mcpServers": {
         "demo": {"command": "python", "args": ["server.py"]},
@@ -146,6 +147,7 @@ def test_mcp_call_denial_never_starts_server(tmp_path, monkeypatch):
     bridge = MCPBridge(config)
     bridge.routes["mcp__demo__ping"] = ("demo", "ping")
     monkeypatch.setenv("OWA_MCP_APPROVAL", "deny")
+    monkeypatch.setitem(sys.modules, "jsonschema", None)
     assert bridge.call("mcp__demo__ping", {}) == "MCP tool call rejected by user."
 
 

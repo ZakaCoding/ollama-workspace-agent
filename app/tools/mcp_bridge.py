@@ -96,17 +96,18 @@ class MCPBridge:
         return definitions
 
     def call(self, name: str, arguments: dict) -> str:
+        server, tool = self.routes[name]
+        if not approve("MCP tool call", f"{server}/{tool}: {json.dumps(arguments, ensure_ascii=False)[:1000]}",
+                       variable="OWA_MCP_APPROVAL"):
+            return "MCP tool call rejected by user."
+
         import anyio
         from jsonschema import ValidationError, validate
 
-        server, tool = self.routes[name]
         try:
             validate(arguments, self.schemas.get(name, {"type": "object"}))
         except ValidationError as exc:
             return f"MCP tool error: invalid arguments: {exc.message}"
-        if not approve("MCP tool call", f"{server}/{tool}: {json.dumps(arguments, ensure_ascii=False)[:1000]}",
-                       variable="OWA_MCP_APPROVAL"):
-            return "MCP tool call rejected by user."
 
         async def invoke(session):
             return await session.call_tool(tool, arguments)
