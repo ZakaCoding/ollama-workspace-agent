@@ -1,288 +1,93 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="OwA is a local-first coding agent for Ollama that indexes your workspace, searches by meaning, and edits code with explicit review."
-    />
-    <title>OwA — Local-first coding agent for Ollama</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <header class="topbar">
-      <div class="container nav">
-        <a class="brand-link" href="#top" aria-label="OwA home">
-          <div class="brand">
-            <span class="brand-avatar">
-              <img src="assets/owa-mascot.png" alt="OwA mascot" />
-            </span>
-            <span class="brand-copy">
-              <strong>OwA</strong>
-              <small>Ollama Workspace Agent</small>
-            </span>
-          </div>
-        </a>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101713">
+  <meta name="description" content="OwA is a local coding agent for Ollama. Explore your workspace, make reviewed edits, run verified commands, and keep your tools under your control.">
+  <meta property="og:title" content="OwA — a coding agent for your own machine">
+  <meta property="og:description" content="A local Ollama coding agent with workspace search, reviewed edits, verified commands, and an inspectable terminal workflow.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="assets/owa-mascot.png">
+  <title>OwA — a coding agent for your own machine</title>
+  <link rel="icon" type="image/png" href="assets/owa-mascot.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="wordmark" href="#top" aria-label="OwA home"><img src="assets/owa-mascot.png" alt="" width="36" height="36"><span>OwA<span class="wordmark-dot">.</span></span></a>
+      <nav aria-label="Main navigation">
+        <a href="#workflow">Workflow</a>
+        <a href="#capabilities">Capabilities</a>
+        <a href="#safety">Control</a>
+        <a href="#install">Get started</a>
+      </nav>
+      <a class="header-link" href="https://github.com/ZakaCoding/ollama-workspace-agent">View source <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
 
-        <nav aria-label="Main navigation">
-          <a href="#why">Why OwA</a>
-          <a href="#features">Features</a>
-          <a href="#stack">Stack</a>
-          <a href="#support">Support</a>
-        </nav>
-
-        <a class="nav-github" href="https://github.com/ZakaCoding/ollama-workspace-agent" target="_blank" rel="noreferrer">
-          GitHub
-        </a>
+  <main id="main">
+    <section class="hero shell" id="top" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="overline"><span class="signal" aria-hidden="true"></span> OLLAMA WORKSPACE AGENT <span class="overline-sep">/</span> LOCAL BY DESIGN</p>
+        <h1 id="hero-title">A coding agent that works <em>where your code lives.</em></h1>
+        <p class="hero-description">OwA runs in your terminal with Ollama. It reads the workspace, finds relevant code, makes reviewed changes, and checks the result with real tools.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#install">Start with OwA <span aria-hidden="true">↗</span></a>
+          <a class="text-link" href="#workflow">See the workflow <span aria-hidden="true">↓</span></a>
+        </div>
+        <p class="release-note"><span class="release-mark" aria-hidden="true"></span> The new MCP, sandbox, and memory work is on <a href="https://github.com/ZakaCoding/ollama-workspace-agent/tree/main">main</a>. Check <a href="https://pypi.org/project/ollama-workspace-agent/">PyPI</a> for the latest packaged version.</p>
       </div>
-    </header>
-
-    <main id="top">
-      <section class="hero">
-        <div class="hero-glow"></div>
-        <div class="container hero-grid">
-          <div class="hero-copy">
-            <p class="eyebrow"><span></span> Local-first AI for real repos</p>
-            <h1>Turn your <em>workspace</em> into a coding partner.</h1>
-            <p class="lead hero-second">
-              OwA is a privacy-first coding agent built for Ollama. It indexes your repository,
-              finds the relevant code by meaning, and helps you patch, review, and validate changes
-              without sending your project to a cloud service.
-            </p>
-
-            <div class="cta-row" id="install">
-              <a class="button" href="https://github.com/ZakaCoding/ollama-workspace-agent" target="_blank" rel="noreferrer">Install OwA</a>
-              <a class="button button-secondary" href="#features">See what it does</a>
-            </div>
-
-            <ul class="trust-list" aria-label="OwA features">
-              <li><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 4.5 6.5 11 3 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Private</li>
-              <li><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 4.5 6.5 11 3 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Local models</li>
-              <li><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 4.5 6.5 11 3 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Git-aware</li>
-              <li><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 4.5 6.5 11 3 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Review-first</li>
-            </ul>
-          </div>
-
-          <div class="workspace-visual" aria-label="OwA terminal preview">
-            <div class="terminal-window">
-              <div class="terminal-bar">
-                <div class="window-dots"><i></i><i></i><i></i></div>
-                <span>owa · ~/workspace</span>
-                <span class="local-pill">LOCAL</span>
-              </div>
-
-              <div class="terminal-body">
-                <div class="mascot-stage">
-                  <div class="pixel-grid"></div>
-                  <div class="mascot-halo"></div>
-                  <img class="mascot" src="assets/owa-mascot.png" alt="OwA mascot" />
-                  <span class="thinking-dot dot-one"></span>
-                  <span class="thinking-dot dot-two"></span>
-                  <span class="thinking-dot dot-three"></span>
-                </div>
-
-                <div class="terminal-lines">
-                  <p><span class="prompt">$</span> owa /setup</p>
-                  <p class="terminal-muted">configuring Ollama connection…</p>
-                  <p><span class="terminal-ok">✓</span> repo indexed with semantic search</p>
-                  <p><span class="prompt">$</span> ask “where is auth handled?”</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="floating-note note-model">
-              <span>MODEL</span>
-              <strong>llama3.1:8b</strong>
-            </div>
-
-            <div class="floating-note note-private">
-              <b>⌾</b>
-              <span>
-                <strong>Private</strong>
-                <small>Nothing leaves your machine</small>
-              </span>
-            </div>
-          </div>
+      <div class="hero-display" aria-label="Illustration of an OwA terminal workflow">
+        <div class="display-top"><span class="display-path">~/projects/calculator <b>›</b> owa</span><span class="display-state"><i aria-hidden="true"></i> LOCAL SESSION</span></div>
+        <div class="display-body">
+          <p class="term-meta">OwA · Ollama Workspace Agent</p>
+          <p class="term-prompt"><span>you ›</span> Fix add() and run the tests.</p>
+          <div class="term-event"><span class="event-index">01</span><span>read_file</span><small>calculator.py</small><b>done</b></div>
+          <div class="term-event"><span class="event-index">02</span><span>patch_file</span><small>calculator.py</small><b>approved</b></div>
+          <div class="term-event"><span class="event-index">03</span><span>run_command</span><small>python -m unittest -q</small><b>exit 0</b></div>
+          <div class="term-result"><span class="result-glyph" aria-hidden="true">✓</span><div><strong>Change verified</strong><p>add() now returns the sum. The requested tests passed.</p></div></div>
+          <p class="term-footnote">Example workflow · actions require your approval</p>
         </div>
-      </section>
-
-      <section class="section manifesto" id="why">
-        <div class="container">
-          <div class="manifesto-grid">
-            <div>
-              <p class="eyebrow"><span></span> Why OwA exists</p>
-              <h2>Built for local hardware, private workflows, and <em>real coding tasks.</em></h2>
-            </div>
-            <div class="manifesto-copy">
-              <p>
-                Most coding agents assume a giant cloud model and a disposable prompt window. OwA starts from
-                the machine you already own and teaches the agent to behave like a useful local engineering assistant.
-              </p>
-              <div class="model-row">
-                <span>llama3.1:8b</span>
-                <span>qwen2.5-coder</span>
-                <span>nomic-embed-text</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="principles">
-            <article>
-              <span>01</span>
-              <h3>Local-first by design</h3>
-              <p>Your model, index, history, and source code stay on your machine.</p>
-            </article>
-            <article>
-              <span>02</span>
-              <h3>Small model friendly</h3>
-              <p>Compact context budgets and tool routing help small models stay useful.</p>
-            </article>
-            <article>
-              <span>03</span>
-              <h3>Safer execution</h3>
-              <p>Explicit confirmations, review flows, and context-aware checks keep actions inspectable.</p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section class="section features-section" id="features">
-        <div class="container">
-          <div class="section-heading">
-            <p class="eyebrow"><span></span> Built for real work</p>
-            <h2>Everything OwA needs. <em>Nothing it doesn’t.</em></h2>
-            <p>
-              Focused tools for the work developers actually do, connected to the model running on the local machine.
-            </p>
-          </div>
-
-          <div class="feature-grid">
-            <article class="feature-card">
-              <div class="feature-icon">⌕</div>
-              <h3>Semantic code search</h3>
-              <p>Index the project locally and find the files that matter by meaning, not just filename.</p>
-              <code>owa /index</code>
-            </article>
-
-            <article class="feature-card">
-              <div class="feature-icon">✎</div>
-              <h3>Patch with review</h3>
-              <p>Read exact locations, patch them carefully, and review the diff before changes are accepted.</p>
-              <code>ask “fix this safely”</code>
-            </article>
-
-            <article class="feature-card">
-              <div class="feature-icon">⎇</div>
-              <h3>Git-aware workflows</h3>
-              <p>Inspect status, diff, recent history, and repository state without leaving the project.</p>
-              <code>git_status + git_diff</code>
-            </article>
-
-            <article class="feature-card">
-              <div class="feature-icon">◇</div>
-              <h3>Guardrails and validation</h3>
-              <p>Run safety checks, code review, and command verification before trusting the result.</p>
-              <code>code_review + run_command</code>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section class="section update-section">
-        <div class="container">
-          <div class="update-grid">
-            <div>
-              <p class="eyebrow"><span></span> Latest update</p>
-              <h2>OwA behaves more like a focused engineering assistant.</h2>
-            </div>
-
-            <div class="update-list">
-              <article>
-                <span>01</span>
-                <div>
-                  <h3>Context budgets and evidence</h3>
-                  <p>Repository context is kept compact, query-focused, and visible so the model can reason on the right evidence.</p>
-                </div>
-              </article>
-              <article>
-                <span>02</span>
-                <div>
-                  <h3>Safer shell execution</h3>
-                  <p>Actions are confirmed, verified, and only accepted when the command actually ran as expected.</p>
-                </div>
-              </article>
-              <article>
-                <span>03</span>
-                <div>
-                  <h3>API and model telemetry</h3>
-                  <p>Usage tracking, request metrics, and per-model diagnostics make agent health easier to understand.</p>
-                </div>
-              </article>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="section stack-section" id="stack">
-        <div class="container stack-card">
-          <div class="stack-copy">
-            <p class="eyebrow"><span></span> Under the hood</p>
-            <h2>Transparent all the way down.</h2>
-            <p>
-              A lightweight Python app, direct Ollama integration, local indexing, and a compact tool system you can understand.
-            </p>
-          </div>
-
-          <div class="stack-list" aria-label="Technology stack">
-            <span>Python 3.11+</span>
-            <span>Ollama</span>
-            <span>SQLite</span>
-            <span>FastAPI</span>
-            <span>Uvicorn</span>
-            <span>Rich</span>
-            <span>HTTPX</span>
-            <span>Local embeddings</span>
-          </div>
-        </div>
-      </section>
-
-      <section class="section support-section" id="support">
-        <div class="container support-card">
-          <div class="support-visual">
-            <img src="assets/owa-mascot.png" alt="OwA mascot" />
-          </div>
-
-          <div class="support-copy">
-            <p class="eyebrow"><span></span> Keep OwA building</p>
-            <h2>Local-first AI grows with support.</h2>
-            <p>
-              If OwA helps your local workflow, sponsorship keeps the project maintained, documented, and improving.
-            </p>
-            <a class="button" href="https://github.com/sponsors/ZakaCoding" target="_blank" rel="noreferrer">Sponsor OwA</a>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <footer>
-      <div class="container footer-row">
-        <span class="brand">
-          <span class="brand-avatar">
-            <img src="assets/owa-mascot.png" alt="OwA mascot" />
-          </span>
-          <span class="brand-copy">
-            <strong>OwA</strong>
-          </span>
-        </span>
-
-        <p>Built locally. Shared openly.</p>
-
-        <div class="footer-links">
-          <a href="https://github.com/ZakaCoding/ollama-workspace-agent" target="_blank" rel="noreferrer">GitHub</a>
-          <a href="https://github.com/sponsors/ZakaCoding" target="_blank" rel="noreferrer">Sponsors</a>
-        </div>
+        <div class="display-bottom"><span>model <b>qwen2.5-coder:7b</b></span><span>workspace <b>local</b></span></div>
       </div>
-    </footer>
-  </body>
+    </section>
+
+    <section class="proof-strip" aria-label="OwA at a glance"><div class="shell proof-inner"><span>YOUR OLLAMA MODEL</span><span class="proof-separator" aria-hidden="true">/</span><span>YOUR WORKSPACE</span><span class="proof-separator" aria-hidden="true">/</span><span>YOUR APPROVAL</span><span class="proof-separator" aria-hidden="true">/</span><span>VERIFIED OUTPUT</span></div></section>
+
+    <section class="section shell" id="workflow" aria-labelledby="workflow-title">
+      <div class="section-intro"><p class="kicker">01 / THE WORKFLOW</p><h2 id="workflow-title">From question to checked change.</h2><p>OwA keeps the work visible. The model gets focused context and tool results, while you remain in control of actions that change files or run commands.</p></div>
+      <div class="workflow-list">
+        <article><span class="step-number">01</span><div><h3>Understand the project</h3><p>Read files directly, inspect Git, or build a local index for code search. Evidence is trimmed to fit smaller model contexts.</p></div><code>/index</code></article>
+        <article><span class="step-number">02</span><div><h3>Plan and edit</h3><p>Ask for a focused patch. OwA checks workspace paths and asks before it writes. Optional manager and tester roles can review the work.</p></div><code>patch_file</code></article>
+        <article><span class="step-number">03</span><div><h3>Run and verify</h3><p>Approve a command, see its output and exit code, then let OwA report whether the requested check actually passed.</p></div><code>run_command</code></article>
+        <article><span class="step-number">04</span><div><h3>Keep useful context</h3><p>Local conversation history, the code index, and completed file-change episodes help the next task start with context.</p></div><code>.owa/</code></article>
+      </div>
+    </section>
+
+    <section class="section capability-section" id="capabilities" aria-labelledby="capabilities-title"><div class="shell">
+      <div class="section-intro wide"><p class="kicker">02 / WHAT IS INSIDE</p><h2 id="capabilities-title">A small, inspectable toolchain.</h2><p>The agent uses concrete tools to inspect, edit, test, and explain work in your repository. Optional integrations stay explicit.</p></div>
+      <div class="capability-grid">
+        <article class="capability-feature"><span class="capability-label">WORKSPACE</span><h3>Know the code before changing it.</h3><p>Hybrid code search, direct file reads, project orientation, and Git status, diff, and log give the model grounded evidence.</p><div class="capability-tags"><span>search_code</span><span>read_file</span><span>git_diff</span></div></article>
+        <article><span class="capability-label">MODEL</span><h3>Built around local models.</h3><p>Native Ollama tool calls, bounded context, and explicit verification help 7–9B models handle focused tasks.</p></article>
+        <article><span class="capability-label">INTEGRATIONS · MAIN</span><h3>MCP when you ask for it.</h3><p>Connect optional stdio tools and approve discovery and calls. MCP servers are chosen and configured by you.</p></article>
+        <article><span class="capability-label">MEMORY · MAIN</span><h3>Remember completed work.</h3><p>SQLite episodes record completed file changes locally; they are treated as historical context, not instructions.</p></article>
+        <article><span class="capability-label">ROLES · MAIN</span><h3>Bring in a second pass.</h3><p>Optional manager planning and tester review surround the main coder loop without hiding the tool activity.</p></article>
+      </div>
+    </div></section>
+
+    <section class="section shell control-section" id="safety" aria-labelledby="control-title"><div class="control-copy"><p class="kicker">03 / STAY IN CONTROL</p><h2 id="control-title">Permission is part of the workflow.</h2><p>OwA checks paths before writes, asks before file changes and shell commands, and can run shell commands in a constrained Docker container. The Docker image must be present locally.</p><ul class="control-points"><li><span>01</span> Approval gates for writes, commands, and MCP tools</li><li><span>02</span> Docker command sandbox by default on main</li><li><span>03</span> Tool results and command exit codes stay visible</li></ul><p class="fine-print">MCP servers run with your host privileges. Configure only servers you trust. Host command execution is an explicit opt-in.</p></div><div class="control-panel" aria-label="Example approval prompt"><div class="control-panel-head"><span>OWA / ACTION REVIEW</span><span>02 OF 03</span></div><div class="approval-detail"><small>REQUESTED ACTION</small><strong>run_command</strong><code>python -m unittest -q</code></div><div class="approval-detail"><small>EXECUTION</small><strong>Docker sandbox</strong><p>No network · limited resources · workspace mount</p></div><div class="approval-options"><span class="approve-choice">Allow</span><span>Deny</span></div><p class="panel-caption">Illustrative prompt. OwA asks in the running terminal.</p></div></section>
+
+    <section class="section evidence-section"><div class="shell evidence-inner"><div><p class="kicker">04 / HONEST EXPECTATIONS</p><h2>Useful with small models. Still a tool you supervise.</h2></div><div><p>Earlier disposable-project evaluations passed <strong>36 of 36 runs</strong> for Qwen 7B and <strong>36 of 36</strong> for Ornith 9B. Those results cover focused fixtures, not every real repository. The latest expanded live run is pending while the configured Ollama server is unresponsive.</p><a class="text-link" href="https://github.com/ZakaCoding/ollama-workspace-agent/tree/main/benchmarks">Read evaluation reports <span aria-hidden="true">↗</span></a></div></div></section>
+
+    <section class="section shell install-section" id="install" aria-labelledby="install-title"><div class="section-intro"><p class="kicker">05 / GET STARTED</p><h2 id="install-title">Open a terminal. Bring your own model.</h2><p>Install the published package for a stable starting point. The newest development capabilities are documented in the GitHub source until the next package release.</p></div><div class="install-layout"><div class="install-code"><div class="code-head"><span>INSTALL & RUN</span><span>bash</span></div><pre><code>pipx install ollama-workspace-agent
+cd your-project
+owa
+
+# In OwA, type /setup to connect Ollama</code></pre></div><div class="install-guide"><p><b>01</b> Install Ollama and a chat model.</p><p><b>02</b> Run <code>owa</code> inside your project and use <code>/setup</code> to configure the connection.</p><p><b>03</b> Ask a concrete question or request an edit, then review each proposed action.</p><a class="button button-primary" href="https://github.com/ZakaCoding/ollama-workspace-agent#quick-start">Read the full setup guide <span aria-hidden="true">↗</span></a><a class="package-link" href="https://pypi.org/project/ollama-workspace-agent/">Check the published package version ↗</a></div></div></section>
+  </main>
+  <footer class="site-footer"><div class="shell footer-inner"><div class="footer-brand"><img src="assets/owa-mascot.png" alt="" width="40" height="40"><span><strong>OwA</strong><small>Open source · runs where you work</small></span></div><div class="footer-links"><a href="https://github.com/ZakaCoding/ollama-workspace-agent">GitHub</a><a href="https://github.com/ZakaCoding/ollama-workspace-agent/tree/main/wiki">Docs</a><a href="https://github.com/sponsors/ZakaCoding">Sponsor</a><a href="https://github.com/ZakaCoding/ollama-workspace-agent/blob/main/LICENSE">MIT license</a></div></div></footer>
+</body>
 </html>
