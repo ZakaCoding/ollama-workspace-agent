@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-26
+
 ### Added
 
 - Optional MCP stdio tools with operator-controlled configuration, approval
@@ -11,28 +13,6 @@ All notable changes to this project are documented here.
 - Approval gates for workspace writes and commands; commands use a bounded
   Docker sandbox by default. Optional manager and tester model roles and
   local SQLite episodes record completed file changes.
-
-### Fixed
-
-- MCP tools remain unavailable to greetings and unrelated tasks after
-  discovery. Damaged or unavailable episode storage no longer aborts a task
-  or hides an otherwise completed answer.
-- Assistant health questions such as `did u have problem` now receive isolated
-  conversational replies instead of repository tool calls.
-- Search-tool excerpts and accumulated tool responses are bounded. Command
-  output retains its exit status, and verification uses the full original result.
-- Repeated prose/code blocks and unexecuted tool narration are checked on every
-  response route. Failed correction and empty replies are not marked complete.
-- Non-streaming model responses cut short by the output limit are rejected,
-  including partial tool calls. Successful conversational stream retries now
-  pass verification and save their completion state.
-- Live evaluation includes assistant-status history replay and oversized tool
-  search results; supplied history files are read without modification.
-
-## [0.7.0] - 2026-09-21
-
-### Added
-
 - Shared lazy service startup and cleanup for CLI and API, with per-service
   workspace and history isolation and protection against concurrent mutations.
 - Structured tool progress, heartbeats, completion and error events through
@@ -50,6 +30,23 @@ All notable changes to this project are documented here.
 
 ### Fixed
 
+- Live evaluation now approves only permitted fixture writes and commands
+  through the current approval API and runs fixture commands in their
+  disposable workspace when Docker is unavailable.
+- MCP tools remain unavailable to greetings and unrelated tasks after
+  discovery. Damaged or unavailable episode storage no longer aborts a task
+  or hides an otherwise completed answer.
+- Assistant health questions such as `did u have problem` now receive isolated
+  conversational replies instead of repository tool calls.
+- Search-tool excerpts and accumulated tool responses are bounded. Command
+  output retains its exit status, and verification uses the full original result.
+- Repeated prose/code blocks and unexecuted tool narration are checked on every
+  response route. Failed correction and empty replies are not marked complete.
+- Non-streaming model responses cut short by the output limit are rejected,
+  including partial tool calls. Successful conversational stream retries now
+  pass verification and save their completion state.
+- Live evaluation includes assistant-status history replay and oversized tool
+  search results; supplied history files are read without modification.
 - Hybrid retrieval matches snake_case and camelCase identifier parts, complete
   filename/path references, and quoted phrases across whitespace. Exact matches
   contribute to evidence scores in both semantic and lexical fallback modes.

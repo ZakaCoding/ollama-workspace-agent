@@ -169,8 +169,13 @@ def run_case(model, case, history_fixture=None):
                     if kwargs.get("command") != permitted:
                         result = "Command rejected by evaluation: only the fixture verification command is approved."
                     else:
-                        with patch("app.tools.shell.Confirm.ask", return_value=True):
+                        with patch("app.tools.shell.approve", return_value=True), patch.dict(
+                            os.environ, {"OWA_COMMAND_SANDBOX": "host"}
+                        ):
                             result = _function(**kwargs)
+                elif _name in {"patch_file", "write_file"}:
+                    with patch("app.tools.filesystem.approve", return_value=True):
+                        result = _function(**kwargs)
                 else:
                     result = _function(**kwargs)
                 calls.append({"name": _name, "arguments": kwargs, "result": result})
