@@ -563,7 +563,6 @@ h3 {
 .tint-3 .face-left { fill:#93ad83; }
 .tint-3 .face-right { fill:#6d8e69; }
 .logo-brick .face-right { fill:#d2e6bd; }
-.brick-mascot-piece { image-rendering:auto; }
 .logo-face-outline { fill:none; stroke:#213829; stroke-width:2.5; stroke-linejoin:round; }
 .motion-ready .build-section:not(.is-active) .brick,
 .motion-ready .build-section:not(.is-active) .build-ollama { opacity:0; }

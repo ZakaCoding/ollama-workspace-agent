@@ -3,6 +3,9 @@
 from pathlib import Path
 
 
+ROOT = Path(__file__).parent
+
+
 def point(x, y):
     return f"{x:.1f},{y:.1f}"
 
@@ -41,6 +44,11 @@ parts = [
     '<svg class="build-cube" viewBox="0 0 640 560" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">',
     "  <defs>",
 ]
+vector_source = (ROOT / "assets/owa-mascot-mosaic.svg").read_text()
+mascot_paths = vector_source.split('<g id="mascot-art">', 1)[1].split("</g>", 1)[0].strip()
+parts.append('    <g id="mascot-art" transform="matrix(50 -28 0 56 320 327)">')
+parts.append("      " + mascot_paths.replace("\n", "\n      "))
+parts.append("    </g>")
 for y in range(3):
     for z in range(3):
         c = corners(2, y, z)
@@ -62,14 +70,14 @@ for index, (x, y, z) in enumerate(bricks):
         # The same image is projected onto the full side. Each brick clips out
         # its own fragment, so the mascot appears piece by piece as they land.
         parts.append(f'    <g clip-path="url(#mascot-piece-{y}-{z})">')
-        parts.append('      <image class="brick-mascot-piece" href="assets/owa-mascot.png" x="-1.9" y="-1.0" width="6.9" height="5.0" preserveAspectRatio="none" transform="matrix(50 -28 0 56 320 327)" />')
+        parts.append('      <use href="#mascot-art" />')
         parts.append("    </g>")
         parts.append(f'    <polygon class="logo-face-outline" points="{coordinates(right_face)}" />')
     parts.append("    " + polygon((c["top"], c["right"], c["front"], c["left"]), "top"))
     parts.append("  </g>")
 parts.append("</svg>")
 
-page = Path(__file__).with_name("index.html")
+page = ROOT / "index.html"
 content = page.read_text()
 start = "<!-- BUILD_ART_START -->"
 end = "<!-- BUILD_ART_END -->"
