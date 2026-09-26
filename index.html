@@ -82,10 +82,21 @@
           <button class="build-replay" type="button" aria-label="Replay the brick assembly animation">↻ <span>Replay build</span></button>
           <p class="build-package">Ready to install? <a href="https://pypi.org/project/ollama-workspace-agent/">Find OwA on PyPI <span aria-hidden="true">↗</span></a></p>
         </div>
-        <div class="build-art" role="img" aria-label="Animated low-poly blocks assemble into a cube behind the OwA mascot, with the Ollama logo beside it">
+        <div class="build-art" role="img" aria-label="Animated low-poly cube assembles brick by brick, revealing the OwA mascot across one side, with the Ollama logo beside it">
           <div class="build-grid" aria-hidden="true"></div>
           <!-- BUILD_ART_START -->
           <svg class="build-cube" viewBox="0 0 640 560" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <clipPath id="mascot-piece-0-0" clipPathUnits="userSpaceOnUse"><polygon points="420.0,383.0 468.0,356.0 468.0,410.0 420.0,437.0" /></clipPath>
+              <clipPath id="mascot-piece-0-1" clipPathUnits="userSpaceOnUse"><polygon points="420.0,327.0 468.0,300.0 468.0,354.0 420.0,381.0" /></clipPath>
+              <clipPath id="mascot-piece-0-2" clipPathUnits="userSpaceOnUse"><polygon points="420.0,271.0 468.0,244.0 468.0,298.0 420.0,325.0" /></clipPath>
+              <clipPath id="mascot-piece-1-0" clipPathUnits="userSpaceOnUse"><polygon points="370.0,411.0 418.0,384.0 418.0,438.0 370.0,465.0" /></clipPath>
+              <clipPath id="mascot-piece-1-1" clipPathUnits="userSpaceOnUse"><polygon points="370.0,355.0 418.0,328.0 418.0,382.0 370.0,409.0" /></clipPath>
+              <clipPath id="mascot-piece-1-2" clipPathUnits="userSpaceOnUse"><polygon points="370.0,299.0 418.0,272.0 418.0,326.0 370.0,353.0" /></clipPath>
+              <clipPath id="mascot-piece-2-0" clipPathUnits="userSpaceOnUse"><polygon points="320.0,439.0 368.0,412.0 368.0,466.0 320.0,493.0" /></clipPath>
+              <clipPath id="mascot-piece-2-1" clipPathUnits="userSpaceOnUse"><polygon points="320.0,383.0 368.0,356.0 368.0,410.0 320.0,437.0" /></clipPath>
+              <clipPath id="mascot-piece-2-2" clipPathUnits="userSpaceOnUse"><polygon points="320.0,327.0 368.0,300.0 368.0,354.0 320.0,381.0" /></clipPath>
+            </defs>
             <ellipse class="cube-shadow" cx="320" cy="464" rx="180" ry="33" />
             <g class="brick brick-00 tint-0">
               <polygon class="face-left" points="272.0,300.0 320.0,327.0 320.0,381.0 272.0,354.0" />
@@ -117,9 +128,13 @@
               <polygon class="face-right" points="320.0,383.0 368.0,356.0 368.0,410.0 320.0,437.0" />
               <polygon class="face-top" points="320.0,329.0 368.0,356.0 320.0,383.0 272.0,356.0" />
             </g>
-            <g class="brick brick-06 tint-0">
+            <g class="brick brick-06 tint-0 logo-brick">
               <polygon class="face-left" points="372.0,356.0 420.0,383.0 420.0,437.0 372.0,410.0" />
               <polygon class="face-right" points="420.0,383.0 468.0,356.0 468.0,410.0 420.0,437.0" />
+              <g clip-path="url(#mascot-piece-0-0)">
+                <image class="brick-mascot-piece" href="assets/owa-mascot.png" x="-1.9" y="-1.0" width="6.9" height="5.0" preserveAspectRatio="none" transform="matrix(50 -28 0 56 320 327)" />
+              </g>
+              <polygon class="logo-face-outline" points="420.0,383.0 468.0,356.0 468.0,410.0 420.0,437.0" />
               <polygon class="face-top" points="420.0,329.0 468.0,356.0 420.0,383.0 372.0,356.0" />
             </g>
             <g class="brick brick-07 tint-2">
@@ -142,9 +157,13 @@
               <polygon class="face-right" points="270.0,411.0 318.0,384.0 318.0,438.0 270.0,465.0" />
               <polygon class="face-top" points="270.0,357.0 318.0,384.0 270.0,411.0 222.0,384.0" />
             </g>
-            <g class="brick brick-11 tint-1">
+            <g class="brick brick-11 tint-1 logo-brick">
               <polygon class="face-left" points="322.0,384.0 370.0,411.0 370.0,465.0 322.0,438.0" />
               <polygon class="face-right" points="370.0,411.0 418.0,384.0 418.0,438.0 370.0,465.0" />
+              <g clip-path="url(#mascot-piece-1-0)">
+                <image class="brick-mascot-piece" href="assets/owa-mascot.png" x="-1.9" y="-1.0" width="6.9" height="5.0" preserveAspectRatio="none" transform="matrix(50 -28 0 56 320 327)" />
+              </g>
+              <polygon class="logo-face-outline" points="370.0,411.0 418.0,384.0 418.0,438.0 370.0,465.0" />
               <polygon class="face-top" points="370.0,357.0 418.0,384.0 370.0,411.0 322.0,384.0" />
             </g>
             <g class="brick brick-12 tint-3">
@@ -157,9 +176,13 @@
               <polygon class="face-right" points="320.0,327.0 368.0,300.0 368.0,354.0 320.0,381.0" />
               <polygon class="face-top" points="320.0,273.0 368.0,300.0 320.0,327.0 272.0,300.0" />
             </g>
-            <g class="brick brick-14 tint-1">
+            <g class="brick brick-14 tint-1 logo-brick">
               <polygon class="face-left" points="372.0,300.0 420.0,327.0 420.0,381.0 372.0,354.0" />
               <polygon class="face-right" points="420.0,327.0 468.0,300.0 468.0,354.0 420.0,381.0" />
+              <g clip-path="url(#mascot-piece-0-1)">
+                <image class="brick-mascot-piece" href="assets/owa-mascot.png" x="-1.9" y="-1.0" width="6.9" height="5.0" preserveAspectRatio="none" transform="matrix(50 -28 0 56 320 327)" />
+              </g>
+              <polygon class="logo-face-outline" points="420.0,327.0 468.0,300.0 468.0,354.0 420.0,381.0" />
               <polygon class="face-top" points="420.0,273.0 468.0,300.0 420.0,327.0 372.0,300.0" />
             </g>
             <g class="brick brick-15 tint-3">
@@ -172,9 +195,13 @@
               <polygon class="face-right" points="370.0,243.0 418.0,216.0 418.0,270.0 370.0,297.0" />
               <polygon class="face-top" points="370.0,189.0 418.0,216.0 370.0,243.0 322.0,216.0" />
             </g>
-            <g class="brick brick-17 tint-2">
+            <g class="brick brick-17 tint-2 logo-brick">
               <polygon class="face-left" points="272.0,412.0 320.0,439.0 320.0,493.0 272.0,466.0" />
               <polygon class="face-right" points="320.0,439.0 368.0,412.0 368.0,466.0 320.0,493.0" />
+              <g clip-path="url(#mascot-piece-2-0)">
+                <image class="brick-mascot-piece" href="assets/owa-mascot.png" x="-1.9" y="-1.0" width="6.9" height="5.0" preserveAspectRatio="none" transform="matrix(50 -28 0 56 320 327)" />
+              </g>
+              <polygon class="logo-face-outline" points="320.0,439.0 368.0,412.0 368.0,466.0 320.0,493.0" />
               <polygon class="face-top" points="320.0,385.0 368.0,412.0 320.0,439.0 272.0,412.0" />
             </g>
             <g class="brick brick-18 tint-1">
@@ -182,9 +209,13 @@
               <polygon class="face-right" points="270.0,355.0 318.0,328.0 318.0,382.0 270.0,409.0" />
               <polygon class="face-top" points="270.0,301.0 318.0,328.0 270.0,355.0 222.0,328.0" />
             </g>
-            <g class="brick brick-19 tint-2">
+            <g class="brick brick-19 tint-2 logo-brick">
               <polygon class="face-left" points="322.0,328.0 370.0,355.0 370.0,409.0 322.0,382.0" />
               <polygon class="face-right" points="370.0,355.0 418.0,328.0 418.0,382.0 370.0,409.0" />
+              <g clip-path="url(#mascot-piece-1-1)">
+                <image class="brick-mascot-piece" href="assets/owa-mascot.png" x="-1.9" y="-1.0" width="6.9" height="5.0" preserveAspectRatio="none" transform="matrix(50 -28 0 56 320 327)" />
+              </g>
+              <polygon class="logo-face-outline" points="370.0,355.0 418.0,328.0 418.0,382.0 370.0,409.0" />
               <polygon class="face-top" points="370.0,301.0 418.0,328.0 370.0,355.0 322.0,328.0" />
             </g>
             <g class="brick brick-20 tint-0">
@@ -197,14 +228,22 @@
               <polygon class="face-right" points="320.0,271.0 368.0,244.0 368.0,298.0 320.0,325.0" />
               <polygon class="face-top" points="320.0,217.0 368.0,244.0 320.0,271.0 272.0,244.0" />
             </g>
-            <g class="brick brick-22 tint-2">
+            <g class="brick brick-22 tint-2 logo-brick">
               <polygon class="face-left" points="372.0,244.0 420.0,271.0 420.0,325.0 372.0,298.0" />
               <polygon class="face-right" points="420.0,271.0 468.0,244.0 468.0,298.0 420.0,325.0" />
+              <g clip-path="url(#mascot-piece-0-2)">
+                <image class="brick-mascot-piece" href="assets/owa-mascot.png" x="-1.9" y="-1.0" width="6.9" height="5.0" preserveAspectRatio="none" transform="matrix(50 -28 0 56 320 327)" />
+              </g>
+              <polygon class="logo-face-outline" points="420.0,271.0 468.0,244.0 468.0,298.0 420.0,325.0" />
               <polygon class="face-top" points="420.0,217.0 468.0,244.0 420.0,271.0 372.0,244.0" />
             </g>
-            <g class="brick brick-23 tint-3">
+            <g class="brick brick-23 tint-3 logo-brick">
               <polygon class="face-left" points="272.0,356.0 320.0,383.0 320.0,437.0 272.0,410.0" />
               <polygon class="face-right" points="320.0,383.0 368.0,356.0 368.0,410.0 320.0,437.0" />
+              <g clip-path="url(#mascot-piece-2-1)">
+                <image class="brick-mascot-piece" href="assets/owa-mascot.png" x="-1.9" y="-1.0" width="6.9" height="5.0" preserveAspectRatio="none" transform="matrix(50 -28 0 56 320 327)" />
+              </g>
+              <polygon class="logo-face-outline" points="320.0,383.0 368.0,356.0 368.0,410.0 320.0,437.0" />
               <polygon class="face-top" points="320.0,329.0 368.0,356.0 320.0,383.0 272.0,356.0" />
             </g>
             <g class="brick brick-24 tint-2">
@@ -212,22 +251,29 @@
               <polygon class="face-right" points="270.0,299.0 318.0,272.0 318.0,326.0 270.0,353.0" />
               <polygon class="face-top" points="270.0,245.0 318.0,272.0 270.0,299.0 222.0,272.0" />
             </g>
-            <g class="brick brick-25 tint-3">
+            <g class="brick brick-25 tint-3 logo-brick">
               <polygon class="face-left" points="322.0,272.0 370.0,299.0 370.0,353.0 322.0,326.0" />
               <polygon class="face-right" points="370.0,299.0 418.0,272.0 418.0,326.0 370.0,353.0" />
+              <g clip-path="url(#mascot-piece-1-2)">
+                <image class="brick-mascot-piece" href="assets/owa-mascot.png" x="-1.9" y="-1.0" width="6.9" height="5.0" preserveAspectRatio="none" transform="matrix(50 -28 0 56 320 327)" />
+              </g>
+              <polygon class="logo-face-outline" points="370.0,299.0 418.0,272.0 418.0,326.0 370.0,353.0" />
               <polygon class="face-top" points="370.0,245.0 418.0,272.0 370.0,299.0 322.0,272.0" />
             </g>
-            <g class="brick brick-26 tint-0">
+            <g class="brick brick-26 tint-0 logo-brick">
               <polygon class="face-left" points="272.0,300.0 320.0,327.0 320.0,381.0 272.0,354.0" />
               <polygon class="face-right" points="320.0,327.0 368.0,300.0 368.0,354.0 320.0,381.0" />
+              <g clip-path="url(#mascot-piece-2-2)">
+                <image class="brick-mascot-piece" href="assets/owa-mascot.png" x="-1.9" y="-1.0" width="6.9" height="5.0" preserveAspectRatio="none" transform="matrix(50 -28 0 56 320 327)" />
+              </g>
+              <polygon class="logo-face-outline" points="320.0,327.0 368.0,300.0 368.0,354.0 320.0,381.0" />
               <polygon class="face-top" points="320.0,273.0 368.0,300.0 320.0,327.0 272.0,300.0" />
             </g>
           </svg>
           <!-- BUILD_ART_END -->
-          <div class="build-mascot" aria-hidden="true"><img src="assets/owa-mascot.png" alt="" width="184" height="184"><span>OwA</span></div>
           <div class="build-ollama" aria-hidden="true"><img src="assets/ollama-logo.svg" alt="" width="28" height="40"><span>powered by<br><strong>Ollama</strong></span></div>
           <span class="build-art-label build-art-label-top" aria-hidden="true">LOCAL MODEL / LOCAL WORKSPACE</span>
-          <span class="build-art-label build-art-label-bottom" aria-hidden="true">27 SMALL BLOCKS → ONE WORKFLOW</span>
+          <span class="build-art-label build-art-label-bottom" aria-hidden="true">OWA / ASSEMBLED PIECE BY PIECE</span>
         </div>
       </div>
     </section>

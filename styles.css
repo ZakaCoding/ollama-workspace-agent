@@ -562,8 +562,10 @@ h3 {
 .tint-3 .face-top { fill:#e2efc9; }
 .tint-3 .face-left { fill:#93ad83; }
 .tint-3 .face-right { fill:#6d8e69; }
+.logo-brick .face-right { fill:#d2e6bd; }
+.brick-mascot-piece { image-rendering:auto; }
+.logo-face-outline { fill:none; stroke:#213829; stroke-width:2.5; stroke-linejoin:round; }
 .motion-ready .build-section:not(.is-active) .brick,
-.motion-ready .build-section:not(.is-active) .build-mascot,
 .motion-ready .build-section:not(.is-active) .build-ollama { opacity:0; }
 .motion-ready .build-section.is-active .brick {
   animation:brick-arrive .72s cubic-bezier(.18,.8,.24,1.15) both;
@@ -595,11 +597,8 @@ h3 {
 .brick-24 { animation-delay:2.64s !important; }
 .brick-25 { animation-delay:2.75s !important; }
 .brick-26 { animation-delay:2.86s !important; }
-.motion-ready .build-section.is-active .build-mascot {
-  animation:badge-arrive .7s cubic-bezier(.18,.8,.24,1.15) 3.3s both;
-}
 .motion-ready .build-section.is-active .build-ollama {
-  animation:badge-arrive .7s cubic-bezier(.18,.8,.24,1.15) 3.55s both;
+  animation:badge-arrive .7s cubic-bezier(.18,.8,.24,1.15) 3.3s both;
 }
 @keyframes brick-arrive {
   from { opacity:0; transform:translateY(-90px) scale(.76); }
@@ -613,24 +612,6 @@ h3 {
   0%,100% { transform:translateY(0); }
   50% { transform:translateY(-8px); }
 }
-.build-mascot {
-  position:absolute;
-  left:2%;
-  bottom:6%;
-  display:flex;
-  align-items:center;
-  gap:5px;
-  padding:4px 18px 4px 0;
-  border:1px solid #5a7858;
-  background:#16241b;
-  box-shadow:11px 11px 0 #0d1910;
-  color:var(--accent);
-  font-size:1.8rem;
-  font-weight:800;
-  letter-spacing:-.09em;
-  line-height:1;
-}
-.build-mascot img { width:100px; height:100px; object-fit:contain; }
 .build-ollama {
   position:absolute;
   top:8%;
@@ -1015,8 +996,6 @@ h3 {
   }
   .build-layout { padding-block:80px 50px; }
   .build-art { min-height:320px; }
-  .build-mascot { left:0; bottom:9%; padding-right:10px; font-size:1.25rem; }
-  .build-mascot img { width:68px; height:68px; }
   .build-ollama { top:9%; right:0; gap:9px; padding:7px 11px; }
   .build-ollama img { width:20px; height:30px; }
   .build-ollama strong { font-size:.9rem; }
@@ -1092,8 +1071,7 @@ h3 {
     animation-duration:.01ms!important
   }
   .build-replay { display:none!important; }
-  .build-cube,.brick,.build-mascot,.build-ollama { animation:none!important; }
+  .build-cube,.brick,.build-ollama { animation:none!important; }
   .motion-ready .build-section:not(.is-active) .brick,
-  .motion-ready .build-section:not(.is-active) .build-mascot,
   .motion-ready .build-section:not(.is-active) .build-ollama { opacity:1; }
 }

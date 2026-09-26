@@ -7,9 +7,26 @@ def point(x, y):
     return f"{x:.1f},{y:.1f}"
 
 
+def coordinates(points):
+    return " ".join(point(*p) for p in points)
+
+
 def polygon(points, face):
-    coords = " ".join(point(*p) for p in points)
-    return f'<polygon class="face-{face}" points="{coords}" />'
+    return f'<polygon class="face-{face}" points="{coordinates(points)}" />'
+
+
+def corners(x, y, z):
+    cx = 320 + (x - y) * 50
+    cy = 300 + (x + y) * 28 - z * 56
+    return {
+        "top": (cx, cy - 27),
+        "right": (cx + 48, cy),
+        "front": (cx, cy + 27),
+        "left": (cx - 48, cy),
+        "left_bottom": (cx - 48, cy + 54),
+        "front_bottom": (cx, cy + 81),
+        "right_bottom": (cx + 48, cy + 54),
+    }
 
 
 bricks = []
@@ -22,23 +39,33 @@ for z in range(3):
 bricks.sort(key=lambda cell: (cell[0] + cell[1] + cell[2], cell[2], cell[0]))
 parts = [
     '<svg class="build-cube" viewBox="0 0 640 560" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">',
-    '  <ellipse class="cube-shadow" cx="320" cy="464" rx="180" ry="33" />',
+    "  <defs>",
 ]
+for y in range(3):
+    for z in range(3):
+        c = corners(2, y, z)
+        face = (c["front"], c["right"], c["right_bottom"], c["front_bottom"])
+        parts.append(f'    <clipPath id="mascot-piece-{y}-{z}" clipPathUnits="userSpaceOnUse"><polygon points="{coordinates(face)}" /></clipPath>')
+parts.extend([
+    "  </defs>",
+    '  <ellipse class="cube-shadow" cx="320" cy="464" rx="180" ry="33" />',
+])
 for index, (x, y, z) in enumerate(bricks):
-    cx = 320 + (x - y) * 50
-    cy = 300 + (x + y) * 28 - z * 56
-    top = (cx, cy - 27)
-    right = (cx + 48, cy)
-    front = (cx, cy + 27)
-    left = (cx - 48, cy)
-    left_bottom = (cx - 48, cy + 54)
-    front_bottom = (cx, cy + 81)
-    right_bottom = (cx + 48, cy + 54)
+    c = corners(x, y, z)
+    right_face = (c["front"], c["right"], c["right_bottom"], c["front_bottom"])
     tint = (x * 2 + y + z) % 4
-    parts.append(f'  <g class="brick brick-{index:02d} tint-{tint}">')
-    parts.append("    " + polygon((left, front, front_bottom, left_bottom), "left"))
-    parts.append("    " + polygon((front, right, right_bottom, front_bottom), "right"))
-    parts.append("    " + polygon((top, right, front, left), "top"))
+    logo_class = " logo-brick" if x == 2 else ""
+    parts.append(f'  <g class="brick brick-{index:02d} tint-{tint}{logo_class}">')
+    parts.append("    " + polygon((c["left"], c["front"], c["front_bottom"], c["left_bottom"]), "left"))
+    parts.append("    " + polygon(right_face, "right"))
+    if x == 2:
+        # The same image is projected onto the full side. Each brick clips out
+        # its own fragment, so the mascot appears piece by piece as they land.
+        parts.append(f'    <g clip-path="url(#mascot-piece-{y}-{z})">')
+        parts.append('      <image class="brick-mascot-piece" href="assets/owa-mascot.png" x="-1.9" y="-1.0" width="6.9" height="5.0" preserveAspectRatio="none" transform="matrix(50 -28 0 56 320 327)" />')
+        parts.append("    </g>")
+        parts.append(f'    <polygon class="logo-face-outline" points="{coordinates(right_face)}" />')
+    parts.append("    " + polygon((c["top"], c["right"], c["front"], c["left"]), "top"))
     parts.append("  </g>")
 parts.append("</svg>")
 
