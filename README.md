@@ -430,3 +430,9 @@ Command approval still happens in the process running the service.
 
 See [resource profiles](docs/resource-profiles.md) for budget presets and
 [release validation](docs/releasing.md) for the test and packaging workflow.
+
+
+### Reviewed workspace memory (opt-in)
+
+Propose, inspect, approve, reject, and revoke local lessons with `python -m app.memory`.
+Enable recall with `OWA_LESSON_MEMORY=1`. See [the review workflow and trust boundaries](docs/reviewed-memory.md).
