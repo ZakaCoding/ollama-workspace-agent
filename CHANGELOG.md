@@ -4,10 +4,14 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
-## [0.7.0] - 2026-09-26
+## [0.7.0] - 2026-10-05
 
 ### Added
 
+- Opt-in reviewed workspace lessons stored locally in SQLite, with explicit
+  proposal, approval, rejection, and revocation commands. Recall is disabled
+  by default, bounded, and limited to action requests; lessons never grant
+  tool permissions or enter saved conversation history.
 - Optional MCP stdio tools with operator-controlled configuration, approval
   before server discovery and calls, and explicit-request tool exposure.
 - Approval gates for workspace writes and commands; commands use a bounded
@@ -21,7 +25,7 @@ All notable changes to this project are documented here.
   corrupt-index diagnostics, and explanations of invalid resource settings.
 - Pinned CI dependencies and a Python 3.11–3.14 matrix. Release tags must match
   the package version and dated changelog before tests and package publishing.
-- Twenty live evaluation cases with separate groundedness checks, tool success,
+- Twenty-three live evaluation cases with separate groundedness checks, tool success,
   independent patch tests, latency, and event traces.
 
 - Query-focused source excerpts for large retrieval results, with omission
@@ -117,6 +121,17 @@ All notable changes to this project are documented here.
 - Added pre-execution tool argument validation for malformed JSON, non-object
   arguments, missing or unexpected fields, and incorrect types. Invalid calls
   return correction feedback without executing tools or recording changes.
+
+### Validation
+
+- CI passed on Python 3.11–3.14, including a separate optional MCP job.
+  Local checks passed with 428 tests and 2 skipped, incremental HTTP progress,
+  dependency consistency, release metadata, and wheel/source builds.
+- Full live validation of the current revision is incomplete: the latest
+  Ornith run passed 14 cases before an Ollama connection failure interrupted
+  the 23-case suite. Qwen was not evaluated on this revision. This release
+  does not establish a complete live benchmark score or a model-quality
+  improvement; both full matrices remain follow-up work.
 
 ## [0.6.1] - 2026-09-04
 
